@@ -37,7 +37,6 @@ namespace Geospiza
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddGenericParameter("Sliders", "S", "The sliders to test", GH_ParamAccess.list);
             pManager.AddMeshParameter("Mesh", "M", "The mesh to evaluate", GH_ParamAccess.item);
         }
 
@@ -58,11 +57,10 @@ namespace Geospiza
         /// to store data in output parameters.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            List<GH_NumberSlider> sliders = new List<GH_NumberSlider>();
-            DA.GetDataList(0, sliders);
+
             
             var mesh = new Mesh();
-            if (!DA.GetData(1, ref mesh)) return;
+            if (!DA.GetData(0, ref mesh)) return;
             
             MeshBody meshBody = new MeshBody(mesh);
             Helpers.SendRequest(meshBody);

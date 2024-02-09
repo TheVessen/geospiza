@@ -14,7 +14,7 @@ namespace Geospiza.Lib.Helpers
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
 
                 // Replace 'your_server_endpoint' with your actual server endpoint
-                var result = client.PostAsync("http://127.0.0.1:5173/api/geoget", content).Result;
+                var result = client.PostAsync("http://127.0.0.1:5173/api/geokernel", content).Result;
 
                 if (result.IsSuccessStatusCode)
                 {
