@@ -6,7 +6,7 @@ namespace Geospiza.Lib.Helpers
 {
     public static class Helpers
     {
-        public static void SendRequest(MeshBody datalist)
+        public static void SendRequest(MeshBody datalist, string endpoint)
         {
             var json = datalist.ToJson();
             using (var client = new HttpClient())
@@ -14,7 +14,7 @@ namespace Geospiza.Lib.Helpers
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
 
                 // Replace 'your_server_endpoint' with your actual server endpoint
-                var result = client.PostAsync("http://127.0.0.1:5173/api/geokernel", content).Result;
+                var result = client.PostAsync(endpoint, content).Result;
 
                 if (result.IsSuccessStatusCode)
                 {

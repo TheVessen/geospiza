@@ -38,6 +38,8 @@ namespace Geospiza
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
             pManager.AddMeshParameter("Mesh", "M", "The mesh to evaluate", GH_ParamAccess.item);
+            pManager.AddBooleanParameter("Listen", "L", "Listen for the solution", GH_ParamAccess.item, false);
+            pManager.AddTextParameter("Endpoint", "E", "The endpoint to send the solution to", GH_ParamAccess.item, "");
         }
 
         /// <summary>
@@ -62,14 +64,26 @@ namespace Geospiza
             var mesh = new Mesh();
             if (!DA.GetData(0, ref mesh)) return;
             
+            var listen = false;
+            if (!DA.GetData(1, ref listen)) return;
+            
+            var endpoint = "";
+            if (!DA.GetData(2, ref endpoint)) return;
+            
             MeshBody meshBody = new MeshBody(mesh);
-            Helpers.SendRequest(meshBody);
+
+            if (endpoint == "")
+            {
+                endpoint = "http://127.0.0.1:5173/api/geokernel";
+            }
+            
+
+            if (listen)
+            {
+                Helpers.SendRequest(meshBody, endpoint);
+            }
         }
 
-        private void ScheduleCallback(GH_Document doc)
-        {
-            this.ExpirePreview(false);
-        }
 
         public List<double> Solution { get; set; } = new List<double>();
 
