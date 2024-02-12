@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Geospiza.Lib;
-using Geospiza.Lib.Helpers;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
@@ -20,9 +19,9 @@ namespace Geospiza.Comonents
         /// new tabs/panels will automatically be created.
         /// </summary>
         public Geospiza()
-            : base("Geospiza Solver", "GS",
-                "Genetic solver",
-                "Geospiza", "Solvers")
+            : base("Geospiza Link", "GL",
+                "Sends live data to a web api",
+                "Geospiza", "Display")
         {
         }
 
@@ -43,8 +42,6 @@ namespace Geospiza.Comonents
         {
             pManager.AddNumberParameter("Solution", "S", "The solution", GH_ParamAccess.list);
         }
-
-        private int doneItterations = 0;
 
         /// <summary>
         /// This is the method that actually does the work.

@@ -3,7 +3,7 @@ using System.Net.Http;
 using System.Text;
 using Newtonsoft.Json;
 
-namespace Geospiza.Lib.Helpers
+namespace Geospiza.Lib
 {
     public static class Helpers
     {
@@ -27,6 +27,8 @@ namespace Geospiza.Lib.Helpers
                 }
             }
         }
+        
+        
     }
 };
 

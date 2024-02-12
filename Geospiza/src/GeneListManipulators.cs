@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Geospiza.Lib
+namespace Geospiza
 {
     public static class GeneListManipulators
     {
