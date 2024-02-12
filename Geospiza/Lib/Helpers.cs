@@ -1,4 +1,5 @@
-﻿using System.Net.Http;
+﻿using System.Collections.Generic;
+using System.Net.Http;
 using System.Text;
 using Newtonsoft.Json;
 
@@ -6,9 +7,9 @@ namespace Geospiza.Lib.Helpers
 {
     public static class Helpers
     {
-        public static void SendRequest(MeshBody datalist, string endpoint)
+        public static void SendRequest(List<MeshBody> dataList, string endpoint)
         {
-            var json = datalist.ToJson();
+            var json = JsonConvert.SerializeObject(dataList);
             using (var client = new HttpClient())
             {
                 var content = new StringContent(json, Encoding.UTF8, "application/json");

@@ -1,20 +1,14 @@
-using Grasshopper;
-using Grasshopper.Kernel;
-using Rhino.Geometry;
 using System;
 using System.Collections.Generic;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
-using Newtonsoft.Json;
-using System.Net.Http;
-using System.Text;
+using System.Linq;
 using Geospiza.Lib;
 using Geospiza.Lib.Helpers;
-using Grasshopper.Kernel.Special;
-using Rhino.UI.Controls;
+using Grasshopper.Kernel;
+using Grasshopper.Kernel.Data;
+using Grasshopper.Kernel.Types;
+using Rhino.Geometry;
 
-namespace Geospiza
+namespace Geospiza.Comonents
 {
     public class Geospiza : GH_Component
     {
@@ -37,7 +31,7 @@ namespace Geospiza
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddMeshParameter("Mesh", "M", "The mesh to evaluate", GH_ParamAccess.item);
+            pManager.AddMeshParameter("Mesh", "M", "The mesh to evaluate", GH_ParamAccess.tree);
             pManager.AddBooleanParameter("Listen", "L", "Listen for the solution", GH_ParamAccess.item, false);
             pManager.AddTextParameter("Endpoint", "E", "The endpoint to send the solution to", GH_ParamAccess.item, "");
         }
@@ -60,18 +54,22 @@ namespace Geospiza
         protected override void SolveInstance(IGH_DataAccess DA)
         {
 
-            
-            var mesh = new Mesh();
-            if (!DA.GetData(0, ref mesh)) return;
-            
+            var meshStruct = new GH_Structure<GH_Mesh>();
+            if (!DA.GetDataTree(0, out meshStruct)) return;
+
+            var ghMeshList = meshStruct.FlattenData();
+
+           var meshList = ghMeshList.Select(x => x.Value).ToList();
+
             var listen = false;
             if (!DA.GetData(1, ref listen)) return;
             
             var endpoint = "";
             if (!DA.GetData(2, ref endpoint)) return;
             
-            MeshBody meshBody = new MeshBody(mesh);
-
+            
+            var meshBodies = meshList.Select(x => new MeshBody(x)).ToList();
+            
             if (endpoint == "")
             {
                 endpoint = "http://127.0.0.1:5173/api/geokernel";
@@ -80,7 +78,7 @@ namespace Geospiza
 
             if (listen)
             {
-                Helpers.SendRequest(meshBody, endpoint);
+                Helpers.SendRequest(meshBodies, endpoint);
             }
         }
 
