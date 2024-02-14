@@ -4,7 +4,7 @@ using System.Drawing;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Special;
 using Rhino.Geometry;
-using Geospiza.Lib;
+using Geospiza;
 using System.Threading.Tasks;
 using Geospiza.Core;
 
@@ -28,7 +28,8 @@ public class BasicSolver : GH_Component
     protected override void RegisterInputParams(GH_InputParamManager pManager)
     {
         pManager.AddTextParameter("GeneIds", "GID", "The gene ids from the GeneSelector", GH_ParamAccess.list);
-        pManager.AddNumberParameter("Timestamp", "T", "Timestamp from the server to determine if the solver should run", GH_ParamAccess.item);
+        pManager.AddNumberParameter("Timestamp", "T", "Timestamp from the server to determine if the solver should run",
+            GH_ParamAccess.item);
     }
 
     /// <summary>
@@ -37,27 +38,31 @@ public class BasicSolver : GH_Component
     protected override void RegisterOutputParams(GH_OutputParamManager pManager)
     {
     }
-    
-    private Dictionary<Guid, Gene> _allGenes = new Dictionary<Guid, Gene>();
+
+    private Dictionary<Guid, TemplateGene> _allGenes = new Dictionary<Guid, TemplateGene>();
     private bool _didRun = false;
     private long _lastTimestamp = 0;
 
     void ScheduleCallback(GH_Document doc)
     {
-        var random = new Random();
-        foreach (var gene in _allGenes)
-        {
-            var currentGene = gene.Value;
-            
-            currentGene.SetTickValue(random.Next(currentGene.TickCount +1));
-            if (currentGene.Type != typeof(GH_NumberSlider))
-            {
-            }
-        }
         
+        var random = new Random();
+
+        for (var i = 0; i < 100; i++)
+        {
+            foreach (var gene in _allGenes)
+            {
+                var currentGene = gene.Value;
+
+                currentGene.SetTickValue(random.Next(currentGene.TickCount + 1));
+
+            }
+            doc.NewSolution(false);
+        }
         doc.ExpirePreview(false);
+
     }
-    
+
     /// <summary>
     /// This is the method that actually does the work.
     /// </summary>
@@ -72,24 +77,24 @@ public class BasicSolver : GH_Component
         double timestamp = 0;
         if (!DA.GetData(1, ref timestamp)) return;
         long intTimestamp = Convert.ToInt64(timestamp);
-        
+
         //Check if the solver should run
         var run = true;
-        
+
         if (intTimestamp != _lastTimestamp)
         {
             _didRun = false;
-            _allGenes = new Dictionary<Guid, Gene>();
+            _allGenes = new Dictionary<Guid, TemplateGene>();
         }
 
         if (intTimestamp == _lastTimestamp)
         {
             run = false;
         }
-        
+
         //Initialize the gene pool
         _allGenes = Utils.InitializeGenePool(geneIds, OnPingDocument());
-        
+
         //Run the solver
         if (run && _didRun == false)
         {

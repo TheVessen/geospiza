@@ -7,45 +7,73 @@ namespace Geospiza.Core;
 
 public static class Utils
 {
-    public static Dictionary<Guid, Gene> InitializeGenePool(List<string> geneIds, GH_Document doc)
+    /// <summary>
+    /// Initializes a gene pool from a list of gene IDs and a GH_Document.
+    /// </summary>
+    /// <param name="geneIds">A list of gene IDs to initialize the gene pool with.</param>
+    /// <param name="doc">The GH_Document to use for finding objects.</param>
+    /// <returns>A dictionary of genes where the key is a Guid and the value is a Gene object.</returns>
+    public static Dictionary<Guid, TemplateGene> InitializeGenePool(List<string> geneIds, GH_Document doc)
     {
-        Dictionary<Guid, Gene> genes = new Dictionary<Guid, Gene>();
-        Dictionary<Guid, dynamic> genePools = new Dictionary<Guid, dynamic>();
-        Dictionary<Guid, GH_NumberSlider> numberSliders = new Dictionary<Guid, GH_NumberSlider>();
+        var genes = new Dictionary<Guid, TemplateGene>();
+        var genePools = new Dictionary<Guid, dynamic>();
+        var numberSliders = new Dictionary<Guid, GH_NumberSlider>();
         
         foreach (var id in geneIds)
         {
             var currentParam = doc.FindObject(new Guid(id), true);
             var currentType = currentParam.GetType().ToString();
 
-            Guid guid = currentParam.InstanceGuid;
+            var guid = currentParam.InstanceGuid;
 
-            if (currentType == "GalapagosComponents.GalapagosGeneListObject")
+            switch (currentType)
             {
-                var genePool = currentParam as dynamic;
-                genePools[guid] = genePool;
-                if (genePool.Count != 0)
+                case "GalapagosComponents.GalapagosGeneListObject":
                 {
-                    for (int i = 0; i < genePool.Count; i++)
+                    var genePool = (dynamic)currentParam;
+                    genePools[guid] = genePool;
+                    if (genePool.Count != 0)
                     {
-                        var gene = new Gene(genePool, i);
-                        genes[gene.GeneGuid] = gene;
+                        for (var i = 0; i < genePool.Count; i++)
+                        {
+                            var gene = new TemplateGene(genePool, i);
+                            genes[gene.GeneGuid] = gene;
+                        }
                     }
+
+                    break;
                 }
-            }
-            else if (currentType == "Grasshopper.Kernel.Special.GH_NumberSlider")
-            {
-                var sliderGene = currentParam as GH_NumberSlider;
-                numberSliders[guid] = sliderGene;
-                var gene = new Gene(sliderGene);
-                genes[gene.GeneGuid] = gene;
+                case "Grasshopper.Kernel.Special.GH_NumberSlider":
+                {
+                    var sliderGene = currentParam as GH_NumberSlider;
+                    numberSliders[guid] = sliderGene;
+                    var gene = new TemplateGene(sliderGene);
+                    genes[gene.GeneGuid] = gene;
+                    break;
+                }
             }
         }
         
-        //Initalize gene => Sets all the number sliders and gene pools inside the gene class
-        var baseGene = new Gene(numberSliders, genePools);
+        //Initialize gene => Sets all the number sliders and gene pools inside the gene class
+        new TemplateGene(numberSliders, genePools);
         
         return genes;
     }
     
+    //TODO get finess Geospiza.Comonents.Fitness
+    
+    /// <summary>
+    /// This method is used to create a snapshot of the current state of genes.
+    /// </summary>
+    /// <param name="genes">A dictionary of genes where the key is a Guid and the value is a Gene object.</param>
+    /// <returns>A dictionary of stable genes where the key is a Guid and the value is a StableGene object.</returns>
+    public static Dictionary<Guid, Gene> GetGeneSnapshot(Dictionary<Guid, TemplateGene> genes)
+    {
+        var stableGenes = new Dictionary<Guid, Gene>();
+        foreach (var gene in genes)
+        {
+            stableGenes[gene.Key] = new Gene(gene.Value.TickValue, gene.Key, gene.Value.TickCount);
+        }
+        return stableGenes;
+    }
 }

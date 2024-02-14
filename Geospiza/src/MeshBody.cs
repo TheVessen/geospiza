@@ -2,7 +2,7 @@
 using Rhino.Geometry;
 using Newtonsoft.Json;
 
-namespace Geospiza.Lib
+namespace Geospiza
 {
     public class MeshBody
     {
