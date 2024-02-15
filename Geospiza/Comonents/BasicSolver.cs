@@ -6,7 +6,9 @@ using Grasshopper.Kernel.Special;
 using Rhino.Geometry;
 using Geospiza;
 using System.Threading.Tasks;
+using Geospiza.Algorythm;
 using Geospiza.Core;
+using Grasshopper.Kernel.Data;
 
 namespace Geospiza.Comonents;
 
@@ -37,28 +39,50 @@ public class BasicSolver : GH_Component
     /// </summary>
     protected override void RegisterOutputParams(GH_OutputParamManager pManager)
     {
+        pManager.AddNumberParameter("CurrentGeneration", "CG", "The current generation", GH_ParamAccess.item);
     }
 
-    private Dictionary<Guid, TemplateGene> _allGenes = new Dictionary<Guid, TemplateGene>();
     private bool _didRun = false;
     private long _lastTimestamp = 0;
 
     void ScheduleCallback(GH_Document doc)
     {
         
-        var random = new Random();
-
-        for (var i = 0; i < 100; i++)
-        {
-            foreach (var gene in _allGenes)
-            {
-                var currentGene = gene.Value;
-
-                currentGene.SetTickValue(random.Next(currentGene.TickCount + 1));
-
-            }
-            doc.NewSolution(false);
-        }
+        var evolutionaryAlgorithm = new EvolutionaryAlgorithm();
+        
+        evolutionaryAlgorithm.RunAlgorithm();
+        
+        // var random = new Random();
+        //
+        // Fitness fitti = null;
+        //
+        // foreach (var c in doc.Objects)
+        // {
+        //     if (c is Fitness fitness)
+        //     {
+        //         fitti = fitness;
+        //     }
+        // }
+        //
+        // if (fitti == null)
+        // {
+        //     this.AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "No fitness component found. Please add a fitness component to the canvas.");
+        //     return;
+        // }
+        //
+        // for (var i = 0; i < 100; i++)
+        // {
+        //     
+        //     foreach (var gene in _allGenes)
+        //     {
+        //         var currentGene = gene.Value;
+        //
+        //         currentGene.SetTickValue(random.Next(currentGene.TickCount + 1));
+        //
+        //     }
+        //     Params.Output[0].AddVolatileData(new GH_Path(0), 0, fitti.FitnessValue);
+        //     doc.NewSolution(false);
+        // }
         doc.ExpirePreview(false);
 
     }
@@ -77,14 +101,14 @@ public class BasicSolver : GH_Component
         double timestamp = 0;
         if (!DA.GetData(1, ref timestamp)) return;
         long intTimestamp = Convert.ToInt64(timestamp);
-
+        
+        
         //Check if the solver should run
         var run = true;
 
         if (intTimestamp != _lastTimestamp)
         {
             _didRun = false;
-            _allGenes = new Dictionary<Guid, TemplateGene>();
         }
 
         if (intTimestamp == _lastTimestamp)
@@ -92,8 +116,10 @@ public class BasicSolver : GH_Component
             run = false;
         }
 
-        //Initialize the gene pool
-        _allGenes = Utils.InitializeGenePool(geneIds, OnPingDocument());
+        StateManager stateManager = StateManager.Instance;
+        stateManager.SetDocument(OnPingDocument());
+        stateManager.SetGenes(geneIds);
+        stateManager.SetThisComponent(this);
 
         //Run the solver
         if (run && _didRun == false)

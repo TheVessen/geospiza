@@ -1,88 +1,160 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using Geospiza.Core;
 using Geospiza.Strategies;
+using Grasshopper.GUI.Base;
+using Grasshopper.Kernel;
+using Grasshopper.Kernel.Data;
 
 namespace Geospiza.Algorythm;
 
 public class EvolutionaryAlgorithm: EvolutionBlueprint
 {
 
-    public EvolutionaryAlgorithm(List<TemplateGene> genePool) : base(genePool)
-    {
-    }
-    
     public override void RunAlgorithm()
     {
+        
+        //Initialize the population
         InitializePopulation();
         
-        //Set population fitness
-        
-        
-        for (var i = 0; i < _maxGenerationCount; i++)
+        //Run the algorithm
+        for (var i = 0; i < _maxGenerationCount -1; i++)
         {
-            var topIndividuals = SelectTopIndividuals(_eliteSize);
-            var newPopulation = new List<Individual>(topIndividuals);
-
+            //Create a mating pool
+            var newPopulation = new Population();
+        
             while (newPopulation.Count < _populationSize)
             {
-                var selectedIndividuals = _selectionStrategy.Select(_population, 4);
-                var offspring = new List<Individual>();
-
-                for (int j = 0; j < selectedIndividuals.Count; j += 2)
+                var topIndiv = SelectTopIndividuals(_eliteSize);
+                newPopulation.AddIndividuals(topIndiv);
+                List<Individual> matingPool = _selectionStrategy.Select(_population);
+                
+                var matingPairs = PairIndividuals(matingPool, 0);
+                
+                foreach (var pair in matingPairs)
                 {
                     if (_random.NextDouble() < _crossoverRate)
                     {
-                        var children = _crossoverStrategy.Crosover(new List<Individual> { selectedIndividuals[j], selectedIndividuals[j + 1] });
-                        offspring.AddRange(children);
-                    }
-                    else
-                    {
-                        offspring.Add(selectedIndividuals[j]);
-                        offspring.Add(selectedIndividuals[j + 1]);
-                    }
-                }
+                        var children = _crossoverStrategy.Crossover(pair.Item1, pair.Item2);
 
-                foreach (var individual in offspring)
-                {
-                    foreach (var gene in individual._genePool)
-                    {
-                        if (_random.NextDouble() < _mutationRate)
+                        // Apply mutation to each child
+                        foreach (var child in children)
                         {
-                            MutationStrategies.BasicMutation(gene);
+                            if (_random.NextDouble() < _mutationRate)
+                            {
+                                _mutationStrategy.Mutate(child);
+                            }
                         }
+
+                        // Add children to the new population
+                        newPopulation.AddIndividuals(children);
                     }
                 }
-
-                newPopulation.AddRange(offspring);
-
-                while (newPopulation.Count > _populationSize)
+                
+                //Create mutation
+                foreach (var indiviual in matingPool)
                 {
-                    newPopulation.RemoveAt(newPopulation.Count - 1);
+                    if (_random.NextDouble() < _mutationRate)
+                    {
+                        _mutationStrategy.Mutate(indiviual);
+                    }
+                }
+                newPopulation.AddIndividuals(matingPool);
+            }
+            
+            //Test the population
+            newPopulation.TestPopulation();
+            
+            //Get stats of the current population
+            _stateManager.GetDocument().ExpirePreview(false);
+            _observer.FitnessSnapshot(newPopulation);
+            _observer.SetPopulation(newPopulation);
+
+            if (i > 10)
+            {
+                var currentProgess = _observer.AssessProgress();
+                if(currentProgess < 0.1)
+                {
+                    break;
                 }
             }
             
-            //TODO: Adjust the sliders
-            //TODO: Set the fitness of the new population 
-
+            _stateManager._thisComponent.Params.Output[0].AddVolatileData(new GH_Path(0), 0, i);
+            
             _population = newPopulation;
         }
+        
+        var best = _population.SelectTopIndividuals(1);
+        best.Inhabitants[0].ReinstateGene();
+        
     }
 
     public override void InitializePopulation()
     {
+        var newPopulation = new Population();
         for (var i = 0; i < _populationSize; i++)
         {
+            _stateManager.GetDocument().NewSolution(false);
             var individual = new Individual();
-            foreach (var templateGene in _genePool)
+            
+            //Go through the gene pool and create a new individual
+            foreach (var templateGene in _stateManager.TemplateGenes)
             {
-                var tickValue = _random.Next(templateGene.TickCount);
-                var stableGene = new Gene(tickValue, templateGene.GeneGuid, templateGene.TickCount);
+                var currentTemplateGene = templateGene.Value;
+                currentTemplateGene.SetTickValue(_random.Next(currentTemplateGene.TickCount));
+                var stableGene = new Gene(currentTemplateGene.TickValue, currentTemplateGene.GeneGuid, currentTemplateGene.TickCount);
                 individual.AddStableGene(stableGene);
             }
-            _population.Add(individual);
+            
+            double currentFitness = _stateManager.FitnessComponent.FitnessValue;;
+            
+            individual.SetFitness(currentFitness);
+            
+            //Add the individual to the population
+            newPopulation.AddIndividual(individual);
+            
+            
+            //Scedule a new solution
+            _stateManager.GetDocument().ExpirePreview(false);
         }
+        _observer.FitnessSnapshot(newPopulation);
+        _population = newPopulation;
+    }
+    
+    public List<Tuple<Individual, Individual>> PairIndividuals(List<Individual> selectedIndividuals, double inBreedingFactor)
+    {
+        var pairs = new List<Tuple<Individual, Individual>>();
+        var random = new Random();
+
+        foreach (var individual in selectedIndividuals)
+        {
+            Individual mate = FindMate(individual, selectedIndividuals, inBreedingFactor);
+            pairs.Add(new Tuple<Individual, Individual>(individual, mate));
+        }
+
+        return pairs;
     }
 
+    public Individual FindMate(Individual individual, List<Individual> potentialMates, double inBreedingFactor)
+    {
+        // Sort potential mates by genomic distance
+        var sortedMates = potentialMates.OrderBy(mate => CalculateGenomicDistance(individual, mate)).ToList();
+
+        // Select mate based on in-breeding factor
+        int mateIndex = (int)((inBreedingFactor + 1) / 2 * (sortedMates.Count - 1));
+        return sortedMates[mateIndex];
+    }
+
+    public double CalculateGenomicDistance(Individual ind1, Individual ind2)
+    {
+        // Example: Euclidean distance calculation
+        double distance = 0;
+        for (int i = 0; i < ind1._genePool.Count; i++)
+        {
+            distance += Math.Pow(ind1._genePool[i].TickValue - ind2._genePool[i].TickValue, 2);
+        }
+        return Math.Sqrt(distance);
+    }
 }

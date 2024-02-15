@@ -24,17 +24,9 @@ public class Gene
     }
     
     // This function should only be used from a mutation strategy
-    public void MutateTickValue(int mutation)
+    public void MutatedValue(int mutation)
     {
-        TickValue += mutation;
-    }
-    
-    public void Mutate(MutationStrategy mutationFunction)
-    {
-        Gene mutatedGene = mutationFunction(this);
-        TickValue = mutatedGene.TickValue;
-        GeneGuid = mutatedGene.GeneGuid;
-        TickCount = mutatedGene.TickCount;
+        TickValue = mutation;
     }
     
 }

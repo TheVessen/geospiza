@@ -24,6 +24,6 @@ public class EvolutionaryAlgorithmSettings
         // Set default values
         SelectionStrategy = new TournamentSelection(5); // Default selection strategy
         CrossoverStrategy = new SinglePointCrossover(); // Default crossover strategy
-        MutationStrategy = MutationStrategies.BasicMutation; // Default mutation strategy
+        MutationStrategy = new RandomMutation(MutationRate); // Default mutation strategy
     }
 }

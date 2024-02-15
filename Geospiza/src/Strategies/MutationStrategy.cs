@@ -3,34 +3,104 @@ using Geospiza.Core;
 
 namespace Geospiza.Strategies;
 
-/// <summary>
-/// Blueprint for a mutation strategy
-/// </summary>
-public delegate Gene MutationStrategy(Gene gene);
-public static class MutationStrategies
+public interface IMutationStrategy
 {
-    
-    /// <summary>
-    /// BasicMutation is a delegate method that performs a basic mutation on a given gene.
-    /// </summary>
-    /// <param name="stableGene">The gene to be mutated.</param>
-    /// <returns>A new gene with the mutated tick value.</returns>
-    public static MutationStrategy BasicMutation = (Gene gene) =>
+    public void Mutate(Individual individual);
+}
+
+public abstract class MutationStrategy: IMutationStrategy
+{
+    protected double _mutationRate { get; set; }
+    protected Random _random = new Random();
+    public abstract void Mutate(Individual individual);
+}
+
+public class RandomMutation : MutationStrategy
+{
+
+    private int _mutationDistance = 5;
+    public RandomMutation(double mutationRate)
     {
-        // Create a copy of the stableGene
-        Gene mutatedGene = new Gene(gene);
+        _mutationRate = mutationRate;
+    }
 
-        // Calculate the upper bound for the random number
-        int upperBound = mutatedGene.TickValue < mutatedGene.TickCount
-            ? mutatedGene.TickCount - mutatedGene.TickValue
-            : 0;
+    public override void Mutate(Individual individual)
+    {
+        for (int i = 0; i < individual._genePool.Count; i++)
+        {
+            if (_random.NextDouble() < _mutationRate)
+            {
+                var geneMax = individual._genePool[i].TickCount;
 
-        // Calculate the lower bound for the random number
-        int lowerBound = mutatedGene.TickValue == mutatedGene.TickCount ? -5 : -upperBound;
+                // Generate a mutation value within the mutation distance
+                int mutation = individual._genePool[i].TickValue + _random.Next(-_mutationDistance, _mutationDistance + 1);
 
-        // Mutate the TickValue by adding a random number between lowerBound and upperBound
-        mutatedGene.MutateTickValue(new Random().Next(lowerBound, upperBound + 1));
+                // Check if mutation value is within bounds
+                if (mutation >= 0 && mutation <= geneMax)
+                {
+                    individual._genePool[i].MutatedValue(mutation);
+                }
+            }
+        }
+    }
+}
 
-        return mutatedGene;
-    };
+
+public class FixedValueMutation : MutationStrategy
+{
+
+    private readonly int _mutationValue; // A fixed value for mutation, e.g., 2
+
+    public FixedValueMutation(double mutationRate, int mutationValue)
+    {
+        _mutationRate = mutationRate;
+        _mutationValue = mutationValue;
+    }
+
+    public override void Mutate(Individual individual)
+    {
+        for (int i = 0; i < individual._genePool.Count; i++)
+        {
+            if (_random.NextDouble() < _mutationRate)
+            {
+                int currentValue = individual._genePool[i].TickValue;
+                int newValue = currentValue + _random.Next(-_mutationValue, _mutationValue + 1);
+
+                // Ensure the new value is within bounds
+                newValue = Math.Max(0, Math.Min(newValue, individual._genePool[i].TickCount));
+
+                individual._genePool[i].MutatedValue(newValue);
+            }
+        }
+    }
+}
+
+public class PercentageMutation : MutationStrategy
+{
+
+    private readonly double _mutationPercentage; // e.g., 0.05 for 5%
+
+    public PercentageMutation(double mutationRate, double mutationPercentage)
+    {
+        _mutationRate = mutationRate;
+        _mutationPercentage = mutationPercentage;
+    }
+
+    public override void Mutate(Individual individual)
+    {
+        for (int i = 0; i < individual._genePool.Count; i++)
+        {
+            if (_random.NextDouble() < _mutationRate)
+            {
+                int currentValue = individual._genePool[i].TickValue;
+                int mutationAmount = (int)(currentValue * _mutationPercentage);
+                int newValue = currentValue + _random.Next(-mutationAmount, mutationAmount + 1);
+
+                // Ensure the new value is within bounds
+                newValue = Math.Max(1, Math.Min(newValue, individual._genePool[i].TickCount));
+
+                individual._genePool[i].MutatedValue(newValue);
+            }
+        }
+    }
 }

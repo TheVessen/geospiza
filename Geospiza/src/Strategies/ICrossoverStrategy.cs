@@ -8,50 +8,89 @@ namespace Geospiza.Strategies;
 public interface ICrossoverStrategy
 {
     // public static List<Individual> Crosover(List<Individual> parents);
-    public List<Individual> Crosover(List<Individual> parents);
+    public List<Individual> Crossover(Individual parent1, Individual parent2);
 }
 
 public class SinglePointCrossover: ICrossoverStrategy
 {
     private static Random _random = new Random();
 
-    public  List<Individual> Crosover(List<Individual> parents)
+    public List<Individual> Crossover(Individual parent1, Individual parent2)
     {
-        // Assuming we're always dealing with pairs of parents
-        // The list length should be even
-        var offspring = new List<Individual>();
+        var genePoolP1 = parent1._genePool;
+        var genePoolP2 = parent2._genePool;
 
-        for (int i = 0; i < parents.Count; i += 2)
+        if (genePoolP1.Count != genePoolP2.Count)
         {
-            var parent1 = parents[i];
-            var parent2 = parents[i + 1];
-
-            // Determine crossover point
-            int crossoverPoint = _random.Next(1, parent1._genePool.Count);
-
-            // Create offspring by combining genes from parents
-            var child1Genes = parent1._genePool.Take(crossoverPoint)
-                .Concat(parent2._genePool.Skip(crossoverPoint)).ToList();
-            var child2Genes = parent2._genePool.Take(crossoverPoint)
-                .Concat(parent1._genePool.Skip(crossoverPoint)).ToList();
-
-            var child1 = new Individual();
-            var child2 = new Individual();
-
-            foreach (var gene in child1Genes)
-            {
-                child1.AddStableGene(new Gene(gene)); // Assuming StableGene can be copied this way
-            }
-            
-            foreach (var gene in child2Genes)
-            {
-                child2.AddStableGene(new Gene(gene)); // Assuming StableGene can be copied this way
-            }
-
-            offspring.Add(child1);
-            offspring.Add(child2);
+            throw new ArgumentException("Parents must have genomes of the same length");
         }
 
-        return offspring;
+        int genomeLength = genePoolP1.Count;
+        int crossoverPoint = _random.Next(1, genomeLength); // Exclude first index to ensure actual crossover
+
+        var child1Genome = new List<Gene>();
+        var child2Genome = new List<Gene>();
+
+        for (int i = 0; i < genomeLength; i++)
+        {
+            child1Genome.Add(i < crossoverPoint ? genePoolP1[i] : genePoolP2[i]);
+            child2Genome.Add(i < crossoverPoint ? genePoolP2[i] : genePoolP1[i]);
+        }
+
+        Individual child1 = new Individual(child1Genome);
+        Individual child2 = new Individual(child2Genome);
+
+        return new List<Individual> { child1, child2 };
+    }
+}
+
+public class TwoPointCrossover : ICrossoverStrategy
+{
+    private static Random _random = new Random();
+
+    public List<Individual> Crossover(Individual parent1, Individual parent2)
+    {
+        // Ensure parents have the same number of genes
+        if (parent1._genePool.Count != parent2._genePool.Count)
+        {
+            throw new ArgumentException("Parents must have genomes of the same length");
+        }
+
+        int genomeLength = parent1._genePool.Count;
+
+        // Choose two crossover points
+        int crossoverPoint1 = _random.Next(0, genomeLength);
+        int crossoverPoint2 = _random.Next(0, genomeLength);
+
+        // Ensure crossoverPoint1 is less than crossoverPoint2
+        if (crossoverPoint1 > crossoverPoint2)
+        {
+            int temp = crossoverPoint1;
+            crossoverPoint1 = crossoverPoint2;
+            crossoverPoint2 = temp;
+        }
+
+        var child1Genome = new List<Gene>();
+        var child2Genome = new List<Gene>();
+
+        // Perform crossover
+        for (int i = 0; i < genomeLength; i++)
+        {
+            if (i < crossoverPoint1 || i > crossoverPoint2)
+            {
+                child1Genome.Add(parent1._genePool[i]);
+                child2Genome.Add(parent2._genePool[i]);
+            }
+            else
+            {
+                child1Genome.Add(parent2._genePool[i]);
+                child2Genome.Add(parent1._genePool[i]);
+            }
+        }
+
+        Individual child1 = new Individual(child1Genome);
+        Individual child2 = new Individual(child2Genome);
+
+        return new List<Individual> { child1, child2 };
     }
 }

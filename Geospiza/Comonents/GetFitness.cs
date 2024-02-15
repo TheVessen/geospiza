@@ -6,16 +6,16 @@ using Rhino.Geometry;
 
 namespace Geospiza.Comonents;
 
-public class Fitness : GH_Component
+public class GetFitness : GH_Component
 {
 
     /// <summary>
-    /// Initializes a new instance of the Fitness class.
+    /// Initializes a new instance of the CLASS_NAME class.
     /// </summary>
-    public Fitness()
-        : base("Fitness", "F",
-            "Fitness value for the evolutionary algorithm. ",
-            "Geospiza", "Subcategory")
+    public GetFitness()
+        : base("GetFitness", "GF",
+            "Description",
+            "Geospiza", "Utils")
     {
     }
 
@@ -24,7 +24,6 @@ public class Fitness : GH_Component
     /// </summary>
     protected override void RegisterInputParams(GH_InputParamManager pManager)
     {
-        pManager.AddNumberParameter("Fitness", "F", "Fitness value for the evolutionary algorithm.", GH_ParamAccess.item);
     }
 
     /// <summary>
@@ -32,9 +31,8 @@ public class Fitness : GH_Component
     /// </summary>
     protected override void RegisterOutputParams(GH_OutputParamManager pManager)
     {
+        pManager.AddNumberParameter("Fitness", "F", "The fitness value", GH_ParamAccess.item);
     }
-    
-    public double FitnessValue { get; set; }
 
     /// <summary>
     /// This is the method that actually does the work.
@@ -42,10 +40,20 @@ public class Fitness : GH_Component
     /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
     protected override void SolveInstance(IGH_DataAccess DA)
     {
+        var obj = this.OnPingDocument().Objects;
+
+        double fitnessValue = 0;
         
-        double fitness = 0;
-        if (!DA.GetData(0, ref fitness)) return;
-        FitnessValue = fitness;
+        foreach (var comp in obj)
+        {
+            if (comp is Fitness fitness)
+            {
+                
+                fitnessValue = fitness.FitnessValue;
+            }
+        }
+        
+        DA.SetData(0, fitnessValue);
         
     }
 
@@ -67,6 +75,6 @@ public class Fitness : GH_Component
     /// </summary>
     public override Guid ComponentGuid
     {
-        get { return new Guid("FC2E37D7-CE42-4232-B1C8-07C81ADF75D7"); }
+        get { return new Guid("484E527A-F539-4A9A-AC03-D66915738018"); }
     }
 }

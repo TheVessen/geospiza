@@ -1,41 +1,41 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Geospiza.Comonents;
 using Geospiza.Core;
 using Geospiza.Strategies;
+using Grasshopper.Kernel;
 
 namespace Geospiza.Algorythm;
 
 public abstract class EvolutionBlueprint : IEvolutionarySolver
 {
-    
     //Inhabitants
-    protected List<Individual> _population { get; set; }
-    protected List<TemplateGene> _genePool { get; set; }
+    protected Population _population { get; set; } = new Population();
+    protected Observer _observer = new Observer();
 
     // Parameters
     protected int _populationSize = 100;
-    protected int _maxGenerationCount = 1000;
-    protected double _mutationRate = 0.01;
-    protected double _crossoverRate = 0.7;
-    protected int _eliteSize = 0;
+    protected int _maxGenerationCount = 20;
+    protected double _mutationRate = 0.02;
+    protected double _crossoverRate = 0.75;
+    protected int _eliteSize = 2;
 
     // Strategies
-    protected ISelectionStrategy _selectionStrategy;
-    protected ICrossoverStrategy _crossoverStrategy;
-    protected MutationStrategy _mutationStrategy;
+    protected ISelectionStrategy _selectionStrategy => new IsotropicSelection();
+    protected ICrossoverStrategy _crossoverStrategy => new TwoPointCrossover();
+    protected MutationStrategy _mutationStrategy => new PercentageMutation(_mutationRate, 0.10);
 
     // Random
     protected Random _random = new Random();
 
     public abstract void RunAlgorithm();
     public abstract void InitializePopulation();
-    
-    protected EvolutionBlueprint(List<TemplateGene> genePool)
+    protected static StateManager _stateManager = StateManager.Instance;
+
+    protected EvolutionBlueprint()
     {
-        _genePool = genePool;
     }
-    
 
     /// <summary>
     /// 
@@ -45,9 +45,10 @@ public abstract class EvolutionBlueprint : IEvolutionarySolver
     protected List<Individual> SelectTopIndividuals(int eliteSize)
     {
         // Sort the population by fitness in descending order
-        var sortedPopulation = _population.OrderByDescending(individual => individual.Fitness).ToList();
+        var sortedPopulation = _population.Inhabitants.OrderByDescending(individual => individual.Fitness).ToList();
 
         // Take the top 'eliteSize' individuals
         return sortedPopulation.Take(eliteSize).ToList();
     }
+    
 }
