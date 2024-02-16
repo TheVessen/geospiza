@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Geospiza.Core;
 
-namespace Geospiza.Strategies;
+namespace Geospiza.Strategies.Termination;
 
 public static class TerminationStrategy
 {
@@ -43,9 +43,9 @@ public static class TerminationStrategy
     private static double CalculateGenomicDistance(Individual ind1, Individual ind2)
     {
         double distance = 0;
-        for (int i = 0; i < ind1._genePool.Count; i++)
+        for (int i = 0; i < ind1.GenePool.Count; i++)
         {
-            distance += Math.Pow(ind1._genePool[i].TickValue - ind2._genePool[i].TickValue, 2);
+            distance += Math.Pow(ind1.GenePool[i].TickValue - ind2.GenePool[i].TickValue, 2);
         }
         return Math.Sqrt(distance);
     }

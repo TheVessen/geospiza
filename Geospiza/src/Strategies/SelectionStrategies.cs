@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Geospiza.Core;
 
-namespace Geospiza.Strategies;
+namespace Geospiza.Strategies.Selection;
 
 public interface ISelectionStrategy
 {
@@ -51,11 +51,7 @@ public class TournamentSelection : SelectionStrategy
         _numberOfSelections = numberOfSelections;
     }
     
-    public TournamentSelection()
-    {
-        _tournamentSize = 5;
-        _numberOfSelections = 2;
-    }
+
 
     public override List<Individual> Select(Population population)
     {

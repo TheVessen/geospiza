@@ -5,23 +5,23 @@ namespace Geospiza.Core;
 
 public class Individual
 {
-    public List<Gene> _genePool { get; private set; } = new List<Gene>();
+    public List<Gene> GenePool { get; private set; }
     public double Fitness { get; private set; }
     public double Probability { get; private set; }
     
     public Individual()
     {
-        _genePool = new List<Gene>();
+        GenePool = new List<Gene>();
     }
     
     public Individual(List<Gene> genePool)
     {
-        _genePool = genePool;
+        GenePool = genePool;
     }
     
     public void AddStableGene(Gene gene)
     {
-        _genePool.Add(gene);
+        GenePool.Add(gene);
     }
     public void SetFitness(double fitness)
     {
@@ -36,7 +36,7 @@ public class Individual
     public void ReinstateGene()
     {
         var stateManager = StateManager.Instance;
-        foreach (var gene in _genePool)
+        foreach (var gene in GenePool)
         {
             var matchingGene = stateManager.TemplateGenes[gene.GeneGuid];
             matchingGene?.SetTickValue(gene.TickValue);

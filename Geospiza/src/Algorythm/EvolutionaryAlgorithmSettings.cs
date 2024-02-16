@@ -1,31 +1,31 @@
 ﻿using Geospiza.Strategies;
+using Geospiza.Strategies.Crossover;
+using Geospiza.Strategies.Mutation;
+using Geospiza.Strategies.Pairing;
+using Geospiza.Strategies.Selection;
 
 namespace Geospiza.Algorythm;
 
 public class EvolutionaryAlgorithmSettings
 {
-    public ISelectionStrategy SelectionStrategy { get; set; }
-    public ICrossoverStrategy CrossoverStrategy { get; set; }
-    public IMutationStrategy MutationStrategy { get; set; }
-    public IPairingStrategy PairingStrategy { get; set; }
-    public int PopulationSize { get; set; }
-    public double CrossoverRate { get; set; }
-    public double MutationRate { get; set; }
-    public int MaxGenerations { get; set; }
-    public int EliteSize { get; set; }
+    public ISelectionStrategy SelectionStrategy { get; init; }
+    public ICrossoverStrategy CrossoverStrategy { get; init; }
+    public IMutationStrategy MutationStrategy { get; init; }
+    public IPairingStrategy PairingStrategy { get; init; }
+    public int PopulationSize { get; init; }
+    public int MaxGenerations { get; init; }
+    public int EliteSize { get; init; }
     
     // Constructor to initialize default values
     public EvolutionaryAlgorithmSettings()
     {
         // Set default values
-        PopulationSize = 100;
+        PopulationSize = 50;
         MaxGenerations = 100;
-        CrossoverRate = 0.7;
-        MutationRate = 0.01;
-        EliteSize = 2;
+        EliteSize = 0;
         SelectionStrategy = new TournamentSelection(5,2); // Default selection strategy
-        CrossoverStrategy = new TwoPointCrossover(); // Default crossover strategy
-        MutationStrategy = new PercentageMutation(MutationRate, 0.01); // Default mutation strategy
-        PairingStrategy = new InbreedingPairingStrategy(); // Default pairing strategy
+        CrossoverStrategy = new TwoPointCrossover(0.7); // Default crossover strategy
+        MutationStrategy = new PercentageMutation(0.01, 0.01); // Default mutation strategy
+        PairingStrategy = new InbreedingPairingStrategy(0); // Default pairing strategy
     }
 }

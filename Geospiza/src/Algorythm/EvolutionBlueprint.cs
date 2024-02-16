@@ -4,6 +4,10 @@ using System.Linq;
 using Geospiza.Comonents;
 using Geospiza.Core;
 using Geospiza.Strategies;
+using Geospiza.Strategies.Crossover;
+using Geospiza.Strategies.Mutation;
+using Geospiza.Strategies.Pairing;
+using Geospiza.Strategies.Selection;
 using Grasshopper.Kernel;
 
 namespace Geospiza.Algorythm;
@@ -21,8 +25,6 @@ public abstract class EvolutionBlueprint : IEvolutionarySolver
     // Parameters
     protected int PopulationSize { get; set; }
     protected int MaxGenerations { get; set; }
-    protected double CrossoverRate { get; set; }
-    protected double MutationRate { get; set; }
     protected int EliteSize { get; set; }
 
     // Strategies
@@ -39,10 +41,7 @@ public abstract class EvolutionBlueprint : IEvolutionarySolver
     {
         PopulationSize = settings.PopulationSize;
         MaxGenerations = settings.MaxGenerations;
-        MutationRate = settings.MutationRate;
-        CrossoverRate = settings.CrossoverRate;
         EliteSize = settings.EliteSize;
-        
         SelectionStrategy = settings.SelectionStrategy;
         CrossoverStrategy = settings.CrossoverStrategy;
         MutationStrategy = settings.MutationStrategy;

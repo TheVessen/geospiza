@@ -1,11 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using Geospiza.Core;
-using Geospiza.Strategies;
-using Grasshopper.GUI.Base;
-using Grasshopper.Kernel;
 using Grasshopper.Kernel.Data;
 
 namespace Geospiza.Algorythm;
@@ -34,36 +29,23 @@ public class EvolutionaryAlgorithm: EvolutionBlueprint
                 newPopulation.AddIndividuals(topIndividuals);
                 List<Individual> matingPool = SelectionStrategy.Select(Population);
                 
-                var matingPairs = PairingStrategy.PairIndividuals(matingPool, 0);
+                var matingPairs = PairingStrategy.PairIndividuals(matingPool);
                 
                 foreach (var pair in matingPairs)
                 {
-                    if (Random.NextDouble() < CrossoverRate)
+                    if (!(Random.NextDouble() < CrossoverStrategy.CrossoverRate)) continue;
+                    var children = CrossoverStrategy.Crossover(pair.Item1, pair.Item2);
+
+                    // Apply mutation to each child
+                    foreach (var child in children.Where(child => Random.NextDouble() < MutationStrategy.MutationRate))
                     {
-                        var children = CrossoverStrategy.Crossover(pair.Item1, pair.Item2);
-
-                        // Apply mutation to each child
-                        foreach (var child in children)
-                        {
-                            if (Random.NextDouble() < MutationRate)
-                            {
-                                MutationStrategy.Mutate(child);
-                            }
-                        }
-
-                        // Add children to the new population
-                        newPopulation.AddIndividuals(children);
+                        MutationStrategy.Mutate(child);
                     }
+
+                    // Add children to the new population
+                    newPopulation.AddIndividuals(children);
                 }
                 
-                //Create mutation
-                foreach (var individual in matingPool)
-                {
-                    if (Random.NextDouble() < MutationRate)
-                    {
-                        MutationStrategy.Mutate(individual);
-                    }
-                }
                 newPopulation.AddIndividuals(matingPool);
             }
             
@@ -93,5 +75,4 @@ public class EvolutionaryAlgorithm: EvolutionBlueprint
         best.Inhabitants[0].ReinstateGene();
         
     }
-
 }

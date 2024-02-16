@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Geospiza.Strategies;
+using Geospiza.Strategies.Termination;
 
 namespace Geospiza.Core;
 
@@ -9,19 +10,12 @@ public class Observer
 {
     private static Observer _instance;
     private const int MaxGenerationsToTrack = 5;
-    private Population _currentPopulation { get; set; }
+    private Population CurrentPopulation { get; set; }
     public List<double> GenerationFitnessMap { get; private set; }
 
     public static Observer Instance
     {
-        get
-        {
-            if (_instance == null)
-            {
-                _instance = new Observer();
-            }
-            return _instance;
-        }
+        get { return _instance ?? (_instance = new Observer()); }
     }
     
     public void FitnessSnapshot(Population currentPopulation)
@@ -37,12 +31,12 @@ public class Observer
     
     public void SetPopulation(Population population)
     {
-        _currentPopulation = population;
+        CurrentPopulation = population;
     }
     
     public double AssessProgress()
     {
-        return TerminationStrategy.AssessGeneticDiversity(_currentPopulation);
+        return TerminationStrategy.AssessGeneticDiversity(CurrentPopulation);
     }
     
     public void Reset()

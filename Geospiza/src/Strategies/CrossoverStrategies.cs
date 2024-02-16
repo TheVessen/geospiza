@@ -1,24 +1,34 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using Geospiza.Core;
 
-namespace Geospiza.Strategies;
+namespace Geospiza.Strategies.Crossover;
 
 public interface ICrossoverStrategy
 {
-    // public static List<Individual> Crosover(List<Individual> parents);
+    public double CrossoverRate { get; init; }
     public List<Individual> Crossover(Individual parent1, Individual parent2);
 }
 
-public class SinglePointCrossover: ICrossoverStrategy
+public abstract class CrossoverStrategy: ICrossoverStrategy
 {
-    private static Random _random = new Random();
+    public double CrossoverRate { get; init; }
+    protected readonly Random Random = new Random();
+    
+    public abstract List<Individual> Crossover(Individual parent1, Individual parent2);
+}
 
-    public List<Individual> Crossover(Individual parent1, Individual parent2)
+public class SinglePointCrossover: CrossoverStrategy
+{
+    public SinglePointCrossover(double crossoverRate)
     {
-        var genePoolP1 = parent1._genePool;
-        var genePoolP2 = parent2._genePool;
+        CrossoverRate = crossoverRate;
+    }
+
+    public override List<Individual> Crossover(Individual parent1, Individual parent2)
+    {
+        var genePoolP1 = parent1.GenePool;
+        var genePoolP2 = parent2.GenePool;
 
         if (genePoolP1.Count != genePoolP2.Count)
         {
@@ -26,7 +36,7 @@ public class SinglePointCrossover: ICrossoverStrategy
         }
 
         int genomeLength = genePoolP1.Count;
-        int crossoverPoint = _random.Next(1, genomeLength); // Exclude first index to ensure actual crossover
+        int crossoverPoint = Random.Next(1, genomeLength); // Exclude first index to ensure actual crossover
 
         var child1Genome = new List<Gene>();
         var child2Genome = new List<Gene>();
@@ -44,23 +54,26 @@ public class SinglePointCrossover: ICrossoverStrategy
     }
 }
 
-public class TwoPointCrossover : ICrossoverStrategy
+public class TwoPointCrossover : CrossoverStrategy
 {
-    private static Random _random = new Random();
-
-    public List<Individual> Crossover(Individual parent1, Individual parent2)
+    public TwoPointCrossover(double crossoverRate)
+    {
+        CrossoverRate = crossoverRate;
+    }
+    
+    public override List<Individual> Crossover(Individual parent1, Individual parent2)
     {
         // Ensure parents have the same number of genes
-        if (parent1._genePool.Count != parent2._genePool.Count)
+        if (parent1.GenePool.Count != parent2.GenePool.Count)
         {
             throw new ArgumentException("Parents must have genomes of the same length");
         }
 
-        int genomeLength = parent1._genePool.Count;
+        var genomeLength = parent1.GenePool.Count;
 
         // Choose two crossover points
-        int crossoverPoint1 = _random.Next(0, genomeLength);
-        int crossoverPoint2 = _random.Next(0, genomeLength);
+        var crossoverPoint1 = Random.Next(0, genomeLength);
+        var crossoverPoint2 = Random.Next(0, genomeLength);
 
         // Ensure crossoverPoint1 is less than crossoverPoint2
         if (crossoverPoint1 > crossoverPoint2)
@@ -72,22 +85,22 @@ public class TwoPointCrossover : ICrossoverStrategy
         var child2Genome = new List<Gene>();
 
         // Perform crossover
-        for (int i = 0; i < genomeLength; i++)
+        for (var i = 0; i < genomeLength; i++)
         {
             if (i < crossoverPoint1 || i > crossoverPoint2)
             {
-                child1Genome.Add(parent1._genePool[i]);
-                child2Genome.Add(parent2._genePool[i]);
+                child1Genome.Add(parent1.GenePool[i]);
+                child2Genome.Add(parent2.GenePool[i]);
             }
             else
             {
-                child1Genome.Add(parent2._genePool[i]);
-                child2Genome.Add(parent1._genePool[i]);
+                child1Genome.Add(parent2.GenePool[i]);
+                child2Genome.Add(parent1.GenePool[i]);
             }
         }
 
-        Individual child1 = new Individual(child1Genome);
-        Individual child2 = new Individual(child2Genome);
+        var child1 = new Individual(child1Genome);
+        var child2 = new Individual(child2Genome);
 
         return new List<Individual> { child1, child2 };
     }

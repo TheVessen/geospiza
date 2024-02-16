@@ -1,17 +1,19 @@
 ﻿using System;
 using Geospiza.Core;
 
-namespace Geospiza.Strategies;
+namespace Geospiza.Strategies.Mutation;
 
 public interface IMutationStrategy
 {
+    
     public void Mutate(Individual individual);
+    public double MutationRate { get; init; }
 }
 
 public abstract class MutationStrategy: IMutationStrategy
 {
     protected readonly Random Random = new Random();
-    protected double MutationRate { get; set; }
+    public double MutationRate { get; init; }
     public abstract void Mutate(Individual individual);
 }
 
@@ -27,16 +29,16 @@ public class FixedValueMutation : MutationStrategy
 
     public override void Mutate(Individual individual)
     {
-        for (var i = 0; i < individual._genePool.Count; i++)
+        for (var i = 0; i < individual.GenePool.Count; i++)
         {
             if (!(Random.NextDouble() < MutationRate)) continue;
-            var currentValue = individual._genePool[i].TickValue;
+            var currentValue = individual.GenePool[i].TickValue;
             var newValue = currentValue + Random.Next(-_mutationValue, _mutationValue + 1);
 
             // Ensure the new value is within bounds
-            newValue = Math.Max(0, Math.Min(newValue, individual._genePool[i].TickCount));
+            newValue = Math.Max(0, Math.Min(newValue, individual.GenePool[i].TickCount));
 
-            individual._genePool[i].MutatedValue(newValue);
+            individual.GenePool[i].MutatedValue(newValue);
         }
     }
 }
@@ -57,7 +59,7 @@ public class PercentageMutation : MutationStrategy
 
     public override void Mutate(Individual individual)
     {
-        foreach (var t in individual._genePool)
+        foreach (var t in individual.GenePool)
         {
             if (!(Random.NextDouble() < MutationRate)) continue;
             var currentValue = t.TickValue;

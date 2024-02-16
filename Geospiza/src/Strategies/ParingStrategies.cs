@@ -3,23 +3,30 @@ using System.Collections.Generic;
 using System.Linq;
 using Geospiza.Core;
 
-namespace Geospiza.Strategies;
+namespace Geospiza.Strategies.Pairing;
 
 public interface IPairingStrategy
 {
-    List<Tuple<Individual, Individual>> PairIndividuals(List<Individual> selectedIndividuals, double inBreedingFactor);
+    
+    List<Tuple<Individual, Individual>> PairIndividuals(List<Individual> selectedIndividuals);
 }
 
 public class InbreedingPairingStrategy : IPairingStrategy
 {
-    public List<Tuple<Individual, Individual>> PairIndividuals(List<Individual> selectedIndividuals, double inBreedingFactor)
+    
+    private double InBreedingFactor { get; init; }
+    
+    public InbreedingPairingStrategy(double inBreedingFactor)
+    {
+        InBreedingFactor = inBreedingFactor;
+    }
+    
+    public List<Tuple<Individual, Individual>> PairIndividuals(List<Individual> selectedIndividuals)
     {
         var pairs = new List<Tuple<Individual, Individual>>();
-        var random = new Random();
-
         foreach (var individual in selectedIndividuals)
         {
-            Individual mate = FindMate(individual, selectedIndividuals, inBreedingFactor);
+            Individual mate = FindMate(individual, selectedIndividuals, InBreedingFactor);
             pairs.Add(new Tuple<Individual, Individual>(individual, mate));
         }
 
@@ -32,7 +39,7 @@ public class InbreedingPairingStrategy : IPairingStrategy
         var sortedMates = potentialMates.OrderBy(mate => CalculateGenomicDistance(individual, mate)).ToList();
 
         // Select mate based on in-breeding factor
-        int mateIndex = (int)((inBreedingFactor + 1) / 2 * (sortedMates.Count - 1));
+        var mateIndex = (int)((inBreedingFactor + 1) / 2 * (sortedMates.Count - 1));
         return sortedMates[mateIndex];
     }
 
@@ -40,9 +47,9 @@ public class InbreedingPairingStrategy : IPairingStrategy
     {
         // Example: Euclidean distance calculation
         double distance = 0;
-        for (int i = 0; i < ind1._genePool.Count; i++)
+        for (int i = 0; i < ind1.GenePool.Count; i++)
         {
-            distance += Math.Pow(ind1._genePool[i].TickValue - ind2._genePool[i].TickValue, 2);
+            distance += Math.Pow(ind1.GenePool[i].TickValue - ind2.GenePool[i].TickValue, 2);
         }
         return Math.Sqrt(distance);
     }

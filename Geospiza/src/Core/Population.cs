@@ -25,7 +25,7 @@ public class Population
 
         foreach (var individual in Inhabitants)
         {
-            foreach (var gene in individual._genePool)
+            foreach (var gene in individual.GenePool)
             {
                 var matchingGene = stateManager.TemplateGenes[gene.GeneGuid];
                 if (matchingGene != null)

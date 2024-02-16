@@ -32,6 +32,9 @@ public class BasicSolver : GH_Component
         pManager.AddTextParameter("GeneIds", "GID", "The gene ids from the GeneSelector", GH_ParamAccess.list);
         pManager.AddNumberParameter("Timestamp", "T", "Timestamp from the server to determine if the solver should run",
             GH_ParamAccess.item);
+        pManager.AddGenericParameter("Settings", "S", "The settings for the evolutionary algorithm", GH_ParamAccess.item);
+        
+        pManager[2].Optional = true;
     }
 
     /// <summary>
@@ -44,11 +47,11 @@ public class BasicSolver : GH_Component
 
     private bool _didRun = false;
     private long _lastTimestamp = 0;
+    private EvolutionaryAlgorithmSettings _privateSettings;
 
     void ScheduleCallback(GH_Document doc)
     {
-        var settings = new EvolutionaryAlgorithmSettings();
-        var evolutionaryAlgorithm = new EvolutionaryAlgorithm(settings);
+        var evolutionaryAlgorithm = new EvolutionaryAlgorithm(_privateSettings);
         
         evolutionaryAlgorithm.RunAlgorithm();
         
@@ -69,6 +72,10 @@ public class BasicSolver : GH_Component
         double timestamp = 0;
         if (!DA.GetData(1, ref timestamp)) return;
         long intTimestamp = Convert.ToInt64(timestamp);
+        
+        var settings = new EvolutionaryAlgorithmSettings();
+        if (!DA.GetData(2, ref settings)) return;
+        _privateSettings = settings;
         
         
         //Check if the solver should run
