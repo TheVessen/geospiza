@@ -13,16 +13,9 @@ public interface ISelectionStrategy
 public abstract class SelectionStrategy : ISelectionStrategy
 {
     public abstract List<Individual> Select(Population population);
-    protected Random _random = new Random();
-    protected int numberOfSelections = 2;
+    protected readonly Random Random = new Random();
 }
 
-/// <summary>
-/// <see cref="https://www.baeldung.com/cs/ga-tournament-selection"/>
-/// </summary>
-/// <param name="population"></param>
-/// <param name="numberOfSelections"></param>
-/// <returns></returns>
 public class TournamentSelection : SelectionStrategy
 {
     /// <summary>
@@ -40,15 +33,28 @@ public class TournamentSelection : SelectionStrategy
     /// It's essential to choose an appropriate tournament size based on the problem being solved. Experimentation and parameter tuning may be required to find the optimal size for a specific application.
     /// </remarks>
     private readonly int _tournamentSize;
+    private readonly int _numberOfSelections;
 
-    public TournamentSelection(int tournamentSize)
+    public TournamentSelection(int tournamentSize, int numberOfSelections)
     {
         if (tournamentSize <= 0)
         {
             throw new ArgumentException("Tournament size must be greater than 0");
         }
 
+        if (numberOfSelections < 1)
+        {
+            throw new ArgumentException("Number of selections must be greater than 0");
+        }
+
         _tournamentSize = tournamentSize;
+        _numberOfSelections = numberOfSelections;
+    }
+    
+    public TournamentSelection()
+    {
+        _tournamentSize = 5;
+        _numberOfSelections = 2;
     }
 
     public override List<Individual> Select(Population population)
@@ -65,14 +71,14 @@ public class TournamentSelection : SelectionStrategy
 
         var selectedIndividuals = new List<Individual>();
 
-        for (int i = 0; i < numberOfSelections; i++)
+        for (int i = 0; i < _numberOfSelections; i++)
         {
             var tournament = new List<Individual>(_tournamentSize);
 
             // Randomly select individuals for the tournament
             for (int j = 0; j < _tournamentSize; j++)
             {
-                int randomIndex = _random.Next(population.Inhabitants.Count);
+                int randomIndex = Random.Next(population.Inhabitants.Count);
                 tournament.Add(population.Inhabitants[randomIndex]);
             }
 
@@ -90,6 +96,17 @@ public class TournamentSelection : SelectionStrategy
 /// </summary>
 public class RouletteWheelSelection : SelectionStrategy
 {
+    private readonly int _numberOfSelections;
+    RouletteWheelSelection(int numberOfSelections)
+    {
+        if (numberOfSelections <= 0)
+        {
+            throw new ArgumentException("Number of selections must be greater than 0");
+        }
+
+        this._numberOfSelections = numberOfSelections;
+    }
+    
     public override List<Individual> Select(Population population)
     {
         var selectedIndividuals = new List<Individual>();
@@ -101,9 +118,9 @@ public class RouletteWheelSelection : SelectionStrategy
             throw new InvalidOperationException("Total fitness is zero, selection cannot be performed");
         }
 
-        for (var i = 0; i < numberOfSelections; i++)
+        for (var i = 0; i < _numberOfSelections; i++)
         {
-            var randomFitness = _random.NextDouble() * totalFitness;
+            var randomFitness = Random.NextDouble() * totalFitness;
             double runningSum = 0;
 
             foreach (var individual in population.Inhabitants)
@@ -123,6 +140,18 @@ public class RouletteWheelSelection : SelectionStrategy
 
 public class PoolSelection : SelectionStrategy
 {
+    private readonly int _numberOfSelections;
+    
+    public PoolSelection(int numberOfSelections)
+    {
+        if (numberOfSelections <= 0)
+        {
+            throw new ArgumentException("Number of selections must be greater than 0");
+        }
+
+        _numberOfSelections = numberOfSelections;
+    }
+    
     public override List<Individual> Select(Population population)
     {
         // Validate inputs
@@ -131,7 +160,7 @@ public class PoolSelection : SelectionStrategy
             throw new ArgumentException("Population is empty");
         }
 
-        if (numberOfSelections <= 0 || numberOfSelections > population.Inhabitants.Count)
+        if (_numberOfSelections <= 0 || _numberOfSelections > population.Inhabitants.Count)
         {
             throw new ArgumentException("Invalid number of selections");
         }
@@ -139,9 +168,9 @@ public class PoolSelection : SelectionStrategy
         population.CalculateProbability();
 
         var selectedIndividuals = new List<Individual>();
-        for (int sel = 0; sel < numberOfSelections; sel++)
+        for (int sel = 0; sel < _numberOfSelections; sel++)
         {
-            var r = _random.NextDouble();
+            var r = Random.NextDouble();
             var i = 0;
             while (r > 0 && i < population.Inhabitants.Count)
             {
@@ -159,14 +188,25 @@ public class PoolSelection : SelectionStrategy
 
 public class IsotropicSelection : SelectionStrategy
 {
+    private readonly int _numberOfSelections;
+    
+    public IsotropicSelection(int numberOfSelections)
+    {
+        if (numberOfSelections <= 0)
+        {
+            throw new ArgumentException("Number of selections must be greater than 0");
+        }
+
+        this._numberOfSelections = numberOfSelections;
+    }
     
     public override List<Individual> Select(Population population)
     {
         var selectedIndividuals = new List<Individual>();
 
-        for (int i = 0; i < numberOfSelections; i++)
+        for (int i = 0; i < _numberOfSelections; i++)
         {
-            int randomIndex = _random.Next(population.Count);
+            int randomIndex = Random.Next(population.Count);
             selectedIndividuals.Add(population.Inhabitants[randomIndex]);
         }
 
@@ -176,16 +216,21 @@ public class IsotropicSelection : SelectionStrategy
 
 public class ExclusiveSelection : SelectionStrategy
 {
-    private readonly double topPercentage;
+    /// <summary>
+    /// Value between 0 and 1 representing the top percentage of individuals to selects
+    /// </summary>
+    private readonly double _topPercentage;
+    private readonly int _numberOfSelections;
 
-    public ExclusiveSelection(double topPercentage)
+    public ExclusiveSelection(double topPercentage, int numberOfSelections)
     {
-        if (topPercentage <= 0 || topPercentage > 1)
+        if (topPercentage is <= 0 or > 1)
         {
             throw new ArgumentException("Top percentage must be between 0 and 1");
         }
 
-        this.topPercentage = topPercentage;
+        _topPercentage = topPercentage;
+        _numberOfSelections = numberOfSelections;
     }
 
     public override List<Individual> Select(Population population)
@@ -196,8 +241,8 @@ public class ExclusiveSelection : SelectionStrategy
         var sortedPopulation = population.Inhabitants.OrderBy(individual => individual.Fitness).ToList();
 
         // Select the top N%
-        int cutoffIndex = (int)(population.Count * topPercentage);
-        for (int i = 0; i < numberOfSelections && i < cutoffIndex; i++)
+        var cutoffIndex = (int)(population.Count * _topPercentage);
+        for (var i = 0; i < _numberOfSelections && i < cutoffIndex; i++)
         {
             selectedIndividuals.Add(sortedPopulation[i]);
         }
@@ -208,15 +253,27 @@ public class ExclusiveSelection : SelectionStrategy
 
 public class BiasedSelection : SelectionStrategy
 {
+    private readonly int _numberOfSelections;
+    
+    public BiasedSelection(int numberOfSelections)
+    {
+        if (numberOfSelections <= 0)
+        {
+            throw new ArgumentException("Number of selections must be greater than 0");
+        }
+
+        this._numberOfSelections = numberOfSelections;
+    }
+    
+    
     public override List<Individual> Select(Population population)
     {
         var selectedIndividuals = new List<Individual>();
         var totalFitness = population.Inhabitants.Sum(individual => individual.Fitness);
-        var random = new Random();
 
-        for (int i = 0; i < numberOfSelections; i++)
+        for (int i = 0; i < _numberOfSelections; i++)
         {
-            double selectionPoint = random.NextDouble() * totalFitness;
+            double selectionPoint = Random.NextDouble() * totalFitness;
             double runningSum = 0;
 
             foreach (var individual in population.Inhabitants)

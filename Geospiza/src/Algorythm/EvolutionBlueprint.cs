@@ -10,45 +10,98 @@ namespace Geospiza.Algorythm;
 
 public abstract class EvolutionBlueprint : IEvolutionarySolver
 {
+    // Other shared properties
+    protected readonly Random Random = new Random();
+    protected readonly Observer Observer = new Observer();
+    protected static readonly StateManager StateManager = StateManager.Instance;
+    
     //Inhabitants
-    protected Population _population { get; set; } = new Population();
-    protected Observer _observer = new Observer();
+    protected Population Population { get; set; } = new Population();
 
     // Parameters
-    protected int _populationSize = 100;
-    protected int _maxGenerationCount = 20;
-    protected double _mutationRate = 0.02;
-    protected double _crossoverRate = 0.75;
-    protected int _eliteSize = 2;
+    protected int PopulationSize { get; set; }
+    protected int MaxGenerations { get; set; }
+    protected double CrossoverRate { get; set; }
+    protected double MutationRate { get; set; }
+    protected int EliteSize { get; set; }
 
     // Strategies
-    protected ISelectionStrategy _selectionStrategy => new IsotropicSelection();
-    protected ICrossoverStrategy _crossoverStrategy => new TwoPointCrossover();
-    protected MutationStrategy _mutationStrategy => new PercentageMutation(_mutationRate, 0.10);
-
-    // Random
-    protected Random _random = new Random();
-
-    public abstract void RunAlgorithm();
-    public abstract void InitializePopulation();
-    protected static StateManager _stateManager = StateManager.Instance;
-
-    protected EvolutionBlueprint()
+    protected ISelectionStrategy SelectionStrategy { get; set; }
+    protected ICrossoverStrategy CrossoverStrategy { get; set; }
+    protected IMutationStrategy MutationStrategy { get; set; }
+    protected IPairingStrategy PairingStrategy { get; set; }
+    
+    /// <summary>
+    /// Initializes the evolutionary algorithm with the given settings.
+    /// </summary>
+    /// <param name="settings"></param>
+    protected EvolutionBlueprint(EvolutionaryAlgorithmSettings settings)
     {
+        PopulationSize = settings.PopulationSize;
+        MaxGenerations = settings.MaxGenerations;
+        MutationRate = settings.MutationRate;
+        CrossoverRate = settings.CrossoverRate;
+        EliteSize = settings.EliteSize;
+        
+        SelectionStrategy = settings.SelectionStrategy;
+        CrossoverStrategy = settings.CrossoverStrategy;
+        MutationStrategy = settings.MutationStrategy;
+        PairingStrategy = settings.PairingStrategy;
+        
     }
+    
+    /// <summary>
+    /// Main method to run the evolutionary algorithm.
+    /// </summary>
+    public abstract void RunAlgorithm();
 
     /// <summary>
-    /// 
+    /// Selects the top individuals from the population.
     /// </summary>
     /// <param name="eliteSize"></param>
     /// <returns></returns>
     protected List<Individual> SelectTopIndividuals(int eliteSize)
     {
         // Sort the population by fitness in descending order
-        var sortedPopulation = _population.Inhabitants.OrderByDescending(individual => individual.Fitness).ToList();
+        var sortedPopulation = Population.Inhabitants.OrderByDescending(individual => individual.Fitness).ToList();
 
         // Take the top 'eliteSize' individuals
         return sortedPopulation.Take(eliteSize).ToList();
     }
     
+    /// <summary>
+    /// Initializes the population for the evolutionary algorithm.
+    /// </summary>
+    public void InitializePopulation()
+    {
+        //Create an empty population
+        var newPopulation = new Population();
+        for (var i = 0; i < PopulationSize; i++)
+        {
+            //Create a new solution and individual
+            StateManager.GetDocument().NewSolution(false);
+            var individual = new Individual();
+            
+            //Go through the gene pool and create a new individual
+            foreach (var templateGene in StateManager.TemplateGenes)
+            {
+                var currentTemplateGene = templateGene.Value;
+                currentTemplateGene.SetTickValue(Random.Next(currentTemplateGene.TickCount));
+                var stableGene = new Gene(currentTemplateGene.TickValue, currentTemplateGene.GeneGuid, currentTemplateGene.TickCount);
+                individual.AddStableGene(stableGene);
+            }
+            
+            //Get fitness from the state state manager and apply it to the individual
+            double currentFitness = StateManager.FitnessComponent.FitnessValue;;
+            individual.SetFitness(currentFitness);
+            
+            //Add the individual to the population
+            newPopulation.AddIndividual(individual);
+            
+            //Scedule a new solution
+            StateManager.GetDocument().ExpirePreview(false);
+        }
+        Observer.FitnessSnapshot(newPopulation);
+        Population = newPopulation;
+    }
 }

@@ -65,9 +65,7 @@ public class TwoPointCrossover : ICrossoverStrategy
         // Ensure crossoverPoint1 is less than crossoverPoint2
         if (crossoverPoint1 > crossoverPoint2)
         {
-            int temp = crossoverPoint1;
-            crossoverPoint1 = crossoverPoint2;
-            crossoverPoint2 = temp;
+            (crossoverPoint1, crossoverPoint2) = (crossoverPoint2, crossoverPoint1);
         }
 
         var child1Genome = new List<Gene>();

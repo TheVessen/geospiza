@@ -47,44 +47,12 @@ public class BasicSolver : GH_Component
 
     void ScheduleCallback(GH_Document doc)
     {
-        
-        var evolutionaryAlgorithm = new EvolutionaryAlgorithm();
+        var settings = new EvolutionaryAlgorithmSettings();
+        var evolutionaryAlgorithm = new EvolutionaryAlgorithm(settings);
         
         evolutionaryAlgorithm.RunAlgorithm();
         
-        // var random = new Random();
-        //
-        // Fitness fitti = null;
-        //
-        // foreach (var c in doc.Objects)
-        // {
-        //     if (c is Fitness fitness)
-        //     {
-        //         fitti = fitness;
-        //     }
-        // }
-        //
-        // if (fitti == null)
-        // {
-        //     this.AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "No fitness component found. Please add a fitness component to the canvas.");
-        //     return;
-        // }
-        //
-        // for (var i = 0; i < 100; i++)
-        // {
-        //     
-        //     foreach (var gene in _allGenes)
-        //     {
-        //         var currentGene = gene.Value;
-        //
-        //         currentGene.SetTickValue(random.Next(currentGene.TickCount + 1));
-        //
-        //     }
-        //     Params.Output[0].AddVolatileData(new GH_Path(0), 0, fitti.FitnessValue);
-        //     doc.NewSolution(false);
-        // }
         doc.ExpirePreview(false);
-
     }
 
     /// <summary>

@@ -18,5 +18,13 @@
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Comonents\Crossover\" />
+    <Folder Include="Comonents\Mutation\" />
+    <Folder Include="Comonents\Pairing\" />
+    <Folder Include="Comonents\Selection\" />
+    <Folder Include="Comonents\Termination\" />
+  </ItemGroup>
+
 
 </Project>
