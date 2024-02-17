@@ -57,8 +57,9 @@ public class GH_BasicSolver : GH_Component
         evolutionaryAlgorithm.RunAlgorithm();
         _population = Observer.Instance.GetCurrentPopulation();
         
-        // Params.Output[0].AddVolatileDataList(new GH_Path(0), _population.Inhabitants);
+        Params.Output[0].AddVolatileDataList(new GH_Path(0), _population.Inhabitants);
         doc.ExpirePreview(false);
+        ExpireSolution(false);
     }
 
     /// <summary>
