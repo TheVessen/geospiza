@@ -1,20 +1,21 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using Geospiza.Strategies.Selection;
 using Grasshopper.Kernel;
 using Rhino.Geometry;
 
 namespace Geospiza.Comonents.Selection;
 
-public class TournamentSelection : GH_Component
+public class GH_RouletteWheelSelection : GH_Component
 {
 
     /// <summary>
     /// Initializes a new instance of the TournamentSelection class.
     /// </summary>
-    public TournamentSelection()
-        : base("TournamentSelection", "TS",
-            "Tournament selection for the evolutionary algorithm. ",
+    public GH_RouletteWheelSelection()
+        : base("RouletteWheelSelection", "RWS",
+            "RouletteWheelSelection",
             "Geospiza", "SelectionStrategy")
     {
     }
@@ -24,8 +25,8 @@ public class TournamentSelection : GH_Component
     /// </summary>
     protected override void RegisterInputParams(GH_InputParamManager pManager)
     {
-        pManager.AddNumberParameter("TournamentSize", "TS", "The size of the tournament", GH_ParamAccess.item, 5);
-        pManager.AddNumberParameter("SelectionSize", "SS", "The size of the selection", GH_ParamAccess.item, 2);
+          pManager.AddNumberParameter("SelectionSize", "SS", "The size of the selection", GH_ParamAccess.item, 2);
+ 
     }
 
     /// <summary>
@@ -42,17 +43,15 @@ public class TournamentSelection : GH_Component
     /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
     protected override void SolveInstance(IGH_DataAccess DA)
     {
-        double tournamentSize = 0;
         double selectionSize = 0;
-        if (!DA.GetData(0, ref tournamentSize)) return;
-        if (!DA.GetData(1, ref selectionSize)) return;
+        if (!DA.GetData(0, ref selectionSize)) return;
         
-        var tournamentSizeInt = Convert.ToInt32(tournamentSize);
         var selectionSizeInt = Convert.ToInt32(selectionSize);
         
-        var selection = new Strategies.Selection.TournamentSelection(tournamentSizeInt, selectionSizeInt);
+        var selection = new RouletteWheelSelection(selectionSizeInt);
         
         DA.SetData(0, selection);
+
     }
     
     public override GH_Exposure Exposure => GH_Exposure.primary;
@@ -75,6 +74,6 @@ public class TournamentSelection : GH_Component
     /// </summary>
     public override Guid ComponentGuid
     {
-        get { return new Guid("BFD3F3A2-8FBE-4FE0-A392-6E02E9402F43"); }
+        get { return new Guid("BFD3F3A2-8FBE-4FE0-44EE-6E02E9402F43"); }
     }
 }

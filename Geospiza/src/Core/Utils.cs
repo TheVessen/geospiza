@@ -60,8 +60,6 @@ public static class Utils
         return genes;
     }
     
-    //TODO get finess Geospiza.Comonents.Fitness
-    
     /// <summary>
     /// This method is used to create a snapshot of the current state of genes.
     /// </summary>
@@ -72,7 +70,7 @@ public static class Utils
         var stableGenes = new Dictionary<Guid, Gene>();
         foreach (var gene in genes)
         {
-            stableGenes[gene.Key] = new Gene(gene.Value.TickValue, gene.Key, gene.Value.TickCount);
+            stableGenes[gene.Key] = new Gene(gene.Value.TickValue, gene.Key, gene.Value.TickCount, gene.Value.Name);
         }
         return stableGenes;
     }

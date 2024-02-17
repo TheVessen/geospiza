@@ -2,29 +2,34 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using Geospiza.Core;
 
 namespace Geospiza.Strategies.Termination;
 
-public static class TerminationStrategy
+public interface ITerminationStrategy
 {
-    public static double AssessFitnessImprovementRate(List<double> generationFitnessMap)
+    public double TerminationThreshold { get; init; }
+    public bool Evaluate();
+}
+
+public abstract class TerminationStrategy : ITerminationStrategy
+{
+    public abstract bool Evaluate();
+    protected static Observer Observer = Observer.Instance;
+    public double TerminationThreshold { get; init; }
+}
+
+public class GenerationDiversity: TerminationStrategy
+{
+    public GenerationDiversity(double threshold = 0.1)
     {
-        int windowSize = 5; // Last 5 generations
-        if (generationFitnessMap.Count < windowSize + 1) 
-        {
-            return double.MaxValue; // Not enough data to assess
-        }
-
-        var recentGenerations = generationFitnessMap.TakeLast(windowSize + 1).ToList();
-        double previousAverage = recentGenerations.Take(windowSize).Average();
-        double currentAverage = recentGenerations.Skip(1).Average();
-
-        return currentAverage - previousAverage; // Improvement in average fitness
+        TerminationThreshold = threshold;
     }
     
-    public static double AssessGeneticDiversity(Population population)
+    public override bool Evaluate()
     {
+        var population = Observer.GetCurrentPopulation();
         double totalDistance = 0;
         int comparisons = 0;
 
@@ -37,8 +42,10 @@ public static class TerminationStrategy
             }
         }
 
-        return comparisons > 0 ? totalDistance / comparisons : 0;
+        var threshold =  comparisons > 0 ? totalDistance / comparisons : 0;
+        return threshold < TerminationThreshold;
     }
+    
 
     private static double CalculateGenomicDistance(Individual ind1, Individual ind2)
     {
@@ -49,45 +56,49 @@ public static class TerminationStrategy
         }
         return Math.Sqrt(distance);
     }
-    
-    private static Individual _previousBestIndividual = null;
-
-    public static double AssessBestIndividualProgress(Individual currentBestIndividual)
-    {
-        if (_previousBestIndividual == null)
-        {
-            _previousBestIndividual = currentBestIndividual;
-            return double.MaxValue; // Initial generation
-        }
-
-        double progress = currentBestIndividual.Fitness - _previousBestIndividual.Fitness;
-        _previousBestIndividual = currentBestIndividual;
-
-        return progress;
-    }
-    
-    public static double AssessFitnessImprovementRate(List<double> generationFitnessMap, int windowSize = 5)
-    {
-        if (generationFitnessMap.Count < windowSize + 1) 
-        {
-            return double.MaxValue; // Not enough data to assess
-        }
-
-        var recentGenerations = generationFitnessMap.TakeLast(windowSize + 1).ToList();
-        double previousAverage = recentGenerations.Take(windowSize).Average();
-        double currentAverage = recentGenerations.Skip(1).Average();
-
-        return currentAverage - previousAverage; // Improvement in average fitness
-    }
-    
-    public static List<double> NormalizeFitnessValues(List<double> fitnessValues)
-    {
-        double maxFitness = fitnessValues.Max();
-        double minFitness = fitnessValues.Min();
-
-        return fitnessValues.Select(fitness => (fitness - minFitness) / (maxFitness - minFitness)).ToList();
-    }
-
-
-
 }
+
+//MAYBE USEFUL LATER
+
+// public static double AssessBestIndividualProgress(Individual currentBestIndividual)
+// {
+//     if (_previousBestIndividual == null)
+//     {
+//         _previousBestIndividual = currentBestIndividual;
+//         return double.MaxValue; // Initial generation
+//     }
+//
+//     double progress = currentBestIndividual.Fitness - _previousBestIndividual.Fitness;
+//     _previousBestIndividual = currentBestIndividual;
+//
+//     return progress;
+// }
+//     
+// public static double AssessFitnessImprovementRate(List<double> generationFitnessMap, int windowSize = 5)
+// {
+//     if (generationFitnessMap.Count < windowSize + 1) 
+//     {
+//         return double.MaxValue; // Not enough data to assess
+//     }
+//
+//     var recentGenerations = generationFitnessMap.TakeLast(windowSize + 1).ToList();
+//     double previousAverage = recentGenerations.Take(windowSize).Average();
+//     double currentAverage = recentGenerations.Skip(1).Average();
+//
+//     return currentAverage - previousAverage; // Improvement in average fitness
+// }
+
+// public static double AssessFitnessImprovementRate(List<double> generationFitnessMap)
+// {
+//     int windowSize = 5; // Last 5 generations
+//     if (generationFitnessMap.Count < windowSize + 1) 
+//     {
+//         return double.MaxValue; // Not enough data to assess
+//     }
+//
+//     var recentGenerations = generationFitnessMap.TakeLast(windowSize + 1).ToList();
+//     double previousAverage = recentGenerations.Take(windowSize).Average();
+//     double currentAverage = recentGenerations.Skip(1).Average();
+//
+//     return currentAverage - previousAverage; // Improvement in average fitness
+// }

@@ -1,21 +1,22 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using Geospiza.Strategies.Selection;
 using Grasshopper.Kernel;
 using Rhino.Geometry;
 
-namespace Geospiza.Comonents;
+namespace Geospiza;
 
-public class Fitness : GH_Component
+public class GH_ExclusiveSelection : GH_Component
 {
 
     /// <summary>
-    /// Initializes a new instance of the Fitness class.
+    /// Initializes a new instance of the GH_ExclusiveSelection class.
     /// </summary>
-    public Fitness()
-        : base("Fitness", "F",
-            "Fitness value for the evolutionary algorithm. ",
-            "Geospiza", "Subcategory")
+    public GH_ExclusiveSelection()
+        : base("ExclusiveSelection", "ES",
+            "Description",
+            "Geospiza", "SelectionStrategy")
     {
     }
 
@@ -24,7 +25,8 @@ public class Fitness : GH_Component
     /// </summary>
     protected override void RegisterInputParams(GH_InputParamManager pManager)
     {
-        pManager.AddNumberParameter("Fitness", "F", "Fitness value for the evolutionary algorithm.", GH_ParamAccess.item);
+        pManager.AddNumberParameter("SelectionSize", "SS", "The size of the selection", GH_ParamAccess.item, 2);
+        pManager.AddNumberParameter("TopPercentage", "TP", "The percentage of the top individuals to be selected", GH_ParamAccess.item, 0.1);
     }
 
     /// <summary>
@@ -32,9 +34,8 @@ public class Fitness : GH_Component
     /// </summary>
     protected override void RegisterOutputParams(GH_OutputParamManager pManager)
     {
+        pManager.AddGenericParameter("SelectionStrategy", "SS", "The selection strategy", GH_ParamAccess.item);
     }
-    
-    public double FitnessValue { get; set; }
 
     /// <summary>
     /// This is the method that actually does the work.
@@ -42,11 +43,16 @@ public class Fitness : GH_Component
     /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
     protected override void SolveInstance(IGH_DataAccess DA)
     {
+        double selectionSize = 0;
+        if (!DA.GetData(0, ref selectionSize)) return;
+        double topPercentage = 0;
+        if (!DA.GetData(1, ref topPercentage)) return;
         
-        double fitness = 0;
-        if (!DA.GetData(0, ref fitness)) return;
-        FitnessValue = fitness;
+        var selectionSizeInt = Convert.ToInt32(selectionSize);
         
+        var selection = new ExclusiveSelection(topPercentage,selectionSizeInt);
+        
+        DA.SetData(0, selection);
     }
 
     /// <summary>
@@ -67,6 +73,6 @@ public class Fitness : GH_Component
     /// </summary>
     public override Guid ComponentGuid
     {
-        get { return new Guid("FC2E37D7-CE42-4232-B1C8-07C81ADF75D7"); }
+        get { return new Guid("D854EADC-0573-4FA9-BFD2-F0C0B9387D40"); }
     }
 }

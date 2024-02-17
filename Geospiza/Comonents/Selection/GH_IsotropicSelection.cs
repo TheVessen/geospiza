@@ -1,21 +1,22 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using Geospiza.Strategies.Selection;
 using Grasshopper.Kernel;
 using Rhino.Geometry;
 
-namespace Geospiza.Comonents.Crossover;
+namespace Geospiza;
 
-public class TwoPointCrossover : GH_Component
+public class GH_IsotropicSelection : GH_Component
 {
 
     /// <summary>
-    /// Initializes a new instance of the TwoPointCrossover class.
+    /// Initializes a new instance of the GH_IsotropicSelection class.
     /// </summary>
-    public TwoPointCrossover()
-        : base("TwoPointCrossover", "TPC",
-            "Two point crossover strategy",
-            "Geospiza", "CrossoverStrategies")
+    public GH_IsotropicSelection()
+        : base("IsotropicSelection", "IS",
+            "Description",
+            "Geospiza", "SelectionStrategy")
     {
     }
 
@@ -24,7 +25,7 @@ public class TwoPointCrossover : GH_Component
     /// </summary>
     protected override void RegisterInputParams(GH_InputParamManager pManager)
     {
-        pManager.AddNumberParameter("CrossoverRate", "CR", "The crossover rate", GH_ParamAccess.item, 0.7);
+        pManager.AddNumberParameter("SelectionSize", "SS", "The size of the selection", GH_ParamAccess.item, 2);
     }
 
     /// <summary>
@@ -32,7 +33,7 @@ public class TwoPointCrossover : GH_Component
     /// </summary>
     protected override void RegisterOutputParams(GH_OutputParamManager pManager)
     {
-        pManager.AddGenericParameter("CrossoverStrategy", "CS", "The crossover strategy", GH_ParamAccess.item);
+        pManager.AddGenericParameter("SelectionStrategy", "SS", "The selection strategy", GH_ParamAccess.item);
     }
 
     /// <summary>
@@ -41,15 +42,15 @@ public class TwoPointCrossover : GH_Component
     /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
     protected override void SolveInstance(IGH_DataAccess DA)
     {
-        double crossoverRate = 0;
-        if (!DA.GetData(0, ref crossoverRate)) return;
+        double selectionSize = 0;
+        if (!DA.GetData(0, ref selectionSize)) return;
         
-        var crossover = new Strategies.Crossover.TwoPointCrossover(crossoverRate);
-        DA.SetData(0, crossover);
+        var selectionSizeInt = Convert.ToInt32(selectionSize);
         
+        var selection = new IsotropicSelection(selectionSizeInt);
+        
+        DA.SetData(0, selection);
     }
-    
-    public override GH_Exposure Exposure => GH_Exposure.secondary;
 
     /// <summary>
     /// Provides an Icon for the component.
@@ -69,6 +70,6 @@ public class TwoPointCrossover : GH_Component
     /// </summary>
     public override Guid ComponentGuid
     {
-        get { return new Guid("3560D235-F910-4BC0-9A10-28CBCF6C3B81"); }
+        get { return new Guid("3CDB0B8B-17A7-4A47-A096-7AAE24143F66"); }
     }
 }

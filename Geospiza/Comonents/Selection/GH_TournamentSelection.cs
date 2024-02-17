@@ -1,21 +1,22 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using Geospiza.Strategies.Selection;
 using Grasshopper.Kernel;
 using Rhino.Geometry;
 
-namespace Geospiza.Comonents.Mutation;
+namespace Geospiza.Comonents.Selection;
 
-public class PercentageMutation : GH_Component
+public class GH_TournamentSelection : GH_Component
 {
 
     /// <summary>
-    /// Initializes a new instance of the PercentageMutation class.
+    /// Initializes a new instance of the TournamentSelection class.
     /// </summary>
-    public PercentageMutation()
-        : base("PercentageMutation", "PM",
-            "Percentage mutation strategy",
-            "Geospiza", "MutationStrategies")
+    public GH_TournamentSelection()
+        : base("TournamentSelection", "TS",
+            "Tournament selection for the evolutionary algorithm. ",
+            "Geospiza", "SelectionStrategy")
     {
     }
 
@@ -24,8 +25,8 @@ public class PercentageMutation : GH_Component
     /// </summary>
     protected override void RegisterInputParams(GH_InputParamManager pManager)
     {
-        pManager.AddNumberParameter("MutationRate", "MR", "The mutation rate", GH_ParamAccess.item, 0.01);
-        pManager.AddNumberParameter("Percentage", "P", "The percentage of the population to mutate", GH_ParamAccess.item, 0.1);
+        pManager.AddNumberParameter("TournamentSize", "TS", "The size of the tournament", GH_ParamAccess.item, 5);
+        pManager.AddNumberParameter("SelectionSize", "SS", "The size of the selection", GH_ParamAccess.item, 2);
     }
 
     /// <summary>
@@ -33,7 +34,7 @@ public class PercentageMutation : GH_Component
     /// </summary>
     protected override void RegisterOutputParams(GH_OutputParamManager pManager)
     {
-        pManager.AddGenericParameter("MutationStrategy", "MS", "The mutation strategy", GH_ParamAccess.item);  
+        pManager.AddGenericParameter("SelectionStrategy", "SS", "The selection strategy", GH_ParamAccess.item);
     }
 
     /// <summary>
@@ -42,17 +43,20 @@ public class PercentageMutation : GH_Component
     /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
     protected override void SolveInstance(IGH_DataAccess DA)
     {
-        double mutationRate = 0;
-        double percentage = 0;
-        if (!DA.GetData(0, ref mutationRate)) return;
-        if (!DA.GetData(1, ref percentage)) return;
+        double tournamentSize = 0;
+        double selectionSize = 0;
+        if (!DA.GetData(0, ref tournamentSize)) return;
+        if (!DA.GetData(1, ref selectionSize)) return;
         
-        var strategy = new Strategies.Mutation.PercentageMutation(mutationRate, percentage);
+        var tournamentSizeInt = Convert.ToInt32(tournamentSize);
+        var selectionSizeInt = Convert.ToInt32(selectionSize);
         
-        DA.SetData(0, strategy);
+        var selection = new TournamentSelection(tournamentSizeInt, selectionSizeInt);
+        
+        DA.SetData(0, selection);
     }
-
-    public override GH_Exposure Exposure => GH_Exposure.tertiary;
+    
+    public override GH_Exposure Exposure => GH_Exposure.primary;
 
     /// <summary>
     /// Provides an Icon for the component.
@@ -72,6 +76,6 @@ public class PercentageMutation : GH_Component
     /// </summary>
     public override Guid ComponentGuid
     {
-        get { return new Guid("7BFDF3C6-F4FB-4F26-BDC2-C76E20FE95B8"); }
+        get { return new Guid("BFD3F3A2-8FBE-4FE0-A392-6E02E9402F43"); }
     }
 }

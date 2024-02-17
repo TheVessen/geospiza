@@ -3,6 +3,7 @@ using Geospiza.Strategies.Crossover;
 using Geospiza.Strategies.Mutation;
 using Geospiza.Strategies.Pairing;
 using Geospiza.Strategies.Selection;
+using Geospiza.Strategies.Termination;
 
 namespace Geospiza.Algorythm;
 
@@ -12,6 +13,7 @@ public class EvolutionaryAlgorithmSettings
     public ICrossoverStrategy CrossoverStrategy { get; init; }
     public IMutationStrategy MutationStrategy { get; init; }
     public IPairingStrategy PairingStrategy { get; init; }
+    public ITerminationStrategy TerminationStrategy { get; init; }
     public int PopulationSize { get; init; }
     public int MaxGenerations { get; init; }
     public int EliteSize { get; init; }
@@ -27,5 +29,6 @@ public class EvolutionaryAlgorithmSettings
         CrossoverStrategy = new TwoPointCrossover(0.7); // Default crossover strategy
         MutationStrategy = new PercentageMutation(0.01, 0.01); // Default mutation strategy
         PairingStrategy = new InbreedingPairingStrategy(0); // Default pairing strategy
+        TerminationStrategy = new GenerationDiversity(); // Default termination strategy
     }
 }

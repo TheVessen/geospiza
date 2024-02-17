@@ -18,9 +18,5 @@
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Comonents\Termination\" />
-  </ItemGroup>
-
 
 </Project>

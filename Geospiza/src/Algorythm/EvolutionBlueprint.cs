@@ -8,6 +8,7 @@ using Geospiza.Strategies.Crossover;
 using Geospiza.Strategies.Mutation;
 using Geospiza.Strategies.Pairing;
 using Geospiza.Strategies.Selection;
+using Geospiza.Strategies.Termination;
 using Grasshopper.Kernel;
 
 namespace Geospiza.Algorythm;
@@ -32,6 +33,7 @@ public abstract class EvolutionBlueprint : IEvolutionarySolver
     protected ICrossoverStrategy CrossoverStrategy { get; set; }
     protected IMutationStrategy MutationStrategy { get; set; }
     protected IPairingStrategy PairingStrategy { get; set; }
+    protected ITerminationStrategy TerminationStrategy { get; set; }
     
     /// <summary>
     /// Initializes the evolutionary algorithm with the given settings.
@@ -46,6 +48,7 @@ public abstract class EvolutionBlueprint : IEvolutionarySolver
         CrossoverStrategy = settings.CrossoverStrategy;
         MutationStrategy = settings.MutationStrategy;
         PairingStrategy = settings.PairingStrategy;
+        TerminationStrategy = settings.TerminationStrategy;
         
     }
     
@@ -86,7 +89,7 @@ public abstract class EvolutionBlueprint : IEvolutionarySolver
             {
                 var currentTemplateGene = templateGene.Value;
                 currentTemplateGene.SetTickValue(Random.Next(currentTemplateGene.TickCount));
-                var stableGene = new Gene(currentTemplateGene.TickValue, currentTemplateGene.GeneGuid, currentTemplateGene.TickCount);
+                var stableGene = new Gene(currentTemplateGene.TickValue, currentTemplateGene.GeneGuid, currentTemplateGene.TickCount, currentTemplateGene.Name);
                 individual.AddStableGene(stableGene);
             }
             

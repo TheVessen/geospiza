@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Newtonsoft.Json;
 
 namespace Geospiza.Core;
 
@@ -33,7 +34,7 @@ public class Individual
         Probability = normalizedFitness;
     }
     
-    public void ReinstateGene()
+    public void Reinstate()
     {
         var stateManager = StateManager.Instance;
         foreach (var gene in GenePool)
@@ -41,5 +42,25 @@ public class Individual
             var matchingGene = stateManager.TemplateGenes[gene.GeneGuid];
             matchingGene?.SetTickValue(gene.TickValue);
         }
+    }
+
+    public string ToJson()
+    {
+        var settings = new JsonSerializerSettings
+        {
+            ContractResolver = new Newtonsoft.Json.Serialization.DefaultContractResolver
+            {
+                IgnoreSerializableInterface = true,
+                IgnoreSerializableAttribute = true
+            }
+        };
+
+        var obj = new
+        {
+            Fitness = this.Fitness,
+            GenePool = this.GenePool
+        };
+
+        return JsonConvert.SerializeObject(obj, settings);
     }
 }

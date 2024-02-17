@@ -12,6 +12,7 @@ public class TemplateGene
     public Type Type { get; private set; }
     public Guid GhInstanceGuid { get; private set; }
     public Guid GeneGuid { get; private set; }
+    public string Name { get; private set; }
     public int TickCount { get; private set; }
     private static Dictionary<Guid, GH_NumberSlider> _allSliders;
     private static Dictionary<Guid, dynamic> _allGenePools;
@@ -36,6 +37,7 @@ public class TemplateGene
         TickCount = genPoolList.TickCount;
         GeneGuid = Guid.NewGuid();
         Type = genPoolList.GetType();
+        Name = genPoolList.NickName;
         GhInstanceGuid = genPoolList.InstanceGuid;
     }
     
@@ -46,6 +48,7 @@ public class TemplateGene
         GeneGuid = Guid.NewGuid();
         Type = slider.GetType();
         GhInstanceGuid = slider.InstanceGuid;
+        Name = slider.NickName;
     }
     
     public void SetTickValue(int tickValue)

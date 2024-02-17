@@ -12,12 +12,12 @@ using Grasshopper.Kernel.Data;
 
 namespace Geospiza.Comonents;
 
-public class BasicSolver : GH_Component
+public class GH_BasicSolver : GH_Component
 {
     /// <summary>
     /// Initializes a new instance of the BasicSolver class.
     /// </summary>
-    public BasicSolver()
+    public GH_BasicSolver()
         : base("BasicSolver", "BS",
             "Description",
             "Geospiza", "Solvers")
@@ -42,19 +42,22 @@ public class BasicSolver : GH_Component
     /// </summary>
     protected override void RegisterOutputParams(GH_OutputParamManager pManager)
     {
-        pManager.AddNumberParameter("CurrentGeneration", "CG", "The current generation", GH_ParamAccess.item);
+        pManager.AddGenericParameter("Observer", "LP", "The last population", GH_ParamAccess.item);
     }
 
     private bool _didRun = false;
     private long _lastTimestamp = 0;
     private EvolutionaryAlgorithmSettings _privateSettings;
+    private Population _population;
 
     void ScheduleCallback(GH_Document doc)
     {
         var evolutionaryAlgorithm = new EvolutionaryAlgorithm(_privateSettings);
         
         evolutionaryAlgorithm.RunAlgorithm();
+        _population = Observer.Instance.GetCurrentPopulation();
         
+        // Params.Output[0].AddVolatileDataList(new GH_Path(0), _population.Inhabitants);
         doc.ExpirePreview(false);
     }
 
@@ -102,6 +105,9 @@ public class BasicSolver : GH_Component
             OnPingDocument().ScheduleSolution(10, ScheduleCallback);
             _lastTimestamp = intTimestamp;
             _didRun = true;
+
+            DA.SetData(0, Observer.Instance);
+
         }
     }
 

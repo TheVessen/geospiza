@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using Geospiza.Core;
+using Geospiza.Strategies.Termination;
 using Grasshopper.Kernel.Data;
 
 namespace Geospiza.Algorythm;
@@ -59,11 +60,7 @@ public class EvolutionaryAlgorithm: EvolutionBlueprint
 
             if (i > 10)
             {
-                var currentProgress = Observer.AssessProgress();
-                if(currentProgress < 0.1)
-                {
-                    break;
-                }
+                if(TerminationStrategy.Evaluate()) break;
             }
             
             StateManager._thisComponent.Params.Output[0].AddVolatileData(new GH_Path(0), 0, i);
@@ -72,7 +69,7 @@ public class EvolutionaryAlgorithm: EvolutionBlueprint
         }
         
         var best = Population.SelectTopIndividuals(1);
-        best.Inhabitants[0].ReinstateGene();
+        best.Inhabitants[0].Reinstate();
         
     }
 }

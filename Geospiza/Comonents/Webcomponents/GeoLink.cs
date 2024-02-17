@@ -9,7 +9,7 @@ using Rhino.Geometry;
 
 namespace Geospiza.Comonents
 {
-    public class Geospiza : GH_Component
+    public class GeoLink : GH_Component
     {
         /// <summary>
         /// Each implementation of GH_Component must provide a public 
@@ -18,10 +18,10 @@ namespace Geospiza.Comonents
         /// Subcategory the panel. If you use non-existing tab or panel names, 
         /// new tabs/panels will automatically be created.
         /// </summary>
-        public Geospiza()
+        public GeoLink()
             : base("Geospiza Link", "GL",
                 "Sends live data to a web api",
-                "Geospiza", "Display")
+                "Geospiza", "Webcomponents")
         {
         }
 

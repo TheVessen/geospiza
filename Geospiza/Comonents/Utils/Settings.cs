@@ -7,6 +7,7 @@ using Geospiza.Strategies.Crossover;
 using Geospiza.Strategies.Mutation;
 using Geospiza.Strategies.Pairing;
 using Geospiza.Strategies.Selection;
+using Geospiza.Strategies.Termination;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Types;
 using Rhino.Geometry;
@@ -22,7 +23,7 @@ public class Settings : GH_Component
     public Settings()
         : base("Settings", "S",
             "Settings for the evolutionary algorithm. ",
-            "Geospiza", "Solver")
+            "Geospiza", "Utils")
     {
     }
 
@@ -38,11 +39,14 @@ public class Settings : GH_Component
         pManager.AddGenericParameter("PairingStrategy", "PS", "The pairing strategy", GH_ParamAccess.item);
         pManager.AddGenericParameter("CrossoverStrategy", "CS", "The crossover strategy", GH_ParamAccess.item);
         pManager.AddGenericParameter("MutationStrategy", "MS", "The mutation strategy", GH_ParamAccess.item);
+        pManager.AddGenericParameter("TerminationStrategy", "TS", "The termination strategy", GH_ParamAccess.item);
+        
         
         pManager[3].Optional = true;
         pManager[4].Optional = true;
         pManager[5].Optional = true;
         pManager[6].Optional = true;
+        pManager[7].Optional = true;
     }
 
     /// <summary>
@@ -69,11 +73,13 @@ public class Settings : GH_Component
         GH_ObjectWrapper pairingStrategyContainer = null;
         GH_ObjectWrapper crossoverStrategyContainer = null;
         GH_ObjectWrapper mutationStrategyContainer = null;
+        GH_ObjectWrapper terminationStrategyContainer = null;
 
         ISelectionStrategy selectionStrategy = null;
         IPairingStrategy pairingStrategy = null;
         ICrossoverStrategy crossoverStrategy = null;
         IMutationStrategy mutationStrategy = null;
+        ITerminationStrategy terminationStrategy = null;
         
         if (!DA.GetData(0, ref populationSize)) return;
         if (!DA.GetData(1, ref maxGenerations)) return;
@@ -82,6 +88,7 @@ public class Settings : GH_Component
         DA.GetData(4, ref pairingStrategyContainer);
         DA.GetData(5, ref crossoverStrategyContainer);
         DA.GetData(6, ref mutationStrategyContainer);
+        DA.GetData(7, ref terminationStrategyContainer);
         
         if (selectionStrategyContainer != null)
         {
@@ -91,7 +98,6 @@ public class Settings : GH_Component
         {
             selectionStrategy = new TournamentSelection(5, 2); // default selection strategy
         }
-
         if (pairingStrategyContainer != null)
         {
             pairingStrategy = pairingStrategyContainer.Value as IPairingStrategy;
@@ -100,7 +106,6 @@ public class Settings : GH_Component
         {
             pairingStrategy = new InbreedingPairingStrategy(0.5); // default pairing strategy
         }
-
         if (crossoverStrategyContainer != null)
         {
             crossoverStrategy = crossoverStrategyContainer.Value as ICrossoverStrategy;
@@ -109,7 +114,6 @@ public class Settings : GH_Component
         {
             crossoverStrategy = new SinglePointCrossover(0.7); // default crossover strategy
         }
-
         if (mutationStrategyContainer != null)
         {
             mutationStrategy = mutationStrategyContainer.Value as IMutationStrategy;
@@ -117,6 +121,10 @@ public class Settings : GH_Component
         if (mutationStrategy == null)
         {
             mutationStrategy = new PercentageMutation(0.01, 0.1); // default mutation strategy
+        }
+        if (terminationStrategyContainer != null)
+        {
+            terminationStrategy = terminationStrategyContainer.Value as ITerminationStrategy;
         }
         
         if(populationSize <= 0) this.AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Population size must be greater than 0");
@@ -132,7 +140,8 @@ public class Settings : GH_Component
             SelectionStrategy = selectionStrategy,
             PairingStrategy = pairingStrategy,
             CrossoverStrategy = crossoverStrategy,
-            MutationStrategy = mutationStrategy
+            MutationStrategy = mutationStrategy,
+            TerminationStrategy = terminationStrategy
         };
         
         DA.SetData(0, settings);

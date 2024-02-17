@@ -93,7 +93,8 @@ public class TournamentSelection : SelectionStrategy
 public class RouletteWheelSelection : SelectionStrategy
 {
     private readonly int _numberOfSelections;
-    RouletteWheelSelection(int numberOfSelections)
+
+    public RouletteWheelSelection(int numberOfSelections)
     {
         if (numberOfSelections <= 0)
         {

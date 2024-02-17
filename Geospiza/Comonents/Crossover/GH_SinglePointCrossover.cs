@@ -1,21 +1,22 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using Geospiza.Strategies.Crossover;
 using Grasshopper.Kernel;
 using Rhino.Geometry;
 
-namespace Geospiza.Comonents.Pairing;
+namespace Geospiza;
 
-public class InbreedingPairing : GH_Component
+public class GH_SinglePointCrossover : GH_Component
 {
 
     /// <summary>
-    /// Initializes a new instance of the InbreedingPairing class.
+    /// Initializes a new instance of the SinglePointCrossover class.
     /// </summary>
-    public InbreedingPairing()
-        : base("InbreedingPairing", "IP",
+    public GH_SinglePointCrossover()
+        : base("SinglePointCrossover", "SinglePointCrossover",
             "Description",
-            "Geospiza", "PairingStrategies")
+            "Geospiza", "Subcategory")
     {
     }
 
@@ -24,7 +25,7 @@ public class InbreedingPairing : GH_Component
     /// </summary>
     protected override void RegisterInputParams(GH_InputParamManager pManager)
     {
-        pManager.AddNumberParameter("InBreedingFactor", "P", "Description", GH_ParamAccess.item, 0);
+        pManager.AddNumberParameter("CrossoverRate", "CR", "The crossover rate", GH_ParamAccess.item, 0.7);
     }
 
     /// <summary>
@@ -32,7 +33,7 @@ public class InbreedingPairing : GH_Component
     /// </summary>
     protected override void RegisterOutputParams(GH_OutputParamManager pManager)
     {
-        pManager.AddGenericParameter("PairingStrategy", "PS", "The pairing strategy", GH_ParamAccess.item);
+        pManager.AddGenericParameter("CrossoverStrategy", "CS", "The crossover strategy", GH_ParamAccess.item);
     }
 
     /// <summary>
@@ -41,12 +42,11 @@ public class InbreedingPairing : GH_Component
     /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
     protected override void SolveInstance(IGH_DataAccess DA)
     {
-        double inBreedingFactor = 0;
-        if (!DA.GetData(0, ref inBreedingFactor)) return;
+        double crossoverRate = 0;
+        if (!DA.GetData(0, ref crossoverRate)) return;
         
-        var pairing = new Strategies.Pairing.InbreedingPairingStrategy(inBreedingFactor);
-        
-        DA.SetData(0, pairing);
+        var crossover = new SinglePointCrossover(crossoverRate);
+        DA.SetData(0, crossover);
     }
 
     /// <summary>
@@ -67,6 +67,6 @@ public class InbreedingPairing : GH_Component
     /// </summary>
     public override Guid ComponentGuid
     {
-        get { return new Guid("86B5A4E3-080A-4419-A0AD-FD42CB4890F5"); }
+        get { return new Guid("28BDC3CE-B8D8-4895-B165-4C442A197F05"); }
     }
 }

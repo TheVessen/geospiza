@@ -34,14 +34,15 @@ public class Observer
         CurrentPopulation = population;
     }
     
-    public double AssessProgress()
-    {
-        return TerminationStrategy.AssessGeneticDiversity(CurrentPopulation);
-    }
     
     public void Reset()
     {
         GenerationFitnessMap = new List<double>();
-    }    
+    }
+    
+    public Population GetCurrentPopulation()
+    {
+        return CurrentPopulation;
+    }
 
 }
