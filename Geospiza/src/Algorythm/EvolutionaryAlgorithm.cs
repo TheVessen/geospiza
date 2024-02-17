@@ -14,7 +14,6 @@ public class EvolutionaryAlgorithm: EvolutionBlueprint
 
     public override void RunAlgorithm()
     {
-        
         //Initialize the population
         InitializePopulation();
         
@@ -58,12 +57,10 @@ public class EvolutionaryAlgorithm: EvolutionBlueprint
             Observer.FitnessSnapshot(newPopulation);
             Observer.SetPopulation(newPopulation);
 
-            if (i > 10)
+            if (i > 5)
             {
                 if(TerminationStrategy.Evaluate()) break;
             }
-            
-            StateManager._thisComponent.Params.Output[0].AddVolatileData(new GH_Path(0), 0, i);
             
             Population = newPopulation;
         }

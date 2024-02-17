@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using Grasshopper.Kernel;
+using Grasshopper.Kernel.Special;
 using Newtonsoft.Json;
 
 namespace Geospiza.Core;
@@ -9,6 +11,9 @@ public class Individual
     public List<Gene> GenePool { get; private set; }
     public double Fitness { get; private set; }
     public double Probability { get; private set; }
+    private Type Type { get;  set; }
+    private Guid GhInstanceGuid { get;  set; }
+    private int GenePoolIndex { get;  set; }
     
     public Individual()
     {
@@ -43,7 +48,7 @@ public class Individual
             matchingGene?.SetTickValue(gene.TickValue);
         }
     }
-
+    
     public string ToJson()
     {
         var settings = new JsonSerializerSettings

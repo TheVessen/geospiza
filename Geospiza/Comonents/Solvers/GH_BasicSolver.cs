@@ -52,13 +52,13 @@ public class GH_BasicSolver : GH_Component
 
     void ScheduleCallback(GH_Document doc)
     {
+        Observer.Instance.Reset();
+        
         var evolutionaryAlgorithm = new EvolutionaryAlgorithm(_privateSettings);
         
         evolutionaryAlgorithm.RunAlgorithm();
         _population = Observer.Instance.GetCurrentPopulation();
         
-        Params.Output[0].AddVolatileDataList(new GH_Path(0), _population.Inhabitants);
-        doc.ExpirePreview(false);
         ExpireSolution(false);
     }
 
@@ -99,6 +99,7 @@ public class GH_BasicSolver : GH_Component
         stateManager.SetDocument(OnPingDocument());
         stateManager.SetGenes(geneIds);
         stateManager.SetThisComponent(this);
+        
 
         //Run the solver
         if (run && _didRun == false)
@@ -106,10 +107,10 @@ public class GH_BasicSolver : GH_Component
             OnPingDocument().ScheduleSolution(10, ScheduleCallback);
             _lastTimestamp = intTimestamp;
             _didRun = true;
-
             DA.SetData(0, Observer.Instance);
-
         }
+
+        DA.SetData(0, Observer.Instance);
     }
 
     /// <summary>

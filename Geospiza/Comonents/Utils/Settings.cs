@@ -124,7 +124,7 @@ public class Settings : GH_Component
         }
         if (terminationStrategyContainer != null)
         {
-            terminationStrategy = terminationStrategyContainer.Value as ITerminationStrategy;
+            terminationStrategy = new GenerationDiversity();
         }
         
         if(populationSize <= 0) this.AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Population size must be greater than 0");

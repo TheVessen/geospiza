@@ -10,12 +10,19 @@ public class Observer
 {
     private static Observer _instance;
     private const int MaxGenerationsToTrack = 5;
-    private Population CurrentPopulation { get; set; }
+    public Population CurrentPopulation { get; private set; }
     public List<double> GenerationFitnessMap { get; private set; }
 
     public static Observer Instance
     {
-        get { return _instance ?? (_instance = new Observer()); }
+        get
+        {
+            if (_instance == null)
+            {
+                _instance = new Observer();
+            }
+            return _instance;
+        }
     }
     
     public void FitnessSnapshot(Population currentPopulation)
@@ -38,6 +45,8 @@ public class Observer
     public void Reset()
     {
         GenerationFitnessMap = new List<double>();
+        CurrentPopulation = null;
+        
     }
     
     public Population GetCurrentPopulation()

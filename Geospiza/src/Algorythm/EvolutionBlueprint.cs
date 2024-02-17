@@ -17,8 +17,8 @@ public abstract class EvolutionBlueprint : IEvolutionarySolver
 {
     // Other shared properties
     protected readonly Random Random = new Random();
-    protected readonly Observer Observer = new Observer();
     protected static readonly StateManager StateManager = StateManager.Instance;
+    protected Observer Observer { get; set; }
     
     //Inhabitants
     protected Population Population { get; set; } = new Population();
@@ -41,6 +41,8 @@ public abstract class EvolutionBlueprint : IEvolutionarySolver
     /// <param name="settings"></param>
     protected EvolutionBlueprint(EvolutionaryAlgorithmSettings settings)
     {
+        Observer = Observer.Instance;
+        
         PopulationSize = settings.PopulationSize;
         MaxGenerations = settings.MaxGenerations;
         EliteSize = settings.EliteSize;

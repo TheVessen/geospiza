@@ -8,15 +8,16 @@ using Rhino.Geometry;
 
 namespace Geospiza;
 
-public class ReinstateIndividual : GH_Component
+public class GH_Observer : GH_Component
 {
+
     /// <summary>
-    /// Initializes a new instance of the ReinstateIndividual class.
+    /// Initializes a new instance of the Observer class.
     /// </summary>
-    public ReinstateIndividual()
-        : base("ReinstateIndividual", "RI",
+    public GH_Observer()
+        : base("Observer", "Observer",
             "Description",
-            "Geospiza", "Utils")
+            "Geospiza", "Subcategory")
     {
     }
 
@@ -25,8 +26,7 @@ public class ReinstateIndividual : GH_Component
     /// </summary>
     protected override void RegisterInputParams(GH_InputParamManager pManager)
     {
-        pManager.AddGenericParameter("Individual", "I", "The individual to reinstate", GH_ParamAccess.item);
-        pManager.AddBooleanParameter("Reinstate", "R", "Reinstate the individual", GH_ParamAccess.item, false);
+        pManager.AddGenericParameter("Observer", "P", "The population to observe", GH_ParamAccess.item);
     }
 
     /// <summary>
@@ -34,9 +34,8 @@ public class ReinstateIndividual : GH_Component
     /// </summary>
     protected override void RegisterOutputParams(GH_OutputParamManager pManager)
     {
+        pManager.AddGenericParameter("Individuals", "I", "The individuals in the population", GH_ParamAccess.list);
     }
-    
-    private Individual individual;
 
     /// <summary>
     /// This is the method that actually does the work.
@@ -44,26 +43,27 @@ public class ReinstateIndividual : GH_Component
     /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
     protected override void SolveInstance(IGH_DataAccess DA)
     {
-        // Declare a variable for the input
-        GH_ObjectWrapper individualWrapper = new GH_ObjectWrapper();
-        // If the input is not retrieved, return
-        if (!DA.GetData(0, ref individualWrapper)) return;
-        individual = individualWrapper.Value as Individual;
-        bool reinstate = false;
-        if (!DA.GetData(1, ref reinstate)) return;
+        GH_ObjectWrapper wrapper = null;
 
-        if (reinstate)
+        // Reference the input
+        if (!DA.GetData(0, ref wrapper)) return;
+        
+        if(wrapper.Value is Observer)
         {
-            OnPingDocument().ScheduleSolution(10,  ScheduleCallback);
+            var obs = (Observer)wrapper.Value;
+            if (obs.CurrentPopulation == null || obs.CurrentPopulation.Count == 0)
+            {
+                return;
+            }
+  
+            DA.SetDataList(0, obs.GetCurrentPopulation().Inhabitants);
+
         }
-    }
-    
-    void ScheduleCallback(GH_Document doc)
-    {
-        OnPingDocument().NewSolution(false);
-        individual.Reinstate();
-        this.ExpirePreview(false);
-        ExpireSolution(false);
+        else
+        {
+            throw new Exception("The input is not a population");
+        }
+
     }
 
     /// <summary>
@@ -84,6 +84,6 @@ public class ReinstateIndividual : GH_Component
     /// </summary>
     public override Guid ComponentGuid
     {
-        get { return new Guid("6692F05D-9C4F-4B99-B4C5-CF1D91C7B639"); }
+        get { return new Guid("2D368D5B-DC50-432D-85DD-311435EF865C"); }
     }
 }

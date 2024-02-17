@@ -16,7 +16,6 @@ public interface ITerminationStrategy
 public abstract class TerminationStrategy : ITerminationStrategy
 {
     public abstract bool Evaluate();
-    protected static Observer Observer = Observer.Instance;
     public double TerminationThreshold { get; init; }
 }
 
@@ -29,7 +28,7 @@ public class GenerationDiversity: TerminationStrategy
     
     public override bool Evaluate()
     {
-        var population = Observer.GetCurrentPopulation();
+        var population = Observer.Instance.GetCurrentPopulation();
         double totalDistance = 0;
         int comparisons = 0;
 
