@@ -15,7 +15,7 @@ public class GH_TwoPointCrossover : GH_Component
     /// </summary>
     public GH_TwoPointCrossover()
         : base("TwoPointCrossover", "TPC",
-            "Two point crossover strategy",
+            "Performs a two point crossover",
             "Geospiza", "CrossoverStrategies")
     {
     }

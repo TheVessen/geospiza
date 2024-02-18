@@ -15,7 +15,7 @@ public class GH_ExclusiveSelection : GH_Component
     /// </summary>
     public GH_ExclusiveSelection()
         : base("ExclusiveSelection", "ES",
-            "Description",
+            "Performs an exclusive selection",
             "Geospiza", "SelectionStrategy")
     {
     }

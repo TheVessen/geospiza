@@ -15,7 +15,7 @@ public class GH_FixedValueMutation : GH_Component
     /// </summary>
     public GH_FixedValueMutation()
         : base("FixedValueMutation", "FVM",
-            "Description",
+            "Performs a fixed value mutation",
             "Geospiza", "Subcategory")
     {
     }

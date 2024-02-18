@@ -25,6 +25,16 @@ public class Individual
         GenePool = genePool;
     }
     
+    public Individual(Individual individual)
+    {
+        GenePool = individual.GenePool;
+        Fitness = 0;
+        Probability = 0;
+        Type = individual.Type;
+        GhInstanceGuid = individual.GhInstanceGuid;
+        GenePoolIndex = individual.GenePoolIndex;
+    }
+    
     public void AddStableGene(Gene gene)
     {
         GenePool.Add(gene);

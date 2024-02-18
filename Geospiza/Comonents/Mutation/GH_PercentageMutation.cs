@@ -15,7 +15,7 @@ public class GH_PercentageMutation : GH_Component
     /// </summary>
     public GH_PercentageMutation()
         : base("PercentageMutation", "PM",
-            "Percentage mutation strategy",
+            "Performs a percentage mutation",
             "Geospiza", "MutationStrategies")
     {
     }

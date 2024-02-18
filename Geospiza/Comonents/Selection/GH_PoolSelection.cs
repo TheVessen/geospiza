@@ -15,7 +15,7 @@ public class GH_PoolSelection : GH_Component
     /// </summary>
     public GH_PoolSelection()
         : base("PoolSelection", "PS",
-            "Description",
+            "Performs a pool selection",
             "Geospiza", "SelectionStrategy")
     {
     }

@@ -15,7 +15,7 @@ public class GH_GeneticDiverity : GH_Component
     /// </summary>
     public GH_GeneticDiverity()
         : base("GeneticDiverity", "GD",
-            "Description",
+            "Terminates the genetic algorithm when the genetic diversity is below a certain threshold",
             "Geospiza", "TerminationStrategies")
     {
     }

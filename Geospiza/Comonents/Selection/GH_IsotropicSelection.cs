@@ -15,7 +15,7 @@ public class GH_IsotropicSelection : GH_Component
     /// </summary>
     public GH_IsotropicSelection()
         : base("IsotropicSelection", "IS",
-            "Description",
+            "Performs an isotropic selection",
             "Geospiza", "SelectionStrategy")
     {
     }

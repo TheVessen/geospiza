@@ -14,7 +14,7 @@ public class Fitness : GH_Component
     /// </summary>
     public Fitness()
         : base("Fitness", "F",
-            "Fitness value for the evolutionary algorithm. ",
+            "Fitness value for the evolutionary algorithm",
             "Geospiza", "Utils")
     {
     }
@@ -34,7 +34,7 @@ public class Fitness : GH_Component
     {
     }
     
-    public double FitnessValue { get; set; }
+    public double FitnessValue { get; set; } = 0;
 
     /// <summary>
     /// This is the method that actually does the work.
@@ -45,7 +45,11 @@ public class Fitness : GH_Component
         
         double fitness = 0;
         if (!DA.GetData(0, ref fitness)) return;
+
+        // Add the new fitness value
         FitnessValue = fitness;
+
+
         
     }
 

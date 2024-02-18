@@ -15,7 +15,7 @@ public class GH_InbreedingPairing : GH_Component
     /// </summary>
     public GH_InbreedingPairing()
         : base("InbreedingPairing", "IP",
-            "Description",
+            "Performs an inbreeding pairing",
             "Geospiza", "PairingStrategies")
     {
     }

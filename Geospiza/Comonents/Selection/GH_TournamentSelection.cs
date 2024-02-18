@@ -15,7 +15,7 @@ public class GH_TournamentSelection : GH_Component
     /// </summary>
     public GH_TournamentSelection()
         : base("TournamentSelection", "TS",
-            "Tournament selection for the evolutionary algorithm. ",
+            "Performs a tournament selection",
             "Geospiza", "SelectionStrategy")
     {
     }

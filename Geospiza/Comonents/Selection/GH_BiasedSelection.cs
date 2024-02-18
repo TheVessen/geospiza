@@ -15,7 +15,7 @@ public class GH_BiasedSelection : GH_Component
     /// </summary>
     public GH_BiasedSelection()
         : base("BiasedSelection", "BS",
-            "Description",
+            "Performs a biased selection",
             "Geospiza", "SelectionStrategy")
     {
     }

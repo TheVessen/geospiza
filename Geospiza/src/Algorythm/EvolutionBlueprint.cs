@@ -10,6 +10,7 @@ using Geospiza.Strategies.Pairing;
 using Geospiza.Strategies.Selection;
 using Geospiza.Strategies.Termination;
 using Grasshopper.Kernel;
+using Grasshopper.Kernel.Types;
 
 namespace Geospiza.Algorythm;
 
@@ -19,7 +20,7 @@ public abstract class EvolutionBlueprint : IEvolutionarySolver
     protected readonly Random Random = new Random();
     protected static readonly StateManager StateManager = StateManager.Instance;
     protected Observer Observer { get; set; }
-    
+
     //Inhabitants
     protected Population Population { get; set; } = new Population();
 
@@ -34,7 +35,7 @@ public abstract class EvolutionBlueprint : IEvolutionarySolver
     protected IMutationStrategy MutationStrategy { get; set; }
     protected IPairingStrategy PairingStrategy { get; set; }
     protected ITerminationStrategy TerminationStrategy { get; set; }
-    
+
     /// <summary>
     /// Initializes the evolutionary algorithm with the given settings.
     /// </summary>
@@ -42,7 +43,7 @@ public abstract class EvolutionBlueprint : IEvolutionarySolver
     protected EvolutionBlueprint(EvolutionaryAlgorithmSettings settings)
     {
         Observer = Observer.Instance;
-        
+
         PopulationSize = settings.PopulationSize;
         MaxGenerations = settings.MaxGenerations;
         EliteSize = settings.EliteSize;
@@ -51,9 +52,9 @@ public abstract class EvolutionBlueprint : IEvolutionarySolver
         MutationStrategy = settings.MutationStrategy;
         PairingStrategy = settings.PairingStrategy;
         TerminationStrategy = settings.TerminationStrategy;
-        
     }
-    
+
+
     /// <summary>
     /// Main method to run the evolutionary algorithm.
     /// </summary>
@@ -67,45 +68,49 @@ public abstract class EvolutionBlueprint : IEvolutionarySolver
     protected List<Individual> SelectTopIndividuals(int eliteSize)
     {
         // Sort the population by fitness in descending order
-        var sortedPopulation = Population.Inhabitants.OrderByDescending(individual => individual.Fitness).ToList();
+        var copiedPopulation = Population.Inhabitants.Select(individual => new Individual(individual)).ToList();
 
         // Take the top 'eliteSize' individuals
-        return sortedPopulation.Take(eliteSize).ToList();
+        return copiedPopulation.Take(eliteSize).ToList();
     }
-    
+
     /// <summary>
     /// Initializes the population for the evolutionary algorithm.
     /// </summary>
     public void InitializePopulation()
     {
         //Create an empty population
+
         var newPopulation = new Population();
         for (var i = 0; i < PopulationSize; i++)
         {
             //Create a new solution and individual
-            StateManager.GetDocument().NewSolution(false);
             var individual = new Individual();
-            
+
             //Go through the gene pool and create a new individual
             foreach (var templateGene in StateManager.TemplateGenes)
             {
                 var currentTemplateGene = templateGene.Value;
                 currentTemplateGene.SetTickValue(Random.Next(currentTemplateGene.TickCount));
-                var stableGene = new Gene(currentTemplateGene.TickValue, currentTemplateGene.GeneGuid, currentTemplateGene.TickCount, currentTemplateGene.Name);
+                var stableGene = new Gene(currentTemplateGene.TickValue, currentTemplateGene.GeneGuid,
+                    currentTemplateGene.TickCount, currentTemplateGene.Name);
                 individual.AddStableGene(stableGene);
             }
             
+            StateManager.GetDocument().NewSolution(false);
+            StateManager.GetDocument().ExpirePreview(false);
+            StateManager.FitnessComponent.ExpireSolution(false);
+
             //Get fitness from the state state manager and apply it to the individual
-            double currentFitness = StateManager.FitnessComponent.FitnessValue;;
+            double currentFitness = StateManager.FitnessComponent.FitnessValue;
             individual.SetFitness(currentFitness);
-            
+
             //Add the individual to the population
             newPopulation.AddIndividual(individual);
-            
-            //Scedule a new solution
-            StateManager.GetDocument().ExpirePreview(false);
         }
+
         Observer.FitnessSnapshot(newPopulation);
+        Observer.SetPopulation(newPopulation);
         Population = newPopulation;
     }
 }

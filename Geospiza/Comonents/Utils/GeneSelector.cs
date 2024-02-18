@@ -18,7 +18,7 @@ public class GeneSelector : GH_Component
     /// </summary>
     public GeneSelector()
         : base("GeneSelector", "GS",
-            "Description",
+            "Collects the genes for the evolutionary algorithm",
             "Geospiza", "Utils")
     {
     }
@@ -36,7 +36,7 @@ public class GeneSelector : GH_Component
     /// </summary>
     protected override void RegisterOutputParams(GH_OutputParamManager pManager)
     {
-        pManager.AddTextParameter("GeneIds", "GID", "The gene ids", GH_ParamAccess.list);
+        pManager.AddTextParameter("Genes", "GID", "The gene ids", GH_ParamAccess.list);
     }
 
     /// <summary>

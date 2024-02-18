@@ -1,20 +1,23 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Linq;
+using Geospiza.Core;
 using Grasshopper.Kernel;
+using Grasshopper.Kernel.Types;
 using Rhino.Geometry;
 
-namespace Geospiza.Comonents;
+namespace Geospiza;
 
-public class GetFitness : GH_Component
+public class GH_Individual : GH_Component
 {
 
     /// <summary>
-    /// Initializes a new instance of the CLASS_NAME class.
+    /// Initializes a new instance of the GH_Individual class.
     /// </summary>
-    public GetFitness()
-        : base("GetFitness", "GF",
-            "Description",
+    public GH_Individual()
+        : base("Individual", "I",
+            "Gets properties of the individual",
             "Geospiza", "Utils")
     {
     }
@@ -24,6 +27,7 @@ public class GetFitness : GH_Component
     /// </summary>
     protected override void RegisterInputParams(GH_InputParamManager pManager)
     {
+        pManager.AddGenericParameter("Individual", "I", "The individual to reinstate", GH_ParamAccess.item);
     }
 
     /// <summary>
@@ -32,6 +36,8 @@ public class GetFitness : GH_Component
     protected override void RegisterOutputParams(GH_OutputParamManager pManager)
     {
         pManager.AddNumberParameter("Fitness", "F", "The fitness value", GH_ParamAccess.item);
+        pManager.AddNumberParameter("Ticks", "T", "The number of ticks", GH_ParamAccess.list);
+        
     }
 
     /// <summary>
@@ -40,22 +46,15 @@ public class GetFitness : GH_Component
     /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
     protected override void SolveInstance(IGH_DataAccess DA)
     {
-        var obj = this.OnPingDocument().Objects;
-
-        double fitnessValue = 0;
+        GH_ObjectWrapper individualWrapper = null;
+        if (!DA.GetData(0, ref individualWrapper)) return;
+        var individual = individualWrapper.Value as Individual;
         
-        foreach (var comp in obj)
-        {
-            if (comp is Fitness fitness)
-            {
-                
-                fitnessValue = fitness.FitnessValue;
-            }
-        }
-        
-        DA.SetData(0, fitnessValue);
-        
+        DA.SetData(0, individual.Fitness);
+        DA.SetDataList(1,individual.GenePool.Select(gene => gene.TickValue), 1);
     }
+
+    public override GH_Exposure Exposure => GH_Exposure.secondary;
 
     /// <summary>
     /// Provides an Icon for the component.
@@ -75,6 +74,6 @@ public class GetFitness : GH_Component
     /// </summary>
     public override Guid ComponentGuid
     {
-        get { return new Guid("484E527A-F539-4A9A-AC03-D66915738018"); }
+        get { return new Guid("16A3E3D3-A282-460B-92CC-78C6EF91B8CC"); }
     }
 }

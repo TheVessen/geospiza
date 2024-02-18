@@ -15,7 +15,7 @@ public class GH_RouletteWheelSelection : GH_Component
     /// </summary>
     public GH_RouletteWheelSelection()
         : base("RouletteWheelSelection", "RWS",
-            "RouletteWheelSelection",
+            "Performs a roulette wheel selection",
             "Geospiza", "SelectionStrategy")
     {
     }

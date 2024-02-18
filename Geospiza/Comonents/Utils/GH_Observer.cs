@@ -16,8 +16,8 @@ public class GH_Observer : GH_Component
     /// </summary>
     public GH_Observer()
         : base("Observer", "Observer",
-            "Description",
-            "Geospiza", "Subcategory")
+            "The observer holds information about the evolutionary algorithms solutions",
+            "Geospiza", "Utils")
     {
     }
 
@@ -65,6 +65,7 @@ public class GH_Observer : GH_Component
         }
 
     }
+    public override GH_Exposure Exposure => GH_Exposure.secondary;
 
     /// <summary>
     /// Provides an Icon for the component.

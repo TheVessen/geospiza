@@ -15,7 +15,7 @@ public class ReinstateIndividual : GH_Component
     /// </summary>
     public ReinstateIndividual()
         : base("ReinstateIndividual", "RI",
-            "Description",
+            "Reinstate an individual",
             "Geospiza", "Utils")
     {
     }
@@ -62,7 +62,7 @@ public class ReinstateIndividual : GH_Component
     {
         OnPingDocument().NewSolution(false);
         individual.Reinstate();
-        this.ExpirePreview(false);
+        ExpirePreview(false);
         ExpireSolution(false);
     }
 

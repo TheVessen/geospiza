@@ -17,6 +17,16 @@ public class Population
     {
         Inhabitants.AddRange(individual);
     }
+    
+    public Population()
+    {
+    }
+    
+    public Population(Population population)
+    {
+        Inhabitants = new List<Individual>(population.Inhabitants);
+    }
+
 
     public void TestPopulation()
     {
@@ -33,9 +43,10 @@ public class Population
                     matchingGene.SetTickValue(gene.TickValue);
                 }
             }
-
+            stateManager.GetDocument().NewSolution(false);
+            stateManager.GetDocument().ExpirePreview(false);
+            stateManager.FitnessComponent.ExpireSolution(false);
             individual.SetFitness(stateManager.FitnessComponent.FitnessValue);
-            doc.NewSolution(false);
         }
     }
 
