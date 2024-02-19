@@ -33,7 +33,7 @@ public abstract class EvolutionBlueprint : IEvolutionarySolver
     protected ISelectionStrategy SelectionStrategy { get; set; }
     protected ICrossoverStrategy CrossoverStrategy { get; set; }
     protected IMutationStrategy MutationStrategy { get; set; }
-    protected IPairingStrategy PairingStrategy { get; set; }
+    protected PairingStrategy PairingStrategy { get; set; }
     protected ITerminationStrategy TerminationStrategy { get; set; }
 
     /// <summary>
@@ -88,22 +88,26 @@ public abstract class EvolutionBlueprint : IEvolutionarySolver
             var individual = new Individual();
 
             //Go through the gene pool and create a new individual
-            foreach (var templateGene in StateManager.TemplateGenes)
+            foreach (var templateGene in StateManager.Genotype)
             {
-                var currentTemplateGene = templateGene.Value;
-                currentTemplateGene.SetTickValue(Random.Next(currentTemplateGene.TickCount));
-                var stableGene = new Gene(currentTemplateGene.TickValue, currentTemplateGene.GeneGuid,
-                    currentTemplateGene.TickCount, currentTemplateGene.Name);
+                var ctg = templateGene.Value;
+                ctg.SetTickValue(Random.Next(ctg.TickCount));
+
+                var stableGene = new Gene(ctg.TickValue, ctg.GeneGuid,
+                    ctg.TickCount, ctg.Name, ctg.GhInstanceGuid,
+                    ctg.GenePoolIndex);
+
                 individual.AddStableGene(stableGene);
             }
-            
+
             StateManager.GetDocument().NewSolution(false);
             StateManager.GetDocument().ExpirePreview(false);
             StateManager.FitnessComponent.ExpireSolution(false);
 
             //Get fitness from the state state manager and apply it to the individual
-            double currentFitness = StateManager.FitnessComponent.FitnessValue;
+            var currentFitness = StateManager.FitnessComponent.FitnessValue;
             individual.SetFitness(currentFitness);
+            individual.SetGeneration(0);
 
             //Add the individual to the population
             newPopulation.AddIndividual(individual);

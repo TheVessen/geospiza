@@ -1,15 +1,19 @@
 ﻿using System.Collections.Generic;
+using Geospiza.Comonents;
+using Geospiza.Core;
 using Rhino.Geometry;
 using Newtonsoft.Json;
 
 namespace Geospiza
 {
-    public class MeshBody
+    public class WebIndividual
     {
         public List<double> Vertices { get; set; } = new List<double>();
         public List<int> Indices { get; set; } = new List<int>();
+        public  ThreeMaterial Material { get; set; }
+        
 
-        public MeshBody(Mesh mesh)
+        public WebIndividual(Mesh mesh, ThreeMaterial material)
         {
             foreach (var vertex in mesh.Vertices)
             {
@@ -39,10 +43,18 @@ namespace Geospiza
                     Indices.Add(face.C);
                 }
             }
+            Material = material;
         }
-        public string ToJson()
+        
+        public object ToAnonymousObject()
         {
-            return JsonConvert.SerializeObject(this);
+            return new
+            {
+                Vertices,
+                Indices, 
+                Material,
+                Fitness = StateManager.Instance.FitnessComponent.FitnessValue
+            };
         }
     }
 }

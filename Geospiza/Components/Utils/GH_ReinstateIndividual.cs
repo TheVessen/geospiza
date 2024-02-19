@@ -1,22 +1,22 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
-using Geospiza.Strategies.Mutation;
+using Geospiza.Core;
 using Grasshopper.Kernel;
+using Grasshopper.Kernel.Types;
 using Rhino.Geometry;
 
 namespace Geospiza;
 
-public class GH_FixedValueMutation : GH_Component
+public class ReinstateIndividual : GH_Component
 {
-
     /// <summary>
-    /// Initializes a new instance of the FixedValueMutation class.
+    /// Initializes a new instance of the ReinstateIndividual class.
     /// </summary>
-    public GH_FixedValueMutation()
-        : base("FixedValueMutation", "FVM",
-            "Performs a fixed value mutation",
-            "Geospiza", "MutationStrategies")
+    public ReinstateIndividual()
+        : base("ReinstateIndividual", "RI",
+            "Reinstate an individual",
+            "Geospiza", "Utils")
     {
     }
 
@@ -25,8 +25,8 @@ public class GH_FixedValueMutation : GH_Component
     /// </summary>
     protected override void RegisterInputParams(GH_InputParamManager pManager)
     {
-        pManager.AddNumberParameter("MutationRate", "MR", "The mutation rate", GH_ParamAccess.item, 0.01);
-        pManager.AddNumberParameter("MutationValue", "V", "The value to mutate to", GH_ParamAccess.item, 0.1);
+        pManager.AddGenericParameter("Individual", "I", "The individual to reinstate", GH_ParamAccess.item);
+        pManager.AddBooleanParameter("Reinstate", "R", "Reinstate the individual", GH_ParamAccess.item, false);
     }
 
     /// <summary>
@@ -34,8 +34,8 @@ public class GH_FixedValueMutation : GH_Component
     /// </summary>
     protected override void RegisterOutputParams(GH_OutputParamManager pManager)
     {
-        pManager.AddGenericParameter("MutationStrategy", "MS", "The mutation strategy", GH_ParamAccess.item);
     }
+    private Individual individual;
 
     /// <summary>
     /// This is the method that actually does the work.
@@ -43,14 +43,26 @@ public class GH_FixedValueMutation : GH_Component
     /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
     protected override void SolveInstance(IGH_DataAccess DA)
     {
-        double mutationRate = 0;
-        double mutationValue = 0;
-        if (!DA.GetData(0, ref mutationRate)) return;
-        if (!DA.GetData(1, ref mutationValue)) return;
+        // Declare a variable for the input
+        GH_ObjectWrapper individualWrapper = new GH_ObjectWrapper();
+        // If the input is not retrieved, return
+        if (!DA.GetData(0, ref individualWrapper)) return;
+        individual = individualWrapper.Value as Individual;
+        bool reinstate = false;
+        if (!DA.GetData(1, ref reinstate)) return;
 
-        var strategy = new FixedValueMutation(mutationRate, Convert.ToInt32(mutationValue));
-
-        DA.SetData(0, strategy);
+        if (reinstate)
+        {
+            OnPingDocument().ScheduleSolution(10,  ScheduleCallback);
+        }
+    }
+    
+    void ScheduleCallback(GH_Document doc)
+    {
+        OnPingDocument().NewSolution(false);
+        individual.Reinstate();
+        ExpirePreview(false);
+        ExpireSolution(false);
     }
 
     /// <summary>
@@ -71,6 +83,6 @@ public class GH_FixedValueMutation : GH_Component
     /// </summary>
     public override Guid ComponentGuid
     {
-        get { return new Guid("30348E4B-355D-4C85-8A6A-2ED2F7EB002D"); }
+        get { return new Guid("6692F05D-9C4F-4B99-B4C5-CF1D91C7B639"); }
     }
 }

@@ -45,7 +45,7 @@ public class GH_InbreedingPairing : GH_Component
         double inBreedingFactor = 0;
         if (!DA.GetData(0, ref inBreedingFactor)) return;
         
-        var pairing = new InbreedingPairingStrategy(inBreedingFactor);
+        var pairing = new PairingStrategy(inBreedingFactor);
         
         DA.SetData(0, pairing);
     }

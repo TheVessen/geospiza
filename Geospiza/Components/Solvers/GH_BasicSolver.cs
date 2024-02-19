@@ -46,6 +46,8 @@ public class GH_BasicSolver : GH_Component
     protected override void RegisterOutputParams(GH_OutputParamManager pManager)
     {
         pManager.AddGenericParameter("Observer", "LP", "The last population", GH_ParamAccess.item);
+        pManager.AddNumberParameter("CurrentGeneration", "CG", "The current generation", GH_ParamAccess.item);
+        
     }
 
     private bool _didRun = false;
@@ -103,8 +105,6 @@ public class GH_BasicSolver : GH_Component
         var evolutionaryAlgorithm = new EvolutionaryAlgorithm(_privateSettings);
 
         evolutionaryAlgorithm.RunAlgorithm();
-        
-        
 
         _isRunning = false;
         ExpireSolution(false);
@@ -118,20 +118,14 @@ public class GH_BasicSolver : GH_Component
             Params.Output[0].ClearData();
             Params.Output[0].AddVolatileData(new GH_Path(0), 0, Observer.Instance);
         }
+        Params.Output[1].ClearData();
+        Params.Output[1].AddVolatileData(new GH_Path(0), 0, Observer.Instance.CurrentGeneration);
     }
 
     /// <summary>
     /// Provides an Icon for the component.
     /// </summary>
-    protected override Bitmap Icon
-    {
-        get
-        {
-            //You can add image files to your project resources and access them like this:
-            // return Resources.IconForThisComponent;
-            return null;
-        }
-    }
+    protected override Bitmap Icon => Properties.Resources.MainIcon;
 
     /// <summary>
     /// Gets the unique ID for this component. Do not change this ID after release.

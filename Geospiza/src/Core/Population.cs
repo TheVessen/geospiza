@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using Newtonsoft.Json;
 
 namespace Geospiza.Core;
 
@@ -37,7 +38,7 @@ public class Population
         {
             foreach (var gene in individual.GenePool)
             {
-                var matchingGene = stateManager.TemplateGenes[gene.GeneGuid];
+                var matchingGene = stateManager.Genotype[gene.GeneGuid];
                 if (matchingGene != null)
                 {
                     matchingGene.SetTickValue(gene.TickValue);
@@ -60,16 +61,16 @@ public class Population
         return CalculateTotalFitness() / Count;
     }
 
-    public Population SelectTopIndividuals(int eliteSize)
+    public List<Individual> SelectTopIndividuals(int eliteSize)
     {
+        var bestIndividuals = new List<Individual>();
         var sortedPopulation = Inhabitants.OrderByDescending(ind => ind.Fitness).ToList();
-        var newPopulation = new Population();
         for (var i = 0; i < eliteSize; i++)
         {
-            newPopulation.AddIndividual(sortedPopulation[i]);
+            bestIndividuals.Add(sortedPopulation[i]);
         }
 
-        return newPopulation;
+        return bestIndividuals;
     }
 
     public void CalculateProbability()
@@ -79,5 +80,10 @@ public class Population
         {
             individual.SetProbability(individual.Fitness / totalFitness);
         }
+    }
+    
+    public string ToJson()
+    {
+        return JsonConvert.SerializeObject(this);
     }
 }

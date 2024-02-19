@@ -10,13 +10,17 @@ public class Gene
     public Guid GeneGuid { get; private set; }
     public int TickCount { get; private set; }
     public string GeneName { get; private set; }
+    public Guid GhInstanceGuid { get; init; }
+    public int GenePoolIndex { get; init; }
     
-    public Gene(int tickValue, Guid geneGuid, int tickCount, string geneName)
+    public Gene(int tickValue, Guid geneGuid, int tickCount, string geneName, Guid ghInstanceGuid, int genePoolIndex)
         {
             TickValue = tickValue;
             GeneGuid = geneGuid;
             TickCount = tickCount;
             GeneName = geneName;
+            GhInstanceGuid = ghInstanceGuid;
+            GenePoolIndex = genePoolIndex;
         }
     
     public Gene(Gene gene)
@@ -25,6 +29,8 @@ public class Gene
         GeneGuid = gene.GeneGuid;
         TickCount = gene.TickCount;
         GeneName = gene.GeneName;
+        GhInstanceGuid = gene.GhInstanceGuid;
+        GenePoolIndex = gene.GenePoolIndex;
     }
     
     // This function should only be used from a mutation strategy
@@ -49,7 +55,9 @@ public class Gene
             GeneGuid = GeneGuid,
             TickValue = TickValue,
             TickCount = TickCount,
-            GeneName = GeneName
+            GeneName = GeneName,
+            GhInstanceGuid = GhInstanceGuid,
+            GenePoolIndex = GenePoolIndex
         };
 
         return JsonConvert.SerializeObject(obj, settings);

@@ -41,7 +41,6 @@ public class Settings : GH_Component
         pManager.AddGenericParameter("MutationStrategy", "MS", "The mutation strategy", GH_ParamAccess.item);
         pManager.AddGenericParameter("TerminationStrategy", "TS", "The termination strategy", GH_ParamAccess.item);
         
-        
         pManager[3].Optional = true;
         pManager[4].Optional = true;
         pManager[5].Optional = true;
@@ -76,7 +75,7 @@ public class Settings : GH_Component
         GH_ObjectWrapper terminationStrategyContainer = null;
 
         ISelectionStrategy selectionStrategy = null;
-        IPairingStrategy pairingStrategy = null;
+        PairingStrategy pairingStrategy = null;
         ICrossoverStrategy crossoverStrategy = null;
         IMutationStrategy mutationStrategy = null;
         ITerminationStrategy terminationStrategy = null;
@@ -100,11 +99,11 @@ public class Settings : GH_Component
         }
         if (pairingStrategyContainer != null)
         {
-            pairingStrategy = pairingStrategyContainer.Value as IPairingStrategy;
+            pairingStrategy = pairingStrategyContainer.Value as PairingStrategy;
         }
         if (pairingStrategy == null)
         {
-            pairingStrategy = new InbreedingPairingStrategy(0.5); // default pairing strategy
+            pairingStrategy = new PairingStrategy(0.5); // default pairing strategy
         }
         if (crossoverStrategyContainer != null)
         {
@@ -147,19 +146,11 @@ public class Settings : GH_Component
         DA.SetData(0, settings);
     }
     public override GH_Exposure Exposure => GH_Exposure.secondary;
-    
+
     /// <summary>
     /// Provides an Icon for the component.
     /// </summary>
-    protected override Bitmap Icon
-    {
-        get
-        {
-            //You can add image files to your project resources and access them like this:
-            // return Resources.IconForThisComponent;
-            return null;
-        }
-    }
+    protected override Bitmap Icon => Properties.Resources.SettingsIcon;
 
     /// <summary>
     /// Gets the unique ID for this component. Do not change this ID after release.

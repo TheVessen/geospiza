@@ -16,7 +16,7 @@ public class GH_SinglePointCrossover : GH_Component
     public GH_SinglePointCrossover()
         : base("SinglePointCrossover", "SinglePointCrossover",
             "Performs a single point crossover",
-            "Geospiza", "Subcategory")
+            "Geospiza", "CrossoverStrategies")
     {
     }
 

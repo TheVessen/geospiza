@@ -16,6 +16,22 @@ public abstract class SelectionStrategy : ISelectionStrategy
     protected readonly Random Random = new Random();
 }
 
+/// <summary>
+/// Implements the Tournament Selection strategy for selecting individuals in a genetic algorithm.
+/// </summary>
+/// <remarks>
+/// Tournament Selection is a method used in genetic algorithms for selecting potentially useful solutions for recombination.
+///
+/// In Tournament Selection, a subset of individuals is chosen from the population, and the individual with the highest fitness in this group is selected.
+/// The process is repeated until the desired number of individuals is selected.
+///
+/// This class requires the size of the tournament and the number of selections to be made as parameters.
+/// The Select method randomly selects individuals for each tournament and chooses the best individual from each tournament to be part of the next generation.
+///
+/// Note: This selection method maintains diversity in the population as it gives all individuals,
+/// regardless of their fitness, a chance to be selected. However,
+/// it also ensures that fitter individuals have a higher chance of being selected.
+/// </remarks>
 public class TournamentSelection : SelectionStrategy
 {
     /// <summary>
@@ -51,8 +67,13 @@ public class TournamentSelection : SelectionStrategy
         _numberOfSelections = numberOfSelections;
     }
     
-
-
+    /// <summary>
+    ///  Selects individuals from the population using the tournament selection strategy.
+    /// </summary>
+    /// <param name="population"></param>
+    /// <returns></returns>
+    /// <exception cref="ArgumentNullException"></exception>
+    /// <exception cref="ArgumentException"></exception>
     public override List<Individual> Select(Population population)
     {
         if (population == null)
@@ -88,8 +109,22 @@ public class TournamentSelection : SelectionStrategy
 }
 
 /// <summary>
-/// 
+/// Implements the Roulette Wheel Selection strategy for selecting individuals in a genetic algorithm.
 /// </summary>
+/// <remarks>
+/// Roulette Wheel Selection, also known as fitness proportionate selection, is a method used
+/// in genetic algorithms for selecting potentially useful solutions for recombination.
+/// 
+/// In Roulette Wheel Selection, the fitness of an individual is used to assign a probability of selection.
+/// Think of it as a Roulette Wheel where each individual takes up a slice of the wheel, but the size of the slice is proportional to the individual's fitness.
+/// Those with the highest fitness have larger slices and therefore a higher chance of being selected.
+/// 
+/// This class requires the number of selections to be made as a parameter.
+/// The Select method calculates the total fitness of the population and then iterates over the population, selecting individuals based on their proportional fitness.
+/// 
+/// Note: This selection method can lead to premature convergence
+/// as the fittest individuals are more likely to be selected, potentially reducing the genetic diversity in the population.
+/// </remarks>
 public class RouletteWheelSelection : SelectionStrategy
 {
     private readonly int _numberOfSelections;
@@ -135,6 +170,24 @@ public class RouletteWheelSelection : SelectionStrategy
     }
 }
 
+/// <summary>
+/// Implements the Pool Selection strategy for selecting individuals in a genetic algorithm.
+/// </summary>
+/// <remarks>
+/// Pool Selection is a method used in genetic algorithms for selecting potentially useful solutions for recombination.
+///
+/// In Pool Selection, each individual in the population is assigned a selection probability proportional to its fitness.
+/// Then, a number of individuals are selected randomly based on these probabilities.
+/// This process is repeated until the desired number of individuals is selected.
+///
+/// This class requires the number of selections to be made as a parameter.
+/// The Select method calculates the selection probabilities for each individual in the population and then iterates over the population,
+/// selecting individuals based on these probabilities.
+///
+/// Note: This selection method maintains diversity in the population as it gives all individuals,
+/// regardless of their fitness, a chance to be selected.
+/// However, it also ensures that fitter individuals have a higher chance of being selected.
+/// </remarks>
 public class PoolSelection : SelectionStrategy
 {
     private readonly int _numberOfSelections;
@@ -182,7 +235,21 @@ public class PoolSelection : SelectionStrategy
     }
 }
 
-
+/// <summary>
+/// Implements the Isotropic Selection strategy for selecting individuals in a genetic algorithm.
+/// </summary>
+/// <remarks>
+/// Isotropic Selection is a method used in genetic algorithms for selecting potentially useful solutions for recombination.
+///
+/// In Isotropic Selection, each individual in the population has an equal chance of being selected, regardless of their fitness.
+/// This is similar to a roulette wheel selection where each individual occupies an equal slice of the wheel.
+///
+/// This class requires the number of selections to be made as a parameter.
+/// The Select method randomly selects individuals from the population until the desired number of individuals is selected.
+///
+/// Note: This selection method maintains maximum diversity in the population as it gives all individuals an equal chance of being selected.
+/// However, it does not favor fitter individuals, which can slow the algorithm's convergence to optimal solutions.
+/// </remarks>
 public class IsotropicSelection : SelectionStrategy
 {
     private readonly int _numberOfSelections;
@@ -211,6 +278,23 @@ public class IsotropicSelection : SelectionStrategy
     }
 }
 
+/// <summary>
+/// Implements the Exclusive Selection strategy for selecting individuals in a genetic algorithm.
+/// </summary>
+/// <remarks>
+/// Exclusive Selection is a method used in genetic algorithms for selecting potentially useful solutions for recombination.
+///
+/// In Exclusive Selection, a certain percentage of the top-performing individuals in the population are selected.
+/// This percentage is determined by the topPercentage parameter.
+/// The individuals are selected based on their fitness, with higher fitness individuals being more likely to be selected.
+///
+/// This class requires the top percentage of individuals to select and the number of selections to be made as parameters.
+/// The Select method sorts the population by fitness, calculates the cutoff index based on the top percentage, and then selects individuals
+/// from the sorted population until the desired number of individuals is selected or the cutoff index is reached.
+///
+/// Note: This selection method can lead to premature convergence as it heavily favors
+/// the fittest individuals. However, it can also speed up the algorithm's convergence to optimal solutions.
+/// </remarks>
 public class ExclusiveSelection : SelectionStrategy
 {
     /// <summary>
@@ -248,6 +332,23 @@ public class ExclusiveSelection : SelectionStrategy
     }
 }
 
+/// <summary>
+/// Implements the Biased Selection strategy for selecting individuals in a genetic algorithm.
+/// </summary>
+/// <remarks>
+/// Biased Selection is a method used in genetic algorithms for selecting potentially useful solutions for recombination.
+///
+/// In Biased Selection, each individual in the population is assigned a selection probability proportional to its fitness.
+/// Then, a number of individuals are selected randomly based on these probabilities.
+/// This process is repeated until the desired number of individuals is selected.
+///
+/// This class requires the number of selections to be made as a parameter.
+/// The Select method calculates the total fitness of the population, generates a random selection point,
+/// and then iterates over the population, selecting individuals based on their proportional fitness.
+///
+/// Note: This selection method maintains diversity in the population as it gives all individuals,
+/// regardless of their fitness, a chance to be selected. However, it also ensures that fitter individuals have a higher chance of being selected.
+/// </remarks>
 public class BiasedSelection : SelectionStrategy
 {
     private readonly int _numberOfSelections;
@@ -261,7 +362,6 @@ public class BiasedSelection : SelectionStrategy
 
         this._numberOfSelections = numberOfSelections;
     }
-    
     
     public override List<Individual> Select(Population population)
     {

@@ -53,10 +53,7 @@ public static class Utils
                 }
             }
         }
-        
-        //Initialize gene => Sets all the number sliders and gene pools inside the gene class
         new TemplateGene(numberSliders, genePools);
-        
         return genes;
     }
     
@@ -70,7 +67,7 @@ public static class Utils
         var stableGenes = new Dictionary<Guid, Gene>();
         foreach (var gene in genes)
         {
-            stableGenes[gene.Key] = new Gene(gene.Value.TickValue, gene.Key, gene.Value.TickCount, gene.Value.Name);
+            stableGenes[gene.Key] = new Gene(gene.Value.TickValue, gene.Key, gene.Value.TickCount, gene.Value.Name, gene.Value.GhInstanceGuid, gene.Value.GenePoolIndex);
         }
         return stableGenes;
     }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Special;
 using Newtonsoft.Json;
@@ -11,9 +12,7 @@ public class Individual
     public List<Gene> GenePool { get; private set; }
     public double Fitness { get; private set; }
     public double Probability { get; private set; }
-    private Type Type { get;  set; }
-    private Guid GhInstanceGuid { get;  set; }
-    private int GenePoolIndex { get;  set; }
+    public int Generation { get; private set; }
     
     public Individual()
     {
@@ -30,11 +29,8 @@ public class Individual
         GenePool = individual.GenePool;
         Fitness = 0;
         Probability = 0;
-        Type = individual.Type;
-        GhInstanceGuid = individual.GhInstanceGuid;
-        GenePoolIndex = individual.GenePoolIndex;
     }
-    
+
     public void AddStableGene(Gene gene)
     {
         GenePool.Add(gene);
@@ -49,13 +45,45 @@ public class Individual
         Probability = normalizedFitness;
     }
     
+    public void SetGeneration(int generation)
+    {
+        Generation = generation;
+    }
+    
     public void Reinstate()
     {
         var stateManager = StateManager.Instance;
         foreach (var gene in GenePool)
         {
-            var matchingGene = stateManager.TemplateGenes[gene.GeneGuid];
+            var matchingGene = stateManager.Genotype[gene.GeneGuid];
             matchingGene?.SetTickValue(gene.TickValue);
+        }
+    }
+
+    public void Reinstate(GH_Document doc)
+    {
+        foreach (var gene in GenePool)
+        {
+            var slider = doc.FindObject(gene.GhInstanceGuid, true);
+            if(slider == null)
+            {
+                throw new Exception("Gene not found in document.");
+            }
+            
+            var type = slider.GetType().ToString();
+            if (type == "Grasshopper.Kernel.Special.GH_NumberSlider")
+            {
+                var numberSlider = (GH_NumberSlider)slider;
+                numberSlider.TickValue = gene.TickValue;
+            }
+            else if (type == "GalapagosComponents.GalapagosGeneListObject")
+            {
+                var genePool = (dynamic)slider;
+                genePool.set_TickValue(gene.GenePoolIndex, gene.TickValue);
+            }else
+            {
+                throw new Exception("Gene type not recognized.");
+            }
         }
     }
     
@@ -73,9 +101,17 @@ public class Individual
         var obj = new
         {
             Fitness = this.Fitness,
-            GenePool = this.GenePool
+            GenePool = this.GenePool,
+            Generation = this.Generation
         };
 
         return JsonConvert.SerializeObject(obj, settings);
+    }
+    
+    public void FromJson(string json)
+    {
+        var individual =  JsonConvert.DeserializeObject<Individual>(json);
+        Fitness = individual.Fitness;
+        GenePool = individual.GenePool;
     }
 }

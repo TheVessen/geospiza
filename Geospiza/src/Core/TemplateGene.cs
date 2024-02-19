@@ -22,7 +22,7 @@ public class TemplateGene
     
     //GenePool relevant properties
     private dynamic _genPoolList;
-    private int _genePoolIndex = -1;
+    public int GenePoolIndex { get; private set; }
     
     public TemplateGene(Dictionary<Guid, GH_NumberSlider> geneSliders, Dictionary<Guid, dynamic> genePools)
     {
@@ -33,7 +33,7 @@ public class TemplateGene
     public TemplateGene(dynamic genPoolList, int geneIndex)
     {
         _genPoolList = genPoolList;
-        _genePoolIndex = geneIndex;
+        GenePoolIndex = geneIndex;
         TickCount = genPoolList.TickCount;
         GeneGuid = Guid.NewGuid();
         Type = genPoolList.GetType();
@@ -65,7 +65,7 @@ public class TemplateGene
         }
         else
         {
-            if (_allGenePools != null) _allGenePools[GhInstanceGuid].set_TickValue(_genePoolIndex, tickValue);
+            if (_allGenePools != null) _allGenePools[GhInstanceGuid].set_TickValue(GenePoolIndex, tickValue);
             TickValue = tickValue;
             if (_allGenePools != null) _allGenePools[GhInstanceGuid].ExpireSolutionTopLevel(false);
         }

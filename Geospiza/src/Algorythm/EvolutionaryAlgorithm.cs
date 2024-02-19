@@ -43,6 +43,11 @@ public class EvolutionaryAlgorithm : EvolutionBlueprint
                         MutationStrategy.Mutate(child);
                     }
 
+                    foreach (var ind in matingPool)
+                    {
+                        ind.SetGeneration(i+1);
+                    }
+
                     // Add children to the new population
                     newPopulation.AddIndividuals(children);
                 }
@@ -80,6 +85,6 @@ public class EvolutionaryAlgorithm : EvolutionBlueprint
 
         //At end of algorithm, reinstate the best individual
         var best = Population.SelectTopIndividuals(1);
-        best.Inhabitants[0].Reinstate();
+        best[0].Reinstate();
     }
 }

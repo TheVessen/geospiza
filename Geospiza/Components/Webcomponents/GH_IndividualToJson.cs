@@ -1,22 +1,23 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
-using Geospiza.Strategies.Mutation;
+using Geospiza.Core;
 using Grasshopper.Kernel;
+using Grasshopper.Kernel.Types;
 using Rhino.Geometry;
 
-namespace Geospiza;
+namespace Geospiza.Comonents;
 
-public class GH_FixedValueMutation : GH_Component
+public class IndividualToJson : GH_Component
 {
 
     /// <summary>
-    /// Initializes a new instance of the FixedValueMutation class.
+    /// Initializes a new instance of the IndividualToJson class.
     /// </summary>
-    public GH_FixedValueMutation()
-        : base("FixedValueMutation", "FVM",
-            "Performs a fixed value mutation",
-            "Geospiza", "MutationStrategies")
+    public IndividualToJson()
+        : base("IndividualToJson", "Nickname",
+            "Converts an individual to a JSON string",
+            "Geospiza", "Webcomponents")
     {
     }
 
@@ -25,8 +26,7 @@ public class GH_FixedValueMutation : GH_Component
     /// </summary>
     protected override void RegisterInputParams(GH_InputParamManager pManager)
     {
-        pManager.AddNumberParameter("MutationRate", "MR", "The mutation rate", GH_ParamAccess.item, 0.01);
-        pManager.AddNumberParameter("MutationValue", "V", "The value to mutate to", GH_ParamAccess.item, 0.1);
+        pManager.AddGenericParameter("Individual", "I", "The individual to convert to JSON", GH_ParamAccess.item);
     }
 
     /// <summary>
@@ -34,8 +34,9 @@ public class GH_FixedValueMutation : GH_Component
     /// </summary>
     protected override void RegisterOutputParams(GH_OutputParamManager pManager)
     {
-        pManager.AddGenericParameter("MutationStrategy", "MS", "The mutation strategy", GH_ParamAccess.item);
+        pManager.AddTextParameter("JSON", "J", "The JSON string", GH_ParamAccess.item);
     }
+    
 
     /// <summary>
     /// This is the method that actually does the work.
@@ -43,15 +44,20 @@ public class GH_FixedValueMutation : GH_Component
     /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
     protected override void SolveInstance(IGH_DataAccess DA)
     {
-        double mutationRate = 0;
-        double mutationValue = 0;
-        if (!DA.GetData(0, ref mutationRate)) return;
-        if (!DA.GetData(1, ref mutationValue)) return;
+        // Declare a variable for the input
+        GH_ObjectWrapper individualWrapper = new GH_ObjectWrapper();
+        // If the input is not retrieved, return
+        if (!DA.GetData(0, ref individualWrapper)) return;
 
-        var strategy = new FixedValueMutation(mutationRate, Convert.ToInt32(mutationValue));
-
-        DA.SetData(0, strategy);
+        if (individualWrapper.Value is Individual individual)
+        {
+            var json = individual.ToJson();
+        
+            DA.SetData(0, json);
+        }
     }
+    
+    public override GH_Exposure Exposure => GH_Exposure.secondary;
 
     /// <summary>
     /// Provides an Icon for the component.
@@ -71,6 +77,6 @@ public class GH_FixedValueMutation : GH_Component
     /// </summary>
     public override Guid ComponentGuid
     {
-        get { return new Guid("30348E4B-355D-4C85-8A6A-2ED2F7EB002D"); }
+        get { return new Guid("FDB78846-7982-42E4-B8ED-EF37AC136612"); }
     }
 }

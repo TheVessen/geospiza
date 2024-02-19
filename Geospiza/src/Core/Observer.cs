@@ -9,11 +9,10 @@ namespace Geospiza.Core;
 public class Observer
 {
     private static Observer _instance;
-    private const int MaxGenerationsToTrack = 5;
-    public bool IsRunning { get; set; }
-    public int RunGenerations { get; private set; }
+    public int CurrentGeneration { get; private set; }
     public Population CurrentPopulation { get; private set; }
-    public List<double> GenerationFitnessMap { get; private set; }
+    public List<double> AverageGenerationFitnessMap { get; private set; }
+    public List<Individual> BestIndividuals { get; private set; } = new List<Individual>();
 
     public static Observer Instance
     {
@@ -29,30 +28,34 @@ public class Observer
     
     public void FitnessSnapshot(Population currentPopulation)
     {
-        if (GenerationFitnessMap == null)
+        if (AverageGenerationFitnessMap == null)
         {
-            GenerationFitnessMap = new List<double>();
+            AverageGenerationFitnessMap = new List<double>();
         }
         
         var fitness = currentPopulation.GetAverageFitness();
-        GenerationFitnessMap.Add(fitness);
+        AverageGenerationFitnessMap.Add(fitness);
     }
     
     public void SetPopulation(Population population)
     {
         CurrentPopulation = population;
+        var bestIndividual = CurrentPopulation.SelectTopIndividuals(1)[0];
+        
+        BestIndividuals.Add(bestIndividual);
     }
 
     public void UpdateGenerationCounter()
     {
-        RunGenerations++;
+        CurrentGeneration++;
     }
     
     public void Reset()
     {
-        GenerationFitnessMap = new List<double>();
+        AverageGenerationFitnessMap = new List<double>();
         CurrentPopulation = null;
-        RunGenerations = 0;
+        CurrentGeneration = 0;
+        BestIndividuals = new List<Individual>();
     }
     
     public Population GetCurrentPopulation()

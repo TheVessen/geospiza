@@ -12,7 +12,7 @@ public class StateManager
     public GH_Component _thisComponent { get; private set; } = null;
     
     public Fitness FitnessComponent { get; private set; }
-    public Dictionary<Guid, TemplateGene> TemplateGenes { get; private set; }
+    public Dictionary<Guid, TemplateGene> Genotype { get; private set; }
     
     private StateManager() { }
 
@@ -57,11 +57,11 @@ public class StateManager
     
     public void SetGenes(List<string> geneIds)
     {
-        if (TemplateGenes != null)
+        if (Genotype != null)
         {
             return;
         }
-        TemplateGenes = Utils.InitializeGenePool(geneIds, _document);
+        Genotype = Utils.InitializeGenePool(geneIds, _document);
     }
     
     public void SetThisComponent(GH_Component component)

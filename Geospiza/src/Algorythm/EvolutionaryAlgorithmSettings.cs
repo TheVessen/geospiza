@@ -12,7 +12,7 @@ public class EvolutionaryAlgorithmSettings
     public ISelectionStrategy SelectionStrategy { get; init; }
     public ICrossoverStrategy CrossoverStrategy { get; init; }
     public IMutationStrategy MutationStrategy { get; init; }
-    public IPairingStrategy PairingStrategy { get; init; }
+    public PairingStrategy PairingStrategy { get; init; }
     public ITerminationStrategy TerminationStrategy { get; init; }
     public int PopulationSize { get; init; }
     public int MaxGenerations { get; init; }
@@ -28,7 +28,7 @@ public class EvolutionaryAlgorithmSettings
         SelectionStrategy = new TournamentSelection(5,2); // Default selection strategy
         CrossoverStrategy = new TwoPointCrossover(0.7); // Default crossover strategy
         MutationStrategy = new PercentageMutation(0.01, 0.01); // Default mutation strategy
-        PairingStrategy = new InbreedingPairingStrategy(0); // Default pairing strategy
+        PairingStrategy = new PairingStrategy(0); // Default pairing strategy
         TerminationStrategy = new GenerationDiversity(); // Default termination strategy
     }
 }
