@@ -2,8 +2,10 @@
 using System.Collections.Generic;
 using System.Drawing;
 using Geospiza.Strategies.Pairing;
+using GH_IO.Serialization;
 using Grasshopper.Kernel;
 using Rhino.Geometry;
+using System.Windows.Forms;
 
 namespace Geospiza.Comonents.Pairing;
 
@@ -26,6 +28,8 @@ public class GH_InbreedingPairing : GH_Component
     protected override void RegisterInputParams(GH_InputParamManager pManager)
     {
         pManager.AddNumberParameter("InBreedingFactor", "P", "Description", GH_ParamAccess.item, 0);
+        pManager.AddNumberParameter("DistanceFunction", "DF", "The distance function to use. 0 for euclidean, 1 for manhattan", GH_ParamAccess.item, 0);
+        
     }
 
     /// <summary>
@@ -44,6 +48,13 @@ public class GH_InbreedingPairing : GH_Component
     {
         double inBreedingFactor = 0;
         if (!DA.GetData(0, ref inBreedingFactor)) return;
+        double distanceFunction = 0;
+        if (!DA.GetData(1, ref distanceFunction)) return;
+        int distanceFunctionInt = Convert.ToInt32(distanceFunction);
+        if(distanceFunctionInt > 1 || distanceFunctionInt < 0)
+        {
+            AddRuntimeMessage(GH_RuntimeMessageLevel.Error,"Distance function must be 0 or 1");
+        }
         
         var pairing = new PairingStrategy(inBreedingFactor);
         
