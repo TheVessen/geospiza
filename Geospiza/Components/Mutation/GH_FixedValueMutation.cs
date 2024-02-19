@@ -26,7 +26,7 @@ public class GH_FixedValueMutation : GH_Component
     protected override void RegisterInputParams(GH_InputParamManager pManager)
     {
         pManager.AddNumberParameter("MutationRate", "MR", "The mutation rate", GH_ParamAccess.item, 0.01);
-        pManager.AddNumberParameter("MutationValue", "V", "The value to mutate to", GH_ParamAccess.item, 0.1);
+        pManager.AddNumberParameter("MutationValue", "V", "Random int range of Mutation Value(+-MutationValue)", GH_ParamAccess.item, 5);
     }
 
     /// <summary>

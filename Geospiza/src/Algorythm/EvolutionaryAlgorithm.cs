@@ -45,7 +45,7 @@ public class EvolutionaryAlgorithm : EvolutionBlueprint
 
                     foreach (var ind in matingPool)
                     {
-                        ind.SetGeneration(i+1);
+                        ind.SetGeneration(i + 1);
                     }
 
                     // Add children to the new population
