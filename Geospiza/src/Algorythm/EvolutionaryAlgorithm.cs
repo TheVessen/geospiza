@@ -16,24 +16,29 @@ public class EvolutionaryAlgorithm : EvolutionBlueprint
     {
         //Initialize the population
         InitializePopulation();
-        var populationCopy = new Population(Population);
 
         //Run the algorithm
         for (var i = 0; i < MaxGenerations - 1; i++)
         {
+            var populationCopy = new Population(Population);
             //Create a mating pool
             var newPopulation = new Population();
 
             while (newPopulation.Count < PopulationSize)
             {
-                var topIndividuals = SelectTopIndividuals(EliteSize);
-                newPopulation.AddIndividuals(topIndividuals);
+                //Select individuals for mating pool
                 List<Individual> matingPool = SelectionStrategy.Select(populationCopy);
+                
+                //Elitism
+                var elite = SelectTopIndividuals(EliteSize);
+                newPopulation.AddIndividuals(elite);
 
+                //Pair individuals in the mating pool
                 var matingPairs = PairingStrategy.PairIndividuals(matingPool);
 
                 foreach (var pair in matingPairs)
                 {
+                    //Crossover
                     if (!(Random.NextDouble() < CrossoverStrategy.CrossoverRate)) continue;
                     var children = CrossoverStrategy.Crossover(pair.Item1, pair.Item2);
 
@@ -43,6 +48,7 @@ public class EvolutionaryAlgorithm : EvolutionBlueprint
                         MutationStrategy.Mutate(child);
                     }
 
+                    // Set the generation of the children
                     foreach (var ind in matingPool)
                     {
                         ind.SetGeneration(i + 1);
@@ -52,6 +58,7 @@ public class EvolutionaryAlgorithm : EvolutionBlueprint
                     newPopulation.AddIndividuals(children);
                 }
 
+                // Add the mating pool to the new population
                 newPopulation.AddIndividuals(matingPool);
             }
 
@@ -60,7 +67,6 @@ public class EvolutionaryAlgorithm : EvolutionBlueprint
                 // Sort newPopulation based on fitness in ascending order
                 newPopulation.Inhabitants.Sort((inhabitant1, inhabitant2) =>
                     inhabitant1.Fitness.CompareTo(inhabitant2.Fitness));
-
                 // Remove the individuals with the worst fitness
                 int removeCount = newPopulation.Count - PopulationSize;
                 newPopulation.Inhabitants.RemoveRange(PopulationSize, removeCount);

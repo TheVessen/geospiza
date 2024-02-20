@@ -51,6 +51,12 @@ public class TournamentSelection : SelectionStrategy
     private readonly int _tournamentSize;
     private readonly int _numberOfSelections;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="TournamentSelection"/> class.
+    /// </summary>
+    /// <param name="tournamentSize"></param>
+    /// <param name="numberOfSelections"></param>
+    /// <exception cref="ArgumentException"></exception>
     public TournamentSelection(int tournamentSize, int numberOfSelections)
     {
         if (tournamentSize <= 0)
@@ -129,6 +135,11 @@ public class RouletteWheelSelection : SelectionStrategy
 {
     private readonly int _numberOfSelections;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="RouletteWheelSelection"/> class.
+    /// </summary>
+    /// <param name="numberOfSelections"></param>
+    /// <exception cref="ArgumentException"></exception>
     public RouletteWheelSelection(int numberOfSelections)
     {
         if (numberOfSelections <= 0)
@@ -139,6 +150,12 @@ public class RouletteWheelSelection : SelectionStrategy
         this._numberOfSelections = numberOfSelections;
     }
     
+    /// <summary>
+    /// Selects individuals from the population using the roulette wheel selection strategy.
+    /// </summary>
+    /// <param name="population"></param>
+    /// <returns></returns>
+    /// <exception cref="InvalidOperationException"></exception>
     public override List<Individual> Select(Population population)
     {
         var selectedIndividuals = new List<Individual>();
@@ -192,6 +209,11 @@ public class PoolSelection : SelectionStrategy
 {
     private readonly int _numberOfSelections;
     
+    /// <summary>
+    /// Initializes a new instance of the <see cref="PoolSelection"/> class.
+    /// </summary>
+    /// <param name="numberOfSelections"></param>
+    /// <exception cref="ArgumentException"></exception>
     public PoolSelection(int numberOfSelections)
     {
         if (numberOfSelections <= 0)
@@ -202,6 +224,12 @@ public class PoolSelection : SelectionStrategy
         _numberOfSelections = numberOfSelections;
     }
     
+    /// <summary>
+    /// Selects individuals from the population using the pool selection strategy.
+    /// </summary>
+    /// <param name="population"></param>
+    /// <returns></returns>
+    /// <exception cref="ArgumentException"></exception>
     public override List<Individual> Select(Population population)
     {
         // Validate inputs
@@ -250,10 +278,16 @@ public class PoolSelection : SelectionStrategy
 /// Note: This selection method maintains maximum diversity in the population as it gives all individuals an equal chance of being selected.
 /// However, it does not favor fitter individuals, which can slow the algorithm's convergence to optimal solutions.
 /// </remarks>
+[Obsolete("Due to bad performance, this class is marked as obsolete and will be removed in the future. Use one of the other selections instead.")]
 public class IsotropicSelection : SelectionStrategy
 {
     private readonly int _numberOfSelections;
     
+    /// <summary>
+    /// Initializes a new instance of the <see cref="IsotropicSelection"/> class.
+    /// </summary>
+    /// <param name="numberOfSelections"></param>
+    /// <exception cref="ArgumentException"></exception>
     public IsotropicSelection(int numberOfSelections)
     {
         if (numberOfSelections <= 0)
@@ -264,6 +298,11 @@ public class IsotropicSelection : SelectionStrategy
         this._numberOfSelections = numberOfSelections;
     }
     
+    /// <summary>
+    /// Selects individuals from the population using the isotropic selection strategy.
+    /// </summary>
+    /// <param name="population"></param>
+    /// <returns></returns>
     public override List<Individual> Select(Population population)
     {
         var selectedIndividuals = new List<Individual>();
@@ -295,6 +334,7 @@ public class IsotropicSelection : SelectionStrategy
 /// Note: This selection method can lead to premature convergence as it heavily favors
 /// the fittest individuals. However, it can also speed up the algorithm's convergence to optimal solutions.
 /// </remarks>
+[Obsolete("Due to bad performance, this class is marked as obsolete and will be removed in the future. Use one of the other selections instead.")]
 public class ExclusiveSelection : SelectionStrategy
 {
     /// <summary>
@@ -303,6 +343,12 @@ public class ExclusiveSelection : SelectionStrategy
     private readonly double _topPercentage;
     private readonly int _numberOfSelections;
 
+    /// <summary>
+    ///  Initializes a new instance of the <see cref="ExclusiveSelection"/> class.
+    /// </summary>
+    /// <param name="topPercentage"></param>
+    /// <param name="numberOfSelections"></param>
+    /// <exception cref="ArgumentException"></exception>
     public ExclusiveSelection(double topPercentage, int numberOfSelections)
     {
         if (topPercentage is <= 0 or > 1)
@@ -314,6 +360,11 @@ public class ExclusiveSelection : SelectionStrategy
         _numberOfSelections = numberOfSelections;
     }
 
+    /// <summary>
+    ///  Selects individuals from the population using the exclusive selection strategy.
+    /// </summary>
+    /// <param name="population"></param>
+    /// <returns></returns>
     public override List<Individual> Select(Population population)
     {
         var selectedIndividuals = new List<Individual>();
@@ -353,6 +404,11 @@ public class BiasedSelection : SelectionStrategy
 {
     private readonly int _numberOfSelections;
     
+    /// <summary>
+    ///  Initializes a new instance of the <see cref="BiasedSelection"/> class.
+    /// </summary>
+    /// <param name="numberOfSelections"></param>
+    /// <exception cref="ArgumentException"></exception>
     public BiasedSelection(int numberOfSelections)
     {
         if (numberOfSelections <= 0)
@@ -363,6 +419,11 @@ public class BiasedSelection : SelectionStrategy
         this._numberOfSelections = numberOfSelections;
     }
     
+    /// <summary>
+    ///  Selects individuals from the population using the biased selection strategy.
+    /// </summary>
+    /// <param name="population"></param>
+    /// <returns></returns>
     public override List<Individual> Select(Population population)
     {
         var selectedIndividuals = new List<Individual>();
@@ -376,6 +437,79 @@ public class BiasedSelection : SelectionStrategy
             foreach (var individual in population.Inhabitants)
             {
                 runningSum += individual.Fitness;
+                if (runningSum >= selectionPoint)
+                {
+                    selectedIndividuals.Add(individual);
+                    break;
+                }
+            }
+        }
+
+        return selectedIndividuals;
+    }
+}
+
+/// <summary>
+/// Implements the Stochastic Universal Sampling (SUS) strategy for selecting individuals in a genetic algorithm.
+/// </summary>
+/// <remarks>
+/// Stochastic Universal Sampling is a method used in genetic algorithms for selecting potentially useful solutions for recombination.
+/// It is a type of fitness proportionate selection. The main advantage of SUS over simple roulette wheel selection is
+/// that it ensures a spread of selection points, which promotes preservation of diversity.
+///
+/// In SUS, the fitness of each individual is used to assign a probability of selection. However, instead of selecting
+/// individuals one at a time, SUS selects all individuals at once by spreading out evenly spaced pointers over the population's
+/// fitness values sorted in ascending order. This ensures a more even spread of selection points and helps maintain diversity in the population.
+///
+/// This class requires the number of selections to be made as a parameter.
+/// The Select method calculates the total fitness of the population, generates a random starting point, and then selects individuals based on their proportional fitness.
+/// The starting point is incremented by a fixed distance for each selection, ensuring a spread of selection points across the population.
+///
+/// Note: This selection method maintains diversity in the population as it gives all individuals,
+/// regardless of their fitness, a chance to be selected. However, it also ensures that fitter individuals have a higher chance of being selected.
+/// </remarks>
+public class StochasticUniversalSampling : SelectionStrategy
+{
+    /// <summary>
+    /// The number of selections to be made in the SUS process.
+    /// </summary>
+    private readonly int _numberOfSelections;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="StochasticUniversalSampling"/> class.
+    /// </summary>
+    /// <param name="numberOfSelections">The number of selections to be made.</param>
+    public StochasticUniversalSampling(int numberOfSelections)
+    {
+        if (numberOfSelections <= 0)
+        {
+            throw new ArgumentException("Number of selections must be greater than 0");
+        }
+
+        this._numberOfSelections = numberOfSelections;
+    }
+
+    /// <summary>
+    /// Selects individuals from the population using the Stochastic Universal Sampling strategy.
+    /// </summary>
+    /// <param name="population">The population from which to select individuals.</param>
+    /// <returns>A list of selected individuals.</returns>
+    public override List<Individual> Select(Population population)
+    {
+        var selectedIndividuals = new List<Individual>();
+        var totalFitness = population.Inhabitants.Sum(individual => individual.Fitness);
+
+        double distance = 1.0 / _numberOfSelections;
+        double start = Random.NextDouble() * distance;
+
+        for (int i = 0; i < _numberOfSelections; i++)
+        {
+            double selectionPoint = start + i * distance;
+            double runningSum = 0;
+
+            foreach (var individual in population.Inhabitants)
+            {
+                runningSum += individual.Fitness / totalFitness;
                 if (runningSum >= selectionPoint)
                 {
                     selectedIndividuals.Add(individual);

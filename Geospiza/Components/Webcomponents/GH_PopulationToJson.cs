@@ -56,7 +56,7 @@ public class PopulationToJSON : GH_Component
         }
     }
     
-    public override GH_Exposure Exposure => GH_Exposure.secondary;
+    public override GH_Exposure Exposure => GH_Exposure.hidden;
 
     /// <summary>
     /// Provides an Icon for the component.

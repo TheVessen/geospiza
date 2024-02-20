@@ -145,12 +145,12 @@ public class Settings : GH_Component
         
         DA.SetData(0, settings);
     }
-    public override GH_Exposure Exposure => GH_Exposure.secondary;
+    public override GH_Exposure Exposure => GH_Exposure.primary;
 
     /// <summary>
     /// Provides an Icon for the component.
     /// </summary>
-    protected override Bitmap Icon => Properties.Resources.SettingsIcon;
+    protected override Bitmap Icon => Properties.Resources.Settings;
 
     /// <summary>
     /// Gets the unique ID for this component. Do not change this ID after release.

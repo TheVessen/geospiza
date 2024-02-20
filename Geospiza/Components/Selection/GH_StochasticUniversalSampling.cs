@@ -5,17 +5,17 @@ using Geospiza.Strategies.Selection;
 using Grasshopper.Kernel;
 using Rhino.Geometry;
 
-namespace Geospiza.Comonents.Selection;
+namespace Geospiza.Components.Selection;
 
-public class GH_RouletteWheelSelection : GH_Component
+public class GH_StochasticUniversalSampling : GH_Component
 {
 
     /// <summary>
-    /// Initializes a new instance of the TournamentSelection class.
+    /// Initializes a new instance of the GH_StochasticUniversalSampling class.
     /// </summary>
-    public GH_RouletteWheelSelection()
-        : base("RouletteWheelSelection", "RWS",
-            "Performs a roulette wheel selection",
+    public GH_StochasticUniversalSampling()
+        : base("StochasticUniversalSampling", "SUS",
+            "Performs a Stochastic Universal Sampling",
             "Geospiza", "SelectionStrategy")
     {
     }
@@ -25,8 +25,7 @@ public class GH_RouletteWheelSelection : GH_Component
     /// </summary>
     protected override void RegisterInputParams(GH_InputParamManager pManager)
     {
-          pManager.AddNumberParameter("SelectionSize", "SS", "The size of the selection", GH_ParamAccess.item, 2);
- 
+        pManager.AddNumberParameter("SelectionSize", "SS", "The size of the selection", GH_ParamAccess.item, 2);
     }
 
     /// <summary>
@@ -45,27 +44,32 @@ public class GH_RouletteWheelSelection : GH_Component
     {
         double selectionSize = 0;
         if (!DA.GetData(0, ref selectionSize)) return;
-        
-        var selectionSizeInt = Convert.ToInt32(selectionSize);
-        
-        var selection = new RouletteWheelSelection(selectionSizeInt);
-        
-        DA.SetData(0, selection);
 
+        var selectionSizeInt = Convert.ToInt32(selectionSize);
+
+        var selection = new StochasticUniversalSampling(selectionSizeInt);
+
+        DA.SetData(0, selection);
     }
-    
-    public override GH_Exposure Exposure => GH_Exposure.primary;
 
     /// <summary>
     /// Provides an Icon for the component.
     /// </summary>
-    protected override Bitmap Icon => Properties.Resources.RouletSelection;
+    protected override Bitmap Icon
+    {
+        get
+        {
+            //You can add image files to your project resources and access them like this:
+            // return Resources.IconForThisComponent;
+            return null;
+        }
+    }
 
     /// <summary>
     /// Gets the unique ID for this component. Do not change this ID after release.
     /// </summary>
     public override Guid ComponentGuid
     {
-        get { return new Guid("BFD3F3A2-8FBE-4FE0-44EE-6E02E9402F43"); }
+        get { return new Guid("03256F11-0CF3-4547-986A-F16EBC2CC6A5"); }
     }
 }

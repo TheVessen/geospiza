@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using Geospiza.Core;
 
 namespace Geospiza.Strategies.Mutation;
@@ -29,11 +30,30 @@ public class FixedValueMutation : MutationStrategy
 
     public override void Mutate(Individual individual)
     {
+        var lastGenerationMax = Observer.Instance?.CurrentPopulation.Inhabitants.Max(ind => ind.Fitness);
+
         for (var i = 0; i < individual.GenePool.Count; i++)
         {
-            if (!(Random.NextDouble() < MutationRate)) continue;
             var currentValue = individual.GenePool[i].TickValue;
-            var newValue = currentValue + Random.Next(-_mutationValue, _mutationValue + 1);
+            var newValue = currentValue;
+
+            // If the individual's fitness is high ranked 
+            if (individual.Fitness >= lastGenerationMax * 0.8)
+            {
+                if (Random.NextDouble() < MutationRate)
+                {
+                    newValue = currentValue + Random.Next(-_mutationValue, _mutationValue + 1);
+                }
+            }
+            // If the individual's fitness is low ranked
+            else
+            {
+                if (Random.NextDouble() < MutationRate)
+                {
+                    // Multiply the mutation by a relative factor (e.g., 2)
+                    newValue = currentValue + 2 * Random.Next(-_mutationValue, _mutationValue + 1);
+                }
+            }
 
             // Ensure the new value is within bounds
             newValue = Math.Max(0, Math.Min(newValue, individual.GenePool[i].TickCount));

@@ -28,10 +28,38 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- Resource file with its code generator and output -->
     <EmbeddedResource Update="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+
+    <!-- Embedded resource files -->
+    <EmbeddedResource Include="Resources\Icons\Fitness.png" />
+    <EmbeddedResource Include="Resources\Icons\FixValueMutation.png" />
+    <EmbeddedResource Include="Resources\Icons\GeenePool.png" />
+    <EmbeddedResource Include="Resources\Icons\GeneSelector.png" />
+    <EmbeddedResource Include="Resources\Icons\InBreedingStrategy.png" />
+    <EmbeddedResource Include="Resources\Icons\Individual.png" />
+    <EmbeddedResource Include="Resources\Icons\Observer.png" />
+    <EmbeddedResource Include="Resources\Icons\PercentageMutation.png" />
+    <EmbeddedResource Include="Resources\Icons\RouletSelection.png" />
+    <EmbeddedResource Include="Resources\Icons\Settings.png" />
+    <EmbeddedResource Include="Resources\Icons\SinglePointCrosover.png" />
+    <EmbeddedResource Include="Resources\Icons\Solver.png" />
+    <EmbeddedResource Include="Resources\Icons\ThreeMaterial.png" />
+    <EmbeddedResource Include="Resources\Icons\TournamentSelection.png" />
+    <EmbeddedResource Include="Resources\Icons\TwoPointCrosover.png" />
+    <EmbeddedResource Include="Resources\Icons\Weblink.png" />
+    <EmbeddedResource Include="Resources\Icons\BiasSelection.png" />
+    <EmbeddedResource Include="Resources\Icons\IndividualToJSON.png" />
+    <EmbeddedResource Include="Resources\Icons\PoolSelection.png" />
+    <EmbeddedResource Include="Resources\Icons\ReinstateIndividuum.png" />
+    <EmbeddedResource Include="Resources\Icons\TerminationGenetic.png" />
+
+<!--    <EmbeddedResource Include="Resources\Icons\*.png">-->
+<!--      <CopyToOutputDirectory>Always</CopyToOutputDirectory>-->
+<!--    </EmbeddedResource>-->
   </ItemGroup>
 
 

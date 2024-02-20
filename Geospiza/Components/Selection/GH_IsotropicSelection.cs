@@ -52,6 +52,8 @@ public class GH_IsotropicSelection : GH_Component
         DA.SetData(0, selection);
     }
 
+    public override GH_Exposure Exposure => GH_Exposure.hidden;
+
     /// <summary>
     /// Provides an Icon for the component.
     /// </summary>

@@ -2,6 +2,7 @@
 using Grasshopper.Kernel;
 using System;
 using System.Drawing;
+using Geospiza.Properties;
 
 namespace Geospiza
 {
@@ -10,7 +11,7 @@ namespace Geospiza
         public override string Name => "Geospiza";
 
         //Return a 24x24 pixel bitmap to represent this GHA library.
-        public override Bitmap Icon => Properties.Resources.MainIcon;
+        public override Bitmap Icon => Properties.Resources.Solver;
 
         //Return a short string describing the purpose of this GHA library.
         public override string Description => "A library for evolutionary algorithms in Grasshopper";
@@ -24,7 +25,15 @@ namespace Geospiza
         public override string AuthorContact => "felixbrunold@vektornode.com";
         
         public override string Version => "0.1.0";
-        
+        public class Geospiza : GH_AssemblyPriority
+        {
+            public override GH_LoadingInstruction PriorityLoad()
+            {
+                Instances.ComponentServer.AddCategoryIcon("Geospiza", Resources.Solver);
+                Instances.ComponentServer.AddCategorySymbolName("Geospiza", 'G');
+                return GH_LoadingInstruction.Proceed;
+            }
+        }
         
     }
 }

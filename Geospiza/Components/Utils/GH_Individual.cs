@@ -36,7 +36,6 @@ public class GH_Individual : GH_Component
     protected override void RegisterOutputParams(GH_OutputParamManager pManager)
     {
         pManager.AddNumberParameter("Fitness", "F", "The fitness value", GH_ParamAccess.item);
-        pManager.AddNumberParameter("Ticks", "T", "The number of ticks", GH_ParamAccess.list);
         
     }
 
@@ -51,23 +50,14 @@ public class GH_Individual : GH_Component
         var individual = individualWrapper.Value as Individual;
         
         DA.SetData(0, individual.Fitness);
-        DA.SetDataList(1,individual.GenePool.Select(gene => gene.TickValue), 1);
     }
 
-    public override GH_Exposure Exposure => GH_Exposure.secondary;
+    public override GH_Exposure Exposure => GH_Exposure.tertiary;
 
     /// <summary>
     /// Provides an Icon for the component.
     /// </summary>
-    protected override Bitmap Icon
-    {
-        get
-        {
-            //You can add image files to your project resources and access them like this:
-            // return Resources.IconForThisComponent;
-            return null;
-        }
-    }
+    protected override Bitmap Icon => Properties.Resources.Individual;
 
     /// <summary>
     /// Gets the unique ID for this component. Do not change this ID after release.

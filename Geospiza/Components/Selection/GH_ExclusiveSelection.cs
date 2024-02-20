@@ -7,6 +7,10 @@ using Rhino.Geometry;
 
 namespace Geospiza;
 
+
+/// <summary>
+/// 
+/// </summary>
 public class GH_ExclusiveSelection : GH_Component
 {
 
@@ -54,6 +58,8 @@ public class GH_ExclusiveSelection : GH_Component
         
         DA.SetData(0, selection);
     }
+    
+    public override GH_Exposure Exposure => GH_Exposure.hidden;
 
     /// <summary>
     /// Provides an Icon for the component.

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using Geospiza;
 using Geospiza.Core;
@@ -180,15 +181,13 @@ namespace Geospiza.Comonents
         }
 
 
-        public List<double> Solution { get; set; } = new List<double>();
-
         /// <summary>
         /// ProviIdes an Icon for every component that will be visible in the User Interface.
         /// Icons need to be 24x24 pixels.
         /// You can add image files to your project resources and access them like this:
         /// return Resources.IconForThisComponent;
         /// </summary>
-        protected override System.Drawing.Bitmap Icon => null;
+        protected override Bitmap Icon => Properties.Resources.Weblink;
 
         /// <summary>
         /// Each component must have a unique Guid to identify it. 
