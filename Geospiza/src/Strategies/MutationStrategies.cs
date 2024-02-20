@@ -34,30 +34,12 @@ public class FixedValueMutation : MutationStrategy
 
         for (var i = 0; i < individual.GenePool.Count; i++)
         {
+            // if (!(Random.NextDouble() < MutationRate)) continue;
             var currentValue = individual.GenePool[i].TickValue;
-            var newValue = currentValue;
-
-            // If the individual's fitness is high ranked 
-            if (individual.Fitness >= lastGenerationMax * 0.8)
-            {
-                if (Random.NextDouble() < MutationRate)
-                {
-                    newValue = currentValue + Random.Next(-_mutationValue, _mutationValue + 1);
-                }
-            }
-            // If the individual's fitness is low ranked
-            else
-            {
-                if (Random.NextDouble() < MutationRate)
-                {
-                    // Multiply the mutation by a relative factor (e.g., 2)
-                    newValue = currentValue + 2 * Random.Next(-_mutationValue, _mutationValue + 1);
-                }
-            }
-
+            var newValue = currentValue + Random.Next(-_mutationValue, _mutationValue + 1);
+            
             // Ensure the new value is within bounds
             newValue = Math.Max(0, Math.Min(newValue, individual.GenePool[i].TickCount));
-
             individual.GenePool[i].MutatedValue(newValue);
         }
     }
@@ -81,7 +63,7 @@ public class PercentageMutation : MutationStrategy
     {
         foreach (var t in individual.GenePool)
         {
-            if (!(Random.NextDouble() < MutationRate)) continue;
+            // if (!(Random.NextDouble() < MutationRate)) continue;
             var currentValue = t.TickValue;
             var mutationAmount = (int)(currentValue * _mutationPercentage);
             var newValue = currentValue + Random.Next(-mutationAmount, mutationAmount + 1);

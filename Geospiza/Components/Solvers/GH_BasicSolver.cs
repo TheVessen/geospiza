@@ -77,6 +77,8 @@ public class GH_BasicSolver : GH_Component
         // Set up state manager
         StateManager stateManager = StateManager.Instance;
         stateManager.SetDocument(OnPingDocument());
+        
+        //TODO fix when slider is added or removed
         stateManager.SetGenes(geneIds);
         stateManager.SetThisComponent(this);
 

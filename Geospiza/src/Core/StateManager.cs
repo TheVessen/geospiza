@@ -57,10 +57,11 @@ public class StateManager
     
     public void SetGenes(List<string> geneIds)
     {
-        if (Genotype != null)
+        if (Genotype.Count == geneIds.Count)
         {
             return;
         }
+
         Genotype = Utils.InitializeGenePool(geneIds, _document);
     }
     
@@ -72,5 +73,4 @@ public class StateManager
         }
         _thisComponent = component;
     }
-    
 }

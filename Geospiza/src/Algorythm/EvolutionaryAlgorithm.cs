@@ -28,7 +28,7 @@ public class EvolutionaryAlgorithm : EvolutionBlueprint
             {
                 //Select individuals for mating pool
                 List<Individual> matingPool = SelectionStrategy.Select(populationCopy);
-                
+
                 //Elitism
                 var elite = SelectTopIndividuals(EliteSize);
                 newPopulation.AddIndividuals(elite);
@@ -43,7 +43,8 @@ public class EvolutionaryAlgorithm : EvolutionBlueprint
                     var children = CrossoverStrategy.Crossover(pair.Item1, pair.Item2);
 
                     // Apply mutation to each child
-                    foreach (var child in children.Where(child => Random.NextDouble() < MutationStrategy.MutationRate))
+                    foreach (var child in children.Where(child =>
+                                 Random.NextDouble() < MutationStrategy.MutationRate))
                     {
                         MutationStrategy.Mutate(child);
                     }
