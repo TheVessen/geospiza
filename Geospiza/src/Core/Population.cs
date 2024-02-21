@@ -60,6 +60,22 @@ public class Population
     {
         return CalculateTotalFitness() / Count;
     }
+    
+    public int GetDiversity()
+    {
+        int diversity = 0;
+        HashSet<int> uniqueHashes = new HashSet<int>();
+
+        foreach (var individual in Inhabitants)
+        {
+            if (uniqueHashes.Add(individual.GetHashCode()))
+            {
+                diversity++;
+            }
+        }
+
+        return diversity;
+    }
 
     public List<Individual> SelectTopIndividuals(int eliteSize)
     {

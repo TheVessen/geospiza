@@ -43,7 +43,6 @@ public abstract class EvolutionBlueprint : IEvolutionarySolver
     protected EvolutionBlueprint(EvolutionaryAlgorithmSettings settings)
     {
         Observer = Observer.Instance;
-
         PopulationSize = settings.PopulationSize;
         MaxGenerations = settings.MaxGenerations;
         EliteSize = settings.EliteSize;

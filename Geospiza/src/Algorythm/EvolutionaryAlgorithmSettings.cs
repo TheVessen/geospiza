@@ -29,6 +29,6 @@ public class EvolutionaryAlgorithmSettings
         CrossoverStrategy = new TwoPointCrossover(0.7); // Default crossover strategy
         MutationStrategy = new PercentageMutation(0.01, 0.01); // Default mutation strategy
         PairingStrategy = new PairingStrategy(0); // Default pairing strategy
-        TerminationStrategy = new GenerationDiversity(); // Default termination strategy
+        TerminationStrategy = new ProgressConvergence(); // Default termination strategy
     }
 }

@@ -87,6 +87,19 @@ public class Individual
         }
     }
     
+    public override int GetHashCode()
+    {
+        int hash = 17;
+
+        foreach (var gene in GenePool)
+        {
+            hash = hash * 31 + gene.GetHashCode();
+        }
+        hash = hash * 31 + Fitness.GetHashCode();
+
+        return hash;
+    }
+    
     public string ToJson()
     {
         var settings = new JsonSerializerSettings

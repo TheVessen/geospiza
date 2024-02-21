@@ -7,15 +7,15 @@ using Rhino.Geometry;
 
 namespace Geospiza;
 
-public class GH_GeneticDiverity : GH_Component
+public class GH_ProgressConvergence : GH_Component
 {
 
     /// <summary>
     /// Initializes a new instance of the GH_GeneticDiverity class.
     /// </summary>
-    public GH_GeneticDiverity()
-        : base("GeneticDiverity", "GD",
-            "Terminates the genetic algorithm when the genetic diversity is below a certain threshold",
+    public GH_ProgressConvergence()
+        : base("ProgressConvergence", "PC",
+            "Terminates the genetic algorithm when the progress over the last 5 generations is below a certain threshold",
             "Geospiza", "TerminationStrategies")
     {
     }
@@ -44,7 +44,7 @@ public class GH_GeneticDiverity : GH_Component
     {
         double threshold = 0;
         if (!DA.GetData(0, ref threshold)) return;
-        DA.SetData(0, new GenerationDiversity(threshold));
+        DA.SetData(0, new ProgressConvergence(threshold));
     }
 
     /// <summary>

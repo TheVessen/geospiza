@@ -63,14 +63,16 @@ public class PercentageMutation : MutationStrategy
     {
         foreach (var t in individual.GenePool)
         {
-            // if (!(Random.NextDouble() < MutationRate)) continue;
+            
             var currentValue = t.TickValue;
             var mutationAmount = (int)(currentValue * _mutationPercentage);
             var newValue = currentValue + Random.Next(-mutationAmount, mutationAmount + 1);
 
-            // Ensure the new value is within bounds
-            newValue = Math.Max(1, Math.Min(newValue, t.TickCount));
-
+            while (newValue < 0 || newValue > t.TickCount)
+            {
+                newValue = currentValue + Random.Next(-mutationAmount, mutationAmount + 1);
+            }
+            
             t.MutatedValue(newValue);
         }
     }

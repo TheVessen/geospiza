@@ -63,4 +63,14 @@ public class Gene
         return JsonConvert.SerializeObject(obj, settings);
     }
     
+    public override int GetHashCode()
+    {
+        int hash = 17;
+
+        hash = hash * 31 + GeneGuid.GetHashCode();
+        hash = hash * 31 + TickValue.GetHashCode();
+
+        return hash;
+    }
+    
 }

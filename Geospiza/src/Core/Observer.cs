@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Geospiza.Comonents;
 using Geospiza.Strategies;
 using Geospiza.Strategies.Termination;
 
@@ -11,7 +12,11 @@ public class Observer
     private static Observer _instance;
     public int CurrentGeneration { get; private set; }
     public Population CurrentPopulation { get; private set; }
-    public List<double> AverageGenerationFitnessMap { get; private set; }
+    public List<double> AverageFitness { get; private set; } = new List<double>();
+    public List<double> BestFitness { get; private set; } = new List<double>();
+    public List<double> WorstFitness { get; private set; }  = new List<double>();
+    public List<double> TotalFitness { get; private set; } = new List<double>();
+    public List<int> Diversity { get; private set; }    
     public List<Individual> BestIndividuals { get; private set; } = new List<Individual>();
 
     public static Observer Instance
@@ -28,13 +33,27 @@ public class Observer
     
     public void FitnessSnapshot(Population currentPopulation)
     {
-        if (AverageGenerationFitnessMap == null)
+        if (BestFitness == null)
         {
-            AverageGenerationFitnessMap = new List<double>();
+            BestFitness = new List<double>();
+        }
+        if (WorstFitness == null)
+        {
+            WorstFitness = new List<double>();
+        }
+        if (AverageFitness == null)
+        {
+            AverageFitness = new List<double>();
+        } 
+        if (TotalFitness == null)
+        {
+            TotalFitness = new List<double>();
         }
         
-        var fitness = currentPopulation.GetAverageFitness();
-        AverageGenerationFitnessMap.Add(fitness);
+        BestFitness.Add(currentPopulation.Inhabitants.Max(inh => inh.Fitness));
+        WorstFitness.Add(currentPopulation.Inhabitants.Min(inh => inh.Fitness));
+        AverageFitness.Add(currentPopulation.GetAverageFitness());
+        TotalFitness.Add(currentPopulation.CalculateTotalFitness());
     }
     
     public void SetPopulation(Population population)
@@ -52,7 +71,7 @@ public class Observer
     
     public void Reset()
     {
-        AverageGenerationFitnessMap = new List<double>();
+        AverageFitness = new List<double>();
         CurrentPopulation = null;
         CurrentGeneration = 0;
         BestIndividuals = new List<Individual>();

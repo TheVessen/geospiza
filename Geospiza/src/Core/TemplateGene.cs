@@ -16,20 +16,20 @@ public class TemplateGene
     public int TickCount { get; private set; }
     private static Dictionary<Guid, GH_NumberSlider> _allSliders;
     private static Dictionary<Guid, dynamic> _allGenePools;
-    
+
     //Slider relevant properties
     private GH_NumberSlider _slider;
-    
+
     //GenePool relevant properties
     private dynamic _genPoolList;
     public int GenePoolIndex { get; private set; }
-    
+
     public TemplateGene(Dictionary<Guid, GH_NumberSlider> geneSliders, Dictionary<Guid, dynamic> genePools)
     {
         _allSliders = geneSliders;
         _allGenePools = genePools;
     }
-    
+
     public TemplateGene(dynamic genPoolList, int geneIndex)
     {
         _genPoolList = genPoolList;
@@ -40,7 +40,7 @@ public class TemplateGene
         Name = genPoolList.NickName;
         GhInstanceGuid = genPoolList.InstanceGuid;
     }
-    
+
     public TemplateGene(GH_NumberSlider slider)
     {
         _slider = slider;
@@ -50,15 +50,15 @@ public class TemplateGene
         GhInstanceGuid = slider.InstanceGuid;
         Name = slider.NickName;
     }
-    
+
     public void SetTickValue(int tickValue)
     {
-        if(_allSliders == null && _allGenePools == null)
+        if (_allSliders == null && _allGenePools == null)
         {
             throw new Exception("Gene class has not been initialized with a dictionary of sliders and gene pools.");
         }
-        
-        if(Type == typeof(GH_NumberSlider))
+
+        if (Type == typeof(GH_NumberSlider))
         {
             if (_allSliders != null) _allSliders[GhInstanceGuid].TickValue = tickValue;
             TickValue = tickValue;
@@ -70,4 +70,5 @@ public class TemplateGene
             if (_allGenePools != null) _allGenePools[GhInstanceGuid].ExpireSolutionTopLevel(false);
         }
     }
+
 }

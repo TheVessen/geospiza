@@ -16,7 +16,6 @@ namespace Geospiza.Comonents;
 
 public class Settings : GH_Component
 {
-
     /// <summary>
     /// Initializes a new instance of the Settings class.
     /// </summary>
@@ -33,14 +32,16 @@ public class Settings : GH_Component
     protected override void RegisterInputParams(GH_InputParamManager pManager)
     {
         pManager.AddNumberParameter("PopulationSize", "PS", "The size of the population", GH_ParamAccess.item, 50);
-        pManager.AddNumberParameter("MaxGenerations", "MG", "The maximum number of generations", GH_ParamAccess.item,100);
-        pManager.AddNumberParameter("EliteSize", "ES", "The number of elite individuals. If 0 no elite will be picked", GH_ParamAccess.item, 0);
+        pManager.AddNumberParameter("MaxGenerations", "MG", "The maximum number of generations", GH_ParamAccess.item,
+            100);
+        pManager.AddNumberParameter("EliteSize", "ES", "The number of elite individuals. If 0 no elite will be picked",
+            GH_ParamAccess.item, 0);
         pManager.AddGenericParameter("SelectionStrategy", "SS", "The selection strategy", GH_ParamAccess.item);
         pManager.AddGenericParameter("PairingStrategy", "PS", "The pairing strategy", GH_ParamAccess.item);
         pManager.AddGenericParameter("CrossoverStrategy", "CS", "The crossover strategy", GH_ParamAccess.item);
         pManager.AddGenericParameter("MutationStrategy", "MS", "The mutation strategy", GH_ParamAccess.item);
         pManager.AddGenericParameter("TerminationStrategy", "TS", "The termination strategy", GH_ParamAccess.item);
-        
+
         pManager[3].Optional = true;
         pManager[4].Optional = true;
         pManager[5].Optional = true;
@@ -53,7 +54,8 @@ public class Settings : GH_Component
     /// </summary>
     protected override void RegisterOutputParams(GH_OutputParamManager pManager)
     {
-        pManager.AddGenericParameter("Settings", "S", "The settings for the evolutionary algorithm", GH_ParamAccess.item);
+        pManager.AddGenericParameter("Settings", "S", "The settings for the evolutionary algorithm",
+            GH_ParamAccess.item);
     }
 
     /// <summary>
@@ -67,7 +69,7 @@ public class Settings : GH_Component
         double eliteSize = 0;
         double mutationRate = 0;
         double crossoverRate = 0;
-        
+
         GH_ObjectWrapper selectionStrategyContainer = null;
         GH_ObjectWrapper pairingStrategyContainer = null;
         GH_ObjectWrapper crossoverStrategyContainer = null;
@@ -79,7 +81,7 @@ public class Settings : GH_Component
         ICrossoverStrategy crossoverStrategy = null;
         IMutationStrategy mutationStrategy = null;
         ITerminationStrategy terminationStrategy = null;
-        
+
         if (!DA.GetData(0, ref populationSize)) return;
         if (!DA.GetData(1, ref maxGenerations)) return;
         if (!DA.GetData(2, ref eliteSize)) return;
@@ -88,49 +90,22 @@ public class Settings : GH_Component
         DA.GetData(5, ref crossoverStrategyContainer);
         DA.GetData(6, ref mutationStrategyContainer);
         DA.GetData(7, ref terminationStrategyContainer);
-        
-        if (selectionStrategyContainer != null)
-        {
-            selectionStrategy = selectionStrategyContainer.Value as ISelectionStrategy;
-        }
-        if (selectionStrategy == null)
-        {
-            selectionStrategy = new TournamentSelection(5, 2); // default selection strategy
-        }
-        if (pairingStrategyContainer != null)
-        {
-            pairingStrategy = pairingStrategyContainer.Value as PairingStrategy;
-        }
-        if (pairingStrategy == null)
-        {
-            pairingStrategy = new PairingStrategy(0.5); // default pairing strategy
-        }
-        if (crossoverStrategyContainer != null)
-        {
-            crossoverStrategy = crossoverStrategyContainer.Value as ICrossoverStrategy;
-        }
-        if (crossoverStrategy == null)
-        {
-            crossoverStrategy = new SinglePointCrossover(0.7); // default crossover strategy
-        }
-        if (mutationStrategyContainer != null)
-        {
-            mutationStrategy = mutationStrategyContainer.Value as IMutationStrategy;
-        }
-        if (mutationStrategy == null)
-        {
-            mutationStrategy = new PercentageMutation(0.01, 0.1); // default mutation strategy
-        }
-        if (terminationStrategyContainer != null)
-        {
-            terminationStrategy = new GenerationDiversity();
-        }
-        
-        if(populationSize <= 0) this.AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Population size must be greater than 0");
-        if(maxGenerations <= 0) this.AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Max generations must be greater than 0");
-        if(mutationRate is < 0 or > 1) this.AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Mutation rate must be between 0 and 1");
-        if(crossoverRate is < 0 or > 1) this.AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Crossover rate must be between 0 and 1");
-        
+
+        selectionStrategy = selectionStrategyContainer?.Value as ISelectionStrategy ?? new TournamentSelection(5, 2);
+        pairingStrategy = pairingStrategyContainer?.Value as PairingStrategy ?? new PairingStrategy(0.5);
+        crossoverStrategy = crossoverStrategyContainer?.Value as ICrossoverStrategy ?? new SinglePointCrossover(0.7);
+        mutationStrategy = mutationStrategyContainer?.Value as IMutationStrategy ?? new PercentageMutation(0.01, 0.1);
+        terminationStrategy = terminationStrategyContainer?.Value as ITerminationStrategy ?? new MaxGenerations(Convert.ToInt32(maxGenerations));
+
+        if (populationSize <= 0)
+            this.AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Population size must be greater than 0");
+        if (maxGenerations <= 0)
+            this.AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Max generations must be greater than 0");
+        if (mutationRate is < 0 or > 1)
+            this.AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Mutation rate must be between 0 and 1");
+        if (crossoverRate is < 0 or > 1)
+            this.AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Crossover rate must be between 0 and 1");
+
         var settings = new EvolutionaryAlgorithmSettings
         {
             PopulationSize = Convert.ToInt32(populationSize),
@@ -142,9 +117,10 @@ public class Settings : GH_Component
             MutationStrategy = mutationStrategy,
             TerminationStrategy = terminationStrategy
         };
-        
+
         DA.SetData(0, settings);
     }
+
     public override GH_Exposure Exposure => GH_Exposure.primary;
 
     /// <summary>

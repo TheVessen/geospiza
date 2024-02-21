@@ -26,7 +26,7 @@ public class GH_PercentageMutation : GH_Component
     protected override void RegisterInputParams(GH_InputParamManager pManager)
     {
         pManager.AddNumberParameter("MutationRate", "MR", "The mutation rate", GH_ParamAccess.item, 0.01);
-        pManager.AddNumberParameter("Percentage", "P", "The percentage of the population to mutate", GH_ParamAccess.item, 0.1);
+        pManager.AddNumberParameter("Percentage", "P", "The percentage of the population to mutate eg. 0.1 for 10%", GH_ParamAccess.item, 0.1);
     }
 
     /// <summary>

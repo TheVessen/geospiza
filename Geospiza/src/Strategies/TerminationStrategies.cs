@@ -19,85 +19,67 @@ public abstract class TerminationStrategy : ITerminationStrategy
     public double TerminationThreshold { get; init; }
 }
 
-public class GenerationDiversity: TerminationStrategy
+public class ProgressConvergence: TerminationStrategy
 {
-    public GenerationDiversity(double threshold = 0.1)
+    private int ProgessRange;
+    public ProgressConvergence(double threshold = 0.1, int progessRange = 5)
     {
         TerminationThreshold = threshold;
+        ProgessRange = progessRange;
     }
     
     public override bool Evaluate()
     {
-        var population = Observer.Instance.GetCurrentPopulation();
-        double totalDistance = 0;
-        int comparisons = 0;
+        var observer = Observer.Instance;
+        var averageFitness = observer.AverageFitness;
+        var bestFitness = observer.BestFitness;
 
-        for (int i = 0; i < population.Count; i++)
+        if(averageFitness.Count < ProgessRange || bestFitness.Count < ProgessRange)
         {
-            for (int j = i + 1; j < population.Count; j++)
-            {
-                totalDistance += CalculateGenomicDistance(population.Inhabitants[i], population.Inhabitants[j]);
-                comparisons++;
-            }
+            return false;
         }
 
-        var threshold =  comparisons > 0 ? totalDistance / comparisons : 0;
-        return threshold < TerminationThreshold;
-    }
-    
+        double totalNormalizedDelta = 0.0;
 
-    private static double CalculateGenomicDistance(Individual ind1, Individual ind2)
-    {
-        double distance = 0;
-        for (int i = 0; i < ind1.GenePool.Count; i++)
+        for (var i = 1; i <= ProgessRange; i++)
         {
-            distance += Math.Pow(ind1.GenePool[i].TickValue - ind2.GenePool[i].TickValue, 2);
+            var averageDelta = Math.Abs(averageFitness[^i] - averageFitness[^(i + 1)]);
+            var normalizedDelta = averageDelta / bestFitness[^i];
+            totalNormalizedDelta += normalizedDelta;
         }
-        return Math.Sqrt(distance);
+
+        double finalNormalizedDelta = totalNormalizedDelta / ProgessRange;
+
+        return finalNormalizedDelta < TerminationThreshold;
     }
 }
 
-//MAYBE USEFUL LATER
+public class PopulationDiversity: TerminationStrategy
+{
+    public PopulationDiversity(double threshold = 1)
+    {
+        TerminationThreshold = threshold;
+    }
 
-// public static double AssessBestIndividualProgress(Individual currentBestIndividual)
-// {
-//     if (_previousBestIndividual == null)
-//     {
-//         _previousBestIndividual = currentBestIndividual;
-//         return double.MaxValue; // Initial generation
-//     }
-//
-//     double progress = currentBestIndividual.Fitness - _previousBestIndividual.Fitness;
-//     _previousBestIndividual = currentBestIndividual;
-//
-//     return progress;
-// }
-//     
-// public static double AssessFitnessImprovementRate(List<double> generationFitnessMap, int windowSize = 5)
-// {
-//     if (generationFitnessMap.Count < windowSize + 1) 
-//     {
-//         return double.MaxValue; // Not enough data to assess
-//     }
-//
-//     var recentGenerations = generationFitnessMap.TakeLast(windowSize + 1).ToList();
-//     double previousAverage = recentGenerations.Take(windowSize).Average();
-//     double currentAverage = recentGenerations.Skip(1).Average();
-//
-//     return currentAverage - previousAverage; // Improvement in average fitness
-// }
+    public override bool Evaluate()
+    {
+        var population = Observer.Instance.GetCurrentPopulation();
+        var diversity = population.GetDiversity();
+        
+        return diversity <= TerminationThreshold;
+    }
+}
 
-// public static double AssessFitnessImprovementRate(List<double> generationFitnessMap)
-// {
-//     int windowSize = 5; // Last 5 generations
-//     if (generationFitnessMap.Count < windowSize + 1) 
-//     {
-//         return double.MaxValue; // Not enough data to assess
-//     }
-//
-//     var recentGenerations = generationFitnessMap.TakeLast(windowSize + 1).ToList();
-//     double previousAverage = recentGenerations.Take(windowSize).Average();
-//     double currentAverage = recentGenerations.Skip(1).Average();
-//
-//     return currentAverage - previousAverage; // Improvement in average fitness
-// }
+public class MaxGenerations: TerminationStrategy
+{
+    public MaxGenerations(int maxGenerations)
+    {
+        TerminationThreshold = maxGenerations;
+    }
+
+    public override bool Evaluate()
+    {
+        var observer = Observer.Instance;
+        return observer.CurrentGeneration >= TerminationThreshold;
+    }
+}
