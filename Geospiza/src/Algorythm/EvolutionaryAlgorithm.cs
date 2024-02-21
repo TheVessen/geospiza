@@ -21,32 +21,45 @@ public class EvolutionaryAlgorithm : EvolutionBlueprint
         for (var i = 0; i < MaxGenerations - 1; i++)
         {
             var populationCopy = new Population(Population);
+            
             //Create a mating pool
             var newPopulation = new Population();
+            
+            //Elitism
+            var elite = SelectTopIndividuals(EliteSize);
+            newPopulation.AddIndividuals(elite);
 
             while (newPopulation.Count < PopulationSize)
             {
                 //Select individuals for mating pool
-                List<Individual> matingPool = SelectionStrategy.Select(populationCopy);
-
-                //Elitism
-                var elite = SelectTopIndividuals(EliteSize);
-                newPopulation.AddIndividuals(elite);
+               List<Individual> matingPool = SelectionStrategy.Select(populationCopy, PopulationSize);
 
                 //Pair individuals in the mating pool
                 var matingPairs = PairingStrategy.PairIndividuals(matingPool);
+                
+                
 
                 foreach (var pair in matingPairs)
                 {
+                    var children = new List<Individual>();
+                    
                     //Crossover
-                    if (!(Random.NextDouble() < CrossoverStrategy.CrossoverRate)) continue;
-                    var children = CrossoverStrategy.Crossover(pair.Item1, pair.Item2);
-
-                    // Apply mutation to each child
-                    foreach (var child in children.Where(child =>
-                                 Random.NextDouble() < MutationStrategy.MutationRate))
+                    if (!(Random.NextDouble() < CrossoverStrategy.CrossoverRate))
                     {
-                        MutationStrategy.Mutate(child);
+                        children = CrossoverStrategy.Crossover(pair.Item1, pair.Item2);
+                    }else
+                    {
+                        children.Add(pair.Item1);
+                        children.Add(pair.Item2);
+                    }
+                  
+                    //Mutate the children
+                    foreach (var child in children)
+                    {
+                        if (Random.NextDouble() < MutationStrategy.MutationRate)
+                        {
+                            MutationStrategy.Mutate(child);
+                        }
                     }
 
                     // Set the generation of the children
@@ -62,7 +75,7 @@ public class EvolutionaryAlgorithm : EvolutionBlueprint
                 // Add the mating pool to the new population
                 newPopulation.AddIndividuals(matingPool);
             }
-
+            
             if (newPopulation.Count > PopulationSize)
             {
                 // Sort newPopulation based on fitness in ascending order
@@ -72,13 +85,17 @@ public class EvolutionaryAlgorithm : EvolutionBlueprint
                 int removeCount = newPopulation.Count - PopulationSize;
                 newPopulation.Inhabitants.RemoveRange(PopulationSize, removeCount);
             }
-
             //Test the population
             newPopulation.TestPopulation();
+            
+
+            var arg = populationCopy.GetAverageFitness();
+            var newAverageFitness = newPopulation.GetAverageFitness();
+            var diversity = newPopulation.GetDiversity();
 
             //Get stats of the current population
             StateManager.GetDocument().ExpirePreview(false);
-            Observer.FitnessSnapshot(newPopulation);
+            Observer.Snapshot(newPopulation);
             Observer.SetPopulation(newPopulation);
             Observer.UpdateGenerationCounter();
 

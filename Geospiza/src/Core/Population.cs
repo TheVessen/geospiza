@@ -27,6 +27,11 @@ public class Population
     {
         Inhabitants = new List<Individual>(population.Inhabitants);
     }
+    
+    public void ReplaceIndividuals(List<Individual> individuals)
+    {
+        Inhabitants = individuals;
+    }
 
 
     public void TestPopulation()

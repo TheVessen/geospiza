@@ -7,12 +7,12 @@ namespace Geospiza.Strategies.Selection;
 
 public interface ISelectionStrategy
 {
-    List<Individual> Select(Population population);
+    List<Individual> Select(Population population, int numberOfSelections);
 }
 
 public abstract class SelectionStrategy : ISelectionStrategy
 {
-    public abstract List<Individual> Select(Population population);
+    public abstract List<Individual> Select(Population population, int numberOfSelections);
     protected readonly Random Random = new Random();
 }
 
@@ -42,45 +42,34 @@ public class TournamentSelection : SelectionStrategy
     /// It determines the number of individuals that are randomly selected from the population to compete in each tournament.
     /// 
     /// Key Impacts:
-    /// - Selection Pressure: A larger tournament size increases the selection pressure, making it more likely for higher fitness individuals to be selected. This can accelerate convergence towards optimal solutions but also raises the risk of premature convergence. Conversely, a smaller tournament size leads to lower selection pressure, allowing more diverse genetic material to be retained in the population, thus promoting exploration of the solution space.
-    /// - Genetic Diversity: Smaller tournament sizes help maintain genetic diversity within the population, reducing the likelihood of the algorithm getting stuck in local optima. Larger tournament sizes can reduce diversity more rapidly as the fittest individuals tend to dominate the selection process.
-    /// - Balancing Exploration and Exploitation: The tournament size plays a pivotal role in balancing exploration (diversifying search to explore new areas of the solution space) and exploitation (focusing on refining existing good solutions). Adjusting the tournament size can help achieve the desired balance based on the specific problem and solution space characteristics.
+    /// - Selection Pressure: A larger tournament size increases the selection pressure, making it more likely for higher fitness individuals to be selected.
+    /// This can accelerate convergence towards optimal solutions but also raises the risk of premature convergence. Conversely,
+    /// a smaller tournament size leads to lower selection pressure, allowing more diverse genetic material to be retained in the population, thus promoting exploration of the solution space.
+    /// - Genetic Diversity: Smaller tournament sizes help maintain genetic diversity within the population, reducing the likelihood of the
+    /// algorithm getting stuck in local optima. Larger tournament sizes can reduce diversity more rapidly as the fittest individuals tend to dominate the selection process.
+    /// - Balancing Exploration and Exploitation: The tournament size plays a pivotal role in balancing exploration (diversifying search to explore new areas of the solution space)
+    /// and exploitation (focusing on refining existing good solutions). Adjusting the tournament size can help achieve the desired balance based on the specific problem and solution space characteristics.
     ///
     /// It's essential to choose an appropriate tournament size based on the problem being solved. Experimentation and parameter tuning may be required to find the optimal size for a specific application.
     /// </remarks>
     private readonly int _tournamentSize;
-    private readonly int _numberOfSelections;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="TournamentSelection"/> class.
     /// </summary>
     /// <param name="tournamentSize"></param>
-    /// <param name="numberOfSelections"></param>
-    /// <exception cref="ArgumentException"></exception>
-    public TournamentSelection(int tournamentSize, int numberOfSelections)
+    public TournamentSelection(int tournamentSize)
     {
         if (tournamentSize <= 0)
         {
             throw new ArgumentException("Tournament size must be greater than 0");
         }
 
-        if (numberOfSelections < 1)
-        {
-            throw new ArgumentException("Number of selections must be greater than 0");
-        }
-
         _tournamentSize = tournamentSize;
-        _numberOfSelections = numberOfSelections;
     }
     
-    /// <summary>
-    ///  Selects individuals from the population using the tournament selection strategy.
-    /// </summary>
-    /// <param name="population"></param>
-    /// <returns></returns>
-    /// <exception cref="ArgumentNullException"></exception>
-    /// <exception cref="ArgumentException"></exception>
-    public override List<Individual> Select(Population population)
+
+    public override List<Individual> Select(Population population, int numberOfSelections)
     {
         if (population == null)
         {
@@ -94,7 +83,7 @@ public class TournamentSelection : SelectionStrategy
 
         var selectedIndividuals = new List<Individual>();
 
-        for (int i = 0; i < _numberOfSelections; i++)
+        for (int i = 0; i < numberOfSelections; i++)
         {
             var tournament = new List<Individual>(_tournamentSize);
 
@@ -133,30 +122,22 @@ public class TournamentSelection : SelectionStrategy
 /// </remarks>
 public class RouletteWheelSelection : SelectionStrategy
 {
-    private readonly int _numberOfSelections;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="RouletteWheelSelection"/> class.
     /// </summary>
-    /// <param name="numberOfSelections"></param>
-    /// <exception cref="ArgumentException"></exception>
-    public RouletteWheelSelection(int numberOfSelections)
+    public RouletteWheelSelection()
     {
-        if (numberOfSelections <= 0)
-        {
-            throw new ArgumentException("Number of selections must be greater than 0");
-        }
-
-        this._numberOfSelections = numberOfSelections;
     }
     
     /// <summary>
     /// Selects individuals from the population using the roulette wheel selection strategy.
     /// </summary>
     /// <param name="population"></param>
+    /// <param name="numberOfSelections"></param>
     /// <returns></returns>
     /// <exception cref="InvalidOperationException"></exception>
-    public override List<Individual> Select(Population population)
+    public override List<Individual> Select(Population population, int numberOfSelections)
     {
         var selectedIndividuals = new List<Individual>();
         var totalFitness = population.CalculateTotalFitness();
@@ -167,7 +148,7 @@ public class RouletteWheelSelection : SelectionStrategy
             throw new InvalidOperationException("Total fitness is zero, selection cannot be performed");
         }
 
-        for (var i = 0; i < _numberOfSelections; i++)
+        for (var i = 0; i < numberOfSelections; i++)
         {
             var randomFitness = Random.NextDouble() * totalFitness;
             double runningSum = 0;
@@ -207,30 +188,23 @@ public class RouletteWheelSelection : SelectionStrategy
 /// </remarks>
 public class PoolSelection : SelectionStrategy
 {
-    private readonly int _numberOfSelections;
     
     /// <summary>
     /// Initializes a new instance of the <see cref="PoolSelection"/> class.
     /// </summary>
-    /// <param name="numberOfSelections"></param>
-    /// <exception cref="ArgumentException"></exception>
-    public PoolSelection(int numberOfSelections)
+    public PoolSelection()
     {
-        if (numberOfSelections <= 0)
-        {
-            throw new ArgumentException("Number of selections must be greater than 0");
-        }
 
-        _numberOfSelections = numberOfSelections;
     }
     
     /// <summary>
     /// Selects individuals from the population using the pool selection strategy.
     /// </summary>
     /// <param name="population"></param>
+    /// <param name="numberOfSelections"></param>
     /// <returns></returns>
     /// <exception cref="ArgumentException"></exception>
-    public override List<Individual> Select(Population population)
+    public override List<Individual> Select(Population population, int numberOfSelections)
     {
         // Validate inputs
         if (population == null || !population.Inhabitants.Any())
@@ -238,7 +212,7 @@ public class PoolSelection : SelectionStrategy
             throw new ArgumentException("Population is empty");
         }
 
-        if (_numberOfSelections <= 0 || _numberOfSelections > population.Inhabitants.Count)
+        if (numberOfSelections <= 0 || numberOfSelections > population.Inhabitants.Count)
         {
             throw new ArgumentException("Invalid number of selections");
         }
@@ -246,7 +220,7 @@ public class PoolSelection : SelectionStrategy
         population.CalculateProbability();
 
         var selectedIndividuals = new List<Individual>();
-        for (int sel = 0; sel < _numberOfSelections; sel++)
+        for (int sel = 0; sel < numberOfSelections; sel++)
         {
             var r = Random.NextDouble();
             var i = 0;
@@ -281,33 +255,26 @@ public class PoolSelection : SelectionStrategy
 [Obsolete("Due to bad performance, this class is marked as obsolete and will be removed in the future. Use one of the other selections instead.")]
 public class IsotropicSelection : SelectionStrategy
 {
-    private readonly int _numberOfSelections;
     
     /// <summary>
     /// Initializes a new instance of the <see cref="IsotropicSelection"/> class.
     /// </summary>
-    /// <param name="numberOfSelections"></param>
-    /// <exception cref="ArgumentException"></exception>
-    public IsotropicSelection(int numberOfSelections)
+    public IsotropicSelection()
     {
-        if (numberOfSelections <= 0)
-        {
-            throw new ArgumentException("Number of selections must be greater than 0");
-        }
-
-        this._numberOfSelections = numberOfSelections;
+       
     }
     
     /// <summary>
     /// Selects individuals from the population using the isotropic selection strategy.
     /// </summary>
     /// <param name="population"></param>
+    /// <param name="numberOfSelections"></param>
     /// <returns></returns>
-    public override List<Individual> Select(Population population)
+    public override List<Individual> Select(Population population, int numberOfSelections)
     {
         var selectedIndividuals = new List<Individual>();
 
-        for (int i = 0; i < _numberOfSelections; i++)
+        for (int i = 0; i < numberOfSelections; i++)
         {
             int randomIndex = Random.Next(population.Count);
             selectedIndividuals.Add(population.Inhabitants[randomIndex]);
@@ -341,15 +308,12 @@ public class ExclusiveSelection : SelectionStrategy
     /// Value between 0 and 1 representing the top percentage of individuals to selects
     /// </summary>
     private readonly double _topPercentage;
-    private readonly int _numberOfSelections;
 
     /// <summary>
     ///  Initializes a new instance of the <see cref="ExclusiveSelection"/> class.
     /// </summary>
     /// <param name="topPercentage"></param>
-    /// <param name="numberOfSelections"></param>
-    /// <exception cref="ArgumentException"></exception>
-    public ExclusiveSelection(double topPercentage, int numberOfSelections)
+    public ExclusiveSelection(double topPercentage)
     {
         if (topPercentage is <= 0 or > 1)
         {
@@ -357,15 +321,15 @@ public class ExclusiveSelection : SelectionStrategy
         }
 
         _topPercentage = topPercentage;
-        _numberOfSelections = numberOfSelections;
     }
 
     /// <summary>
     ///  Selects individuals from the population using the exclusive selection strategy.
     /// </summary>
     /// <param name="population"></param>
+    /// <param name="numberOfSelections"></param>
     /// <returns></returns>
-    public override List<Individual> Select(Population population)
+    public override List<Individual> Select(Population population,int numberOfSelections)
     {
         var selectedIndividuals = new List<Individual>();
 
@@ -374,7 +338,7 @@ public class ExclusiveSelection : SelectionStrategy
 
         // Select the top N%
         var cutoffIndex = (int)(population.Count * _topPercentage);
-        for (var i = 0; i < _numberOfSelections && i < cutoffIndex; i++)
+        for (var i = 0; i < numberOfSelections && i < cutoffIndex; i++)
         {
             selectedIndividuals.Add(sortedPopulation[i]);
         }
@@ -402,34 +366,27 @@ public class ExclusiveSelection : SelectionStrategy
 /// </remarks>
 public class BiasedSelection : SelectionStrategy
 {
-    private readonly int _numberOfSelections;
     
     /// <summary>
     ///  Initializes a new instance of the <see cref="BiasedSelection"/> class.
     /// </summary>
-    /// <param name="numberOfSelections"></param>
-    /// <exception cref="ArgumentException"></exception>
-    public BiasedSelection(int numberOfSelections)
+    public BiasedSelection()
     {
-        if (numberOfSelections <= 0)
-        {
-            throw new ArgumentException("Number of selections must be greater than 0");
-        }
-
-        this._numberOfSelections = numberOfSelections;
+       
     }
     
     /// <summary>
     ///  Selects individuals from the population using the biased selection strategy.
     /// </summary>
     /// <param name="population"></param>
+    /// <param name="numberOfSelections"></param>
     /// <returns></returns>
-    public override List<Individual> Select(Population population)
+    public override List<Individual> Select(Population population, int numberOfSelections)
     {
         var selectedIndividuals = new List<Individual>();
         var totalFitness = population.Inhabitants.Sum(individual => individual.Fitness);
 
-        for (int i = 0; i < _numberOfSelections; i++)
+        for (int i = 0; i < numberOfSelections; i++)
         {
             double selectionPoint = Random.NextDouble() * totalFitness;
             double runningSum = 0;
@@ -470,39 +427,33 @@ public class BiasedSelection : SelectionStrategy
 /// </remarks>
 public class StochasticUniversalSampling : SelectionStrategy
 {
-    /// <summary>
-    /// The number of selections to be made in the SUS process.
-    /// </summary>
-    private readonly int _numberOfSelections;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="StochasticUniversalSampling"/> class.
     /// </summary>
-    /// <param name="numberOfSelections">The number of selections to be made.</param>
-    public StochasticUniversalSampling(int numberOfSelections)
+    public StochasticUniversalSampling()
     {
-        if (numberOfSelections <= 0)
-        {
-            throw new ArgumentException("Number of selections must be greater than 0");
-        }
-
-        this._numberOfSelections = numberOfSelections;
+    }
+    
+    public void SetPopulationSize(int populationSize)
+    {
     }
 
     /// <summary>
     /// Selects individuals from the population using the Stochastic Universal Sampling strategy.
     /// </summary>
     /// <param name="population">The population from which to select individuals.</param>
+    /// <param name="numberOfSelections"></param>
     /// <returns>A list of selected individuals.</returns>
-    public override List<Individual> Select(Population population)
+    public override List<Individual> Select(Population population, int numberOfSelections)
     {
         var selectedIndividuals = new List<Individual>();
         var totalFitness = population.Inhabitants.Sum(individual => individual.Fitness);
 
-        double distance = 1.0 / _numberOfSelections;
+        double distance = 1.0 / numberOfSelections;
         double start = Random.NextDouble() * distance;
 
-        for (int i = 0; i < _numberOfSelections; i++)
+        for (int i = 0; i < numberOfSelections; i++)
         {
             double selectionPoint = start + i * distance;
             double runningSum = 0;

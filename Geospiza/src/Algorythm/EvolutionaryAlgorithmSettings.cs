@@ -20,15 +20,5 @@ public class EvolutionaryAlgorithmSettings
     
     // Constructor to initialize default values
     public EvolutionaryAlgorithmSettings()
-    {
-        // Set default values
-        PopulationSize = 50;
-        MaxGenerations = 100;
-        EliteSize = 0;
-        SelectionStrategy = new TournamentSelection(5,2); // Default selection strategy
-        CrossoverStrategy = new TwoPointCrossover(0.7); // Default crossover strategy
-        MutationStrategy = new PercentageMutation(0.01, 0.01); // Default mutation strategy
-        PairingStrategy = new PairingStrategy(0); // Default pairing strategy
-        TerminationStrategy = new ProgressConvergence(); // Default termination strategy
-    }
+    { }
 }

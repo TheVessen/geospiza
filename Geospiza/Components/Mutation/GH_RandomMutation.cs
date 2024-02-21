@@ -1,22 +1,22 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
-using Geospiza.Strategies.Selection;
+using Geospiza.Strategies.Mutation;
 using Grasshopper.Kernel;
 using Rhino.Geometry;
 
-namespace Geospiza.Components.Selection;
+namespace Geospiza.Components.Mutation;
 
-public class GH_StochasticUniversalSampling : GH_Component
+public class GH_RandomMutation : GH_Component
 {
 
     /// <summary>
-    /// Initializes a new instance of the GH_StochasticUniversalSampling class.
+    /// Initializes a new instance of the GH_RandomMutation class.
     /// </summary>
-    public GH_StochasticUniversalSampling()
-        : base("StochasticUniversalSampling", "SUS",
-            "Performs a Stochastic Universal Sampling",
-            "Geospiza", "SelectionStrategy")
+    public GH_RandomMutation()
+        : base("RandomMutation", "RM",
+            "Performs a random mutation",
+            "Geospiza", "MutationStrategies")
     {
     }
 
@@ -25,6 +25,7 @@ public class GH_StochasticUniversalSampling : GH_Component
     /// </summary>
     protected override void RegisterInputParams(GH_InputParamManager pManager)
     {
+        pManager.AddNumberParameter("MutationRate", "MR", "The mutation rate", GH_ParamAccess.item, 0.01);
     }
 
     /// <summary>
@@ -32,7 +33,7 @@ public class GH_StochasticUniversalSampling : GH_Component
     /// </summary>
     protected override void RegisterOutputParams(GH_OutputParamManager pManager)
     {
-        pManager.AddGenericParameter("SelectionStrategy", "SS", "The selection strategy", GH_ParamAccess.item);
+        pManager.AddGenericParameter("MutationStrategy", "MS", "The mutation strategy", GH_ParamAccess.item);
     }
 
     /// <summary>
@@ -41,28 +42,24 @@ public class GH_StochasticUniversalSampling : GH_Component
     /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
     protected override void SolveInstance(IGH_DataAccess DA)
     {
-        var selection = new StochasticUniversalSampling();
-        DA.SetData(0, selection);
+        double mutationRate = 0;
+        if (!DA.GetData(0, ref mutationRate)) return;
+
+        var strategy = new RandomMutation(mutationRate);
+
+        DA.SetData(0, strategy);
     }
 
     /// <summary>
     /// Provides an Icon for the component.
     /// </summary>
-    protected override Bitmap Icon
-    {
-        get
-        {
-            //You can add image files to your project resources and access them like this:
-            // return Resources.IconForThisComponent;
-            return null;
-        }
-    }
+    protected override Bitmap Icon => Properties.Resources.RandomMutation;
 
     /// <summary>
     /// Gets the unique ID for this component. Do not change this ID after release.
     /// </summary>
     public override Guid ComponentGuid
     {
-        get { return new Guid("03256F11-0CF3-4547-986A-F16EBC2CC6A5"); }
+        get { return new Guid("10050646-9E96-4EB4-82F8-10731E21DD23"); }
     }
 }

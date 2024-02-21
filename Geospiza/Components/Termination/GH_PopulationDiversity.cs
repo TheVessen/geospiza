@@ -50,15 +50,7 @@ public class GH_PopulationDiversity : GH_Component
     /// <summary>
     /// Provides an Icon for the component.
     /// </summary>
-    protected override Bitmap Icon
-    {
-        get
-        {
-            //You can add image files to your project resources and access them like this:
-            // return Resources.IconForThisComponent;
-            return null;
-        }
-    }
+    protected override Bitmap Icon => Properties.Resources.PopulationDiversity;
 
     /// <summary>
     /// Gets the unique ID for this component. Do not change this ID after release.

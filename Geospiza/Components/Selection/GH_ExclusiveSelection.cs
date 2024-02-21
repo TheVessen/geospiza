@@ -29,7 +29,6 @@ public class GH_ExclusiveSelection : GH_Component
     /// </summary>
     protected override void RegisterInputParams(GH_InputParamManager pManager)
     {
-        pManager.AddNumberParameter("SelectionSize", "SS", "The size of the selection", GH_ParamAccess.item, 2);
         pManager.AddNumberParameter("TopPercentage", "TP", "The percentage of the top individuals to be selected", GH_ParamAccess.item, 0.1);
     }
 
@@ -47,14 +46,10 @@ public class GH_ExclusiveSelection : GH_Component
     /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
     protected override void SolveInstance(IGH_DataAccess DA)
     {
-        double selectionSize = 0;
-        if (!DA.GetData(0, ref selectionSize)) return;
         double topPercentage = 0;
-        if (!DA.GetData(1, ref topPercentage)) return;
+        if (!DA.GetData(0, ref topPercentage)) return;
         
-        var selectionSizeInt = Convert.ToInt32(selectionSize);
-        
-        var selection = new ExclusiveSelection(topPercentage,selectionSizeInt);
+        var selection = new ExclusiveSelection(topPercentage);
         
         DA.SetData(0, selection);
     }

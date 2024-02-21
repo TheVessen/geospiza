@@ -91,11 +91,19 @@ public class Settings : GH_Component
         DA.GetData(6, ref mutationStrategyContainer);
         DA.GetData(7, ref terminationStrategyContainer);
 
-        selectionStrategy = selectionStrategyContainer?.Value as ISelectionStrategy ?? new TournamentSelection(5, 2);
+        selectionStrategy = selectionStrategyContainer?.Value as ISelectionStrategy ?? new StochasticUniversalSampling();
         pairingStrategy = pairingStrategyContainer?.Value as PairingStrategy ?? new PairingStrategy(0.5);
         crossoverStrategy = crossoverStrategyContainer?.Value as ICrossoverStrategy ?? new SinglePointCrossover(0.7);
         mutationStrategy = mutationStrategyContainer?.Value as IMutationStrategy ?? new PercentageMutation(0.01, 0.1);
         terminationStrategy = terminationStrategyContainer?.Value as ITerminationStrategy ?? new MaxGenerations(Convert.ToInt32(maxGenerations));
+
+        // in the selection strategy is sus set the population size
+        if (selectionStrategy is StochasticUniversalSampling)
+        {
+            var sus = selectionStrategy as StochasticUniversalSampling;
+            sus.SetPopulationSize(Convert.ToInt32(populationSize));
+            selectionStrategy = sus;
+        }
 
         if (populationSize <= 0)
             this.AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Population size must be greater than 0");

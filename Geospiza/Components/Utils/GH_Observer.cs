@@ -27,6 +27,8 @@ public class GH_Observer : GH_Component
     protected override void RegisterInputParams(GH_InputParamManager pManager)
     {
         pManager.AddGenericParameter("Observer", "P", "The population to observe", GH_ParamAccess.item);
+       
+        
     }
 
     /// <summary>
@@ -35,6 +37,10 @@ public class GH_Observer : GH_Component
     protected override void RegisterOutputParams(GH_OutputParamManager pManager)
     {
         pManager.AddGenericParameter("Individuals", "I", "The individuals in the population", GH_ParamAccess.list);
+        pManager.AddNumberParameter("AverageFitness", "AF", "Average fitness for each generation", GH_ParamAccess.list);
+        pManager.AddNumberParameter("BestFitness", "BF", "Best fitness for each generation", GH_ParamAccess.list);
+        pManager.AddNumberParameter("WorstFitness", "WF", "Worst fitness for each generation", GH_ParamAccess.list);
+        pManager.AddGenericParameter("BestIndividual", "BI", "The 5 best individuals over all generations", GH_ParamAccess.list);
     }
 
     /// <summary>
@@ -57,7 +63,10 @@ public class GH_Observer : GH_Component
             }
   
             DA.SetDataList(0, obs.GetCurrentPopulation().Inhabitants);
-
+            DA.SetDataList(1, obs.AverageFitness);
+            DA.SetDataList(2, obs.BestFitness);
+            DA.SetDataList(3, obs.WorstFitness);
+            DA.SetDataList(4, obs.BestIndividuals);
         }
         else
         {

@@ -173,6 +173,26 @@ namespace Geospiza.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap PopulationDiversity {
+            get {
+                object obj = ResourceManager.GetObject("PopulationDiversity", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap RandomMutation {
+            get {
+                object obj = ResourceManager.GetObject("RandomMutation", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap ReinstateIndividuum {
             get {
                 object obj = ResourceManager.GetObject("ReinstateIndividuum", resourceCulture);

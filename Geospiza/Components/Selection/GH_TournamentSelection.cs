@@ -25,8 +25,7 @@ public class GH_TournamentSelection : GH_Component
     /// </summary>
     protected override void RegisterInputParams(GH_InputParamManager pManager)
     {
-        pManager.AddNumberParameter("TournamentSize", "TS", "The size of the tournament", GH_ParamAccess.item, 5);
-        pManager.AddNumberParameter("SelectionSize", "SS", "The size of the selection", GH_ParamAccess.item, 2);
+        pManager.AddNumberParameter("TournamentSize", "TS", "The size of the tournament", GH_ParamAccess.item, 4);
     }
 
     /// <summary>
@@ -44,14 +43,10 @@ public class GH_TournamentSelection : GH_Component
     protected override void SolveInstance(IGH_DataAccess DA)
     {
         double tournamentSize = 0;
-        double selectionSize = 0;
         if (!DA.GetData(0, ref tournamentSize)) return;
-        if (!DA.GetData(1, ref selectionSize)) return;
         
         var tournamentSizeInt = Convert.ToInt32(tournamentSize);
-        var selectionSizeInt = Convert.ToInt32(selectionSize);
-        
-        var selection = new TournamentSelection(tournamentSizeInt, selectionSizeInt);
+        var selection = new TournamentSelection(tournamentSizeInt);
         
         DA.SetData(0, selection);
     }

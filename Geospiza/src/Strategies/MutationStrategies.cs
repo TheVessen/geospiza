@@ -30,17 +30,18 @@ public class FixedValueMutation : MutationStrategy
 
     public override void Mutate(Individual individual)
     {
-        var lastGenerationMax = Observer.Instance?.CurrentPopulation.Inhabitants.Max(ind => ind.Fitness);
-
-        for (var i = 0; i < individual.GenePool.Count; i++)
+        foreach (var t in individual.GenePool)
         {
-            // if (!(Random.NextDouble() < MutationRate)) continue;
-            var currentValue = individual.GenePool[i].TickValue;
-            var newValue = currentValue + Random.Next(-_mutationValue, _mutationValue + 1);
-            
-            // Ensure the new value is within bounds
-            newValue = Math.Max(0, Math.Min(newValue, individual.GenePool[i].TickCount));
-            individual.GenePool[i].MutatedValue(newValue);
+            if (Random.NextDouble() < MutationRate)
+            {
+                var currentValue = t.TickValue;
+                var newValue = currentValue + Random.Next(-_mutationValue, _mutationValue);
+                while (newValue < 0 || newValue > t.TickCount)
+                {
+                    newValue = currentValue + Random.Next(-_mutationValue, _mutationValue);
+                }
+                t.MutatedValue(newValue);
+            }
         }
     }
 }
@@ -77,3 +78,24 @@ public class PercentageMutation : MutationStrategy
         }
     }
 }
+
+public class RandomMutation : MutationStrategy
+{
+    public RandomMutation(double mutationRate)
+    {
+        MutationRate = mutationRate;
+    }
+
+    public override void Mutate(Individual individual)
+    {
+        foreach (var t in individual.GenePool)
+        {
+            if (Random.NextDouble() < MutationRate)
+            {
+                var newValue = Random.Next(0, t.TickCount);
+                t.MutatedValue(newValue);
+            }
+        }
+    }
+}
+

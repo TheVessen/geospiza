@@ -7,6 +7,11 @@
     <Description>Description of Geospiza</Description>
     <TargetExt>.gha</TargetExt>
   </PropertyGroup>
+	
+  <ItemGroup>
+    <None Remove="Resources\Icons\PopulationDiversity.png" />
+    <None Remove="Resources\Icons\RandomMutation.png" />
+  </ItemGroup>
   
   <ItemGroup>
     <PackageReference Include="Grasshopper" Version="8.3.24009.15001" IncludeAssets="compile;build" />
@@ -43,6 +48,8 @@
     <EmbeddedResource Include="Resources\Icons\Individual.png" />
     <EmbeddedResource Include="Resources\Icons\Observer.png" />
     <EmbeddedResource Include="Resources\Icons\PercentageMutation.png" />
+    <EmbeddedResource Include="Resources\Icons\PopulationDiversity.png" />
+    <EmbeddedResource Include="Resources\Icons\RandomMutation.png" />
     <EmbeddedResource Include="Resources\Icons\RouletSelection.png" />
     <EmbeddedResource Include="Resources\Icons\Settings.png" />
     <EmbeddedResource Include="Resources\Icons\SinglePointCrosover.png" />

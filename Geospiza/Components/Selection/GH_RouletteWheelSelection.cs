@@ -25,7 +25,6 @@ public class GH_RouletteWheelSelection : GH_Component
     /// </summary>
     protected override void RegisterInputParams(GH_InputParamManager pManager)
     {
-          pManager.AddNumberParameter("SelectionSize", "SS", "The size of the selection", GH_ParamAccess.item, 2);
  
     }
 
@@ -43,12 +42,8 @@ public class GH_RouletteWheelSelection : GH_Component
     /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
     protected override void SolveInstance(IGH_DataAccess DA)
     {
-        double selectionSize = 0;
-        if (!DA.GetData(0, ref selectionSize)) return;
-        
-        var selectionSizeInt = Convert.ToInt32(selectionSize);
-        
-        var selection = new RouletteWheelSelection(selectionSizeInt);
+
+        var selection = new RouletteWheelSelection();
         
         DA.SetData(0, selection);
 

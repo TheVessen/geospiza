@@ -112,7 +112,7 @@ public abstract class EvolutionBlueprint : IEvolutionarySolver
             newPopulation.AddIndividual(individual);
         }
 
-        Observer.FitnessSnapshot(newPopulation);
+        Observer.Snapshot(newPopulation);
         Observer.SetPopulation(newPopulation);
         Population = newPopulation;
     }

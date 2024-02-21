@@ -151,6 +151,12 @@
   <data name="PoolSelection" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\Icons\PoolSelection.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
+  <data name="PopulationDiversity" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\Icons\PopulationDiversity.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="RandomMutation" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\Icons\RandomMutation.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
   <data name="ReinstateIndividuum" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\Icons\ReinstateIndividuum.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
