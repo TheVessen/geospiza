@@ -76,11 +76,12 @@ public class GH_BasicSolver : GH_Component
         
         // Set up state manager
         StateManager stateManager = StateManager.Instance;
-        stateManager.SetDocument(OnPingDocument());
-        
         //TODO fix when slider is added or removed
+        stateManager.SetDocument(OnPingDocument());
         stateManager.SetGenes(geneIds);
+        stateManager.SetFitnessComponent();
         stateManager.SetThisComponent(this);
+        
 
         // Check if the solver should run
         bool run = intTimestamp != _lastTimestamp;

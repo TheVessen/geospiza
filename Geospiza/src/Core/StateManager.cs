@@ -9,7 +9,7 @@ public class StateManager
 {
     private static StateManager _instance;
     private GH_Document _document;
-    public GH_Component _thisComponent { get; private set; } = null;
+    public GH_Component ThisComponent { get; private set; } = null;
     
     public Fitness FitnessComponent { get; private set; }
     public Dictionary<Guid, TemplateGene> Genotype { get; private set; }
@@ -36,41 +36,55 @@ public class StateManager
         }
         
         _document = document;
-        foreach (var comp in _document.Objects)
-        {
-            if (comp is Fitness fitness)
-            {
-                FitnessComponent = fitness;
-            }
-        }
-
-        if (FitnessComponent == null)
-        {
-            throw new Exception("No fitness component found in the document");
-        }
-    }
-
-    public GH_Document GetDocument()
-    {
-        return _document;
     }
     
+    public GH_Document GetDocument()
+    {
+      return _document;
+    }
+    
+    public void SetFitnessComponent()
+    {
+      
+        if (FitnessComponent != null)
+        {
+            return;
+        }
+        
+        foreach (var comp in _document.Objects)
+        {
+          if (comp is Fitness fitness)
+          {
+            FitnessComponent = fitness;
+          }
+        }
+    }
+
     public void SetGenes(List<string> geneIds)
     {
         if (Genotype.Count == geneIds.Count)
         {
             return;
         }
+        
+        Reset();
 
         Genotype = Utils.InitializeGenePool(geneIds, _document);
     }
     
+    private void Reset()
+    {
+        FitnessComponent = null;
+        Genotype = null;
+        ThisComponent = null;
+    }
+    
     public void SetThisComponent(GH_Component component)
     {
-        if (_thisComponent != null)
+        if (ThisComponent != null)
         {
             return;
         }
-        _thisComponent = component;
+        ThisComponent = component;
     }
 }
