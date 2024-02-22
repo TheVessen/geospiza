@@ -15,7 +15,9 @@ public class GH_StochasticUniversalSampling : GH_Component
     /// </summary>
     public GH_StochasticUniversalSampling()
         : base("StochasticUniversalSampling", "SUS",
-            "Performs a Stochastic Universal Sampling",
+            "Performs a Stochastic Universal Sampling. In SUS, the fitness of each individual is used " +
+            "to assign a probability of selection. However, instead of selecting individuals " +
+            "one at a time, SUS selects all individuals at once by spreading out evenly spaced pointers over the population's",
             "Geospiza", "SelectionStrategy")
     {
     }
@@ -48,15 +50,7 @@ public class GH_StochasticUniversalSampling : GH_Component
     /// <summary>
     /// Provides an Icon for the component.
     /// </summary>
-    protected override Bitmap Icon
-    {
-        get
-        {
-            //You can add image files to your project resources and access them like this:
-            // return Resources.IconForThisComponent;
-            return null;
-        }
-    }
+    protected override Bitmap Icon => Properties.Resources.StochasticUniversalSampling;
 
     /// <summary>
     /// Gets the unique ID for this component. Do not change this ID after release.

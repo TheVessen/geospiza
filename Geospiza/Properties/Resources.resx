@@ -121,6 +121,9 @@
   <data name="BiasSelection" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\Icons\BiasSelection.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
+  <data name="DeconstructGene" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\Icons\DeconstructGene.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
   <data name="Fitness" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\Icons\Fitness.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
@@ -171,6 +174,9 @@
   </data>
   <data name="Solver" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\Icons\Solver.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="StochasticUniversalSampling" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\Icons\StochasticUniversalSampling.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
   <data name="TerminationGenetic" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\Icons\TerminationGenetic.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>

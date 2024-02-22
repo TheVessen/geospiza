@@ -17,7 +17,8 @@ public class GH_InbreedingPairing : GH_Component
     /// </summary>
     public GH_InbreedingPairing()
         : base("InbreedingPairing", "IP",
-            "Performs an inbreeding pairing",
+            "This code is a part of a genetic algorithm that pairs individuals based on their genetic similarity or dissimilarity. " +
+            "It uses an in-breeding factor to determine the preference for selecting mates.",
             "Geospiza", "PairingStrategies")
     {
     }
@@ -27,8 +28,9 @@ public class GH_InbreedingPairing : GH_Component
     /// </summary>
     protected override void RegisterInputParams(GH_InputParamManager pManager)
     {
-        pManager.AddNumberParameter("InBreedingFactor", "P", "Description", GH_ParamAccess.item, 0);
-        pManager.AddNumberParameter("DistanceFunction", "DF", "The distance function to use. 0 for euclidean, 1 for manhattan", GH_ParamAccess.item, 0);
+        pManager.AddNumberParameter("InBreedingFactor", "P", "Inbreeding Factor, a value between 0 and 1. A value of 0 promotes pairing between individuals with high genetic similarity, " +
+                                                             "while a value of 1 encourages pairing between individuals with high genetic dissimilarity.", GH_ParamAccess.item, 0.2);
+        pManager.AddNumberParameter("DistanceFunction", "DF", "The distance function to use. 0 for euclidean, 1 for manhattan", GH_ParamAccess.item, 1);
         
     }
 
@@ -56,7 +58,7 @@ public class GH_InbreedingPairing : GH_Component
             AddRuntimeMessage(GH_RuntimeMessageLevel.Error,"Distance function must be 0 or 1");
         }
         
-        var pairing = new PairingStrategy(inBreedingFactor);
+        var pairing = new PairingStrategy(inBreedingFactor, distanceFunctionInt);
         
         DA.SetData(0, pairing);
     }

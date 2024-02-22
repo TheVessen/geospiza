@@ -388,7 +388,7 @@ public class BiasedSelection : SelectionStrategy
 
         for (int i = 0; i < numberOfSelections; i++)
         {
-            double selectionPoint = Random.NextDouble() * totalFitness;
+            var selectionPoint = Random.NextDouble() * totalFitness;
             double runningSum = 0;
 
             foreach (var individual in population.Inhabitants)
@@ -435,10 +435,6 @@ public class StochasticUniversalSampling : SelectionStrategy
     {
     }
     
-    public void SetPopulationSize(int populationSize)
-    {
-    }
-
     /// <summary>
     /// Selects individuals from the population using the Stochastic Universal Sampling strategy.
     /// </summary>

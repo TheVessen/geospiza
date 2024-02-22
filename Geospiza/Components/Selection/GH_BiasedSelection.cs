@@ -15,7 +15,9 @@ public class GH_BiasedSelection : GH_Component
     /// </summary>
     public GH_BiasedSelection()
         : base("BiasedSelection", "BS",
-            "Performs a biased selection",
+            "Performs a biased selection. In Biased Selection, each individual in the population is assigned " +
+            "a selection probability proportional to its fitness.Then, " +
+            "a number of individuals are selected randomly based on these probabilities.",
             "Geospiza", "SelectionStrategy")
     {
     }

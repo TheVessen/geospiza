@@ -15,7 +15,10 @@ public class GH_RandomMutation : GH_Component
     /// </summary>
     public GH_RandomMutation()
         : base("RandomMutation", "RM",
-            "Performs a random mutation",
+            "Applies a random mutation to each gene in an individual's gene pool, where the new value of the gene is a " +
+            "random number within the range of the gene's valid values. This strategy " +
+            "introduces variability in the gene pool, aiding in the " +
+            "exploration of the solution space.",
             "Geospiza", "MutationStrategies")
     {
     }

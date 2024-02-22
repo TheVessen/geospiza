@@ -33,14 +33,14 @@ public class Settings : GH_Component
     {
         pManager.AddNumberParameter("PopulationSize", "PS", "The size of the population", GH_ParamAccess.item, 50);
         pManager.AddNumberParameter("MaxGenerations", "MG", "The maximum number of generations", GH_ParamAccess.item,
-            100);
+            25);
         pManager.AddNumberParameter("EliteSize", "ES", "The number of elite individuals. If 0 no elite will be picked",
             GH_ParamAccess.item, 0);
-        pManager.AddGenericParameter("SelectionStrategy", "SS", "The selection strategy", GH_ParamAccess.item);
-        pManager.AddGenericParameter("PairingStrategy", "PS", "The pairing strategy", GH_ParamAccess.item);
-        pManager.AddGenericParameter("CrossoverStrategy", "CS", "The crossover strategy", GH_ParamAccess.item);
-        pManager.AddGenericParameter("MutationStrategy", "MS", "The mutation strategy", GH_ParamAccess.item);
-        pManager.AddGenericParameter("TerminationStrategy", "TS", "The termination strategy", GH_ParamAccess.item);
+        pManager.AddGenericParameter("SelectionStrategy", "SS", "The selection strategy. As default StochasticUniversalSampling is used", GH_ParamAccess.item);
+        pManager.AddGenericParameter("PairingStrategy", "PS", "The pairing strategy. As default an InBreedingFactor of 0.2 and Manhattan distance will be used", GH_ParamAccess.item);
+        pManager.AddGenericParameter("CrossoverStrategy", "CS", "The crossover strategy. As default TwoPoint crossover will be used with a crossover rate of 0.6", GH_ParamAccess.item);
+        pManager.AddGenericParameter("MutationStrategy", "MS", "The mutation strategy. As default random mutation will be used with a mutation rate of 0.01", GH_ParamAccess.item);
+        pManager.AddGenericParameter("TerminationStrategy", "TS", "The termination strategy. As a default it will terminate if the population diversity falls below 2", GH_ParamAccess.item);
 
         pManager[3].Optional = true;
         pManager[4].Optional = true;
@@ -92,18 +92,10 @@ public class Settings : GH_Component
         DA.GetData(7, ref terminationStrategyContainer);
 
         selectionStrategy = selectionStrategyContainer?.Value as ISelectionStrategy ?? new StochasticUniversalSampling();
-        pairingStrategy = pairingStrategyContainer?.Value as PairingStrategy ?? new PairingStrategy(0.5);
-        crossoverStrategy = crossoverStrategyContainer?.Value as ICrossoverStrategy ?? new SinglePointCrossover(0.7);
-        mutationStrategy = mutationStrategyContainer?.Value as IMutationStrategy ?? new PercentageMutation(0.01, 0.1);
-        terminationStrategy = terminationStrategyContainer?.Value as ITerminationStrategy ?? new MaxGenerations(Convert.ToInt32(maxGenerations));
-
-        // in the selection strategy is sus set the population size
-        if (selectionStrategy is StochasticUniversalSampling)
-        {
-            var sus = selectionStrategy as StochasticUniversalSampling;
-            sus.SetPopulationSize(Convert.ToInt32(populationSize));
-            selectionStrategy = sus;
-        }
+        pairingStrategy = pairingStrategyContainer?.Value as PairingStrategy ?? new PairingStrategy(0.2, 1);
+        crossoverStrategy = crossoverStrategyContainer?.Value as ICrossoverStrategy ?? new TwoPointCrossover(0.6);
+        mutationStrategy = mutationStrategyContainer?.Value as IMutationStrategy ?? new RandomMutation(0.01);
+        terminationStrategy = terminationStrategyContainer?.Value as ITerminationStrategy ?? new PopulationDiversity(2);
 
         if (populationSize <= 0)
             this.AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Population size must be greater than 0");

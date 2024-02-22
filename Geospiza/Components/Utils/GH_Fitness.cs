@@ -14,7 +14,7 @@ public class Fitness : GH_Component
     /// </summary>
     public Fitness()
         : base("Fitness", "F",
-            "Fitness value for the evolutionary algorithm",
+            "Fitness value for the evolutionary algorithm. This component links the fitness value to the main solver",
             "Geospiza", "Utils")
     {
     }

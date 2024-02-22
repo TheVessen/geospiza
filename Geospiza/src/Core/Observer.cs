@@ -5,6 +5,7 @@ using System.Transactions;
 using Geospiza.Comonents;
 using Geospiza.Strategies;
 using Geospiza.Strategies.Termination;
+using Newtonsoft.Json;
 
 namespace Geospiza.Core;
 
@@ -20,6 +21,7 @@ public class Observer
     public List<int> NumberOfUniqueIndividuals { get; private set; } = new List<int>();
     public List<int> Diversity { get; private set; }    
     public List<Individual> BestIndividuals { get; private set; } = new List<Individual>();
+    public List<double> FitnessStandardDeviation { get; private set; } = new List<double>();
 
     public static Observer Instance
     {
@@ -55,12 +57,23 @@ public class Observer
         {
             NumberOfUniqueIndividuals = new List<int>();
         }
+        if (FitnessStandardDeviation == null)
+        {
+            FitnessStandardDeviation = new List<double>();
+        }
         
         BestFitness.Add(currentPopulation.Inhabitants.Max(inh => inh.Fitness));
         WorstFitness.Add(currentPopulation.Inhabitants.Min(inh => inh.Fitness));
         AverageFitness.Add(currentPopulation.GetAverageFitness());
         TotalFitness.Add(currentPopulation.CalculateTotalFitness());
         NumberOfUniqueIndividuals.Add(currentPopulation.GetDiversity());
+        
+        // Calculate standard deviation of fitness
+        double average = currentPopulation.GetAverageFitness();
+        double sumOfSquaresOfDifferences = currentPopulation.Inhabitants.Select(val => (val.Fitness - average) * (val.Fitness - average)).Sum();
+        double standardDeviation = Math.Sqrt(sumOfSquaresOfDifferences / currentPopulation.Inhabitants.Count);
+
+        FitnessStandardDeviation.Add(standardDeviation);
     }
     
     public void SetPopulation(Population population)
@@ -92,6 +105,11 @@ public class Observer
     public Population GetCurrentPopulation()
     {
         return CurrentPopulation;
+    }
+    
+    public string ToJson()
+    {
+        return JsonConvert.SerializeObject(this, Formatting.Indented);
     }
 
 }

@@ -15,7 +15,9 @@ public class GH_TournamentSelection : GH_Component
     /// </summary>
     public GH_TournamentSelection()
         : base("TournamentSelection", "TS",
-            "Performs a tournament selection",
+            "Performs a tournament selection. In Tournament Selection, a subset of individuals is chosen " +
+            "from the population, and the individual with the highest " +
+            "fitness in this group is selected.The process is repeated until the desired number of individuals is selected.",
             "Geospiza", "SelectionStrategy")
     {
     }

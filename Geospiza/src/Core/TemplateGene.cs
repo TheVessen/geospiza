@@ -49,6 +49,7 @@ public class TemplateGene
         Type = slider.GetType();
         GhInstanceGuid = slider.InstanceGuid;
         Name = slider.NickName;
+        GenePoolIndex = -1;
     }
 
     public void SetTickValue(int tickValue)

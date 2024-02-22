@@ -15,7 +15,9 @@ public class GH_PercentageMutation : GH_Component
     /// </summary>
     public GH_PercentageMutation()
         : base("PercentageMutation", "PM",
-            "Performs a percentage mutation",
+            "The PercentageMutation applies a mutation to each gene in an individual's gene pool. " +
+            "It calculates a mutation amount based on the gene's current value and a predefined mutation percentage, " +
+            "then adjusts the gene's value within a valid range, introducing variability in the gene pool.",
             "Geospiza", "MutationStrategies")
     {
     }

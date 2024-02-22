@@ -33,8 +33,9 @@ public class GH_BasicSolver : GH_Component
         pManager.AddTextParameter("Gene", "GID", "The gene ids from the GeneSelector", GH_ParamAccess.list);
         pManager.AddGenericParameter("Settings", "S", "The settings for the evolutionary algorithm",
             GH_ParamAccess.item);
-        pManager.AddNumberParameter("Trigger", "T", "Timestamp from the server to determine if the solver should run",
-            GH_ParamAccess.item);
+        pManager.AddNumberParameter("Timestamp", "T", "Timestamp from the server to determine if the solver should run",
+            GH_ParamAccess.item, 0);
+        pManager.AddBooleanParameter("Run", "R", "Run the solver for running locally", GH_ParamAccess.item, false);
     }
 
     /// <summary>
@@ -46,10 +47,12 @@ public class GH_BasicSolver : GH_Component
         pManager.AddNumberParameter("CurrentGeneration", "CG", "The current generation", GH_ParamAccess.item);
     }
 
-    private bool _didRun = false;
     private long _lastTimestamp = 0;
     private EvolutionaryAlgorithmSettings _privateSettings;
     private bool _isRunning = true;
+    private  Guid _solutionId = Guid.NewGuid();
+    private Guid _lastSolutionId;
+    
 
 
     /// <summary>
@@ -69,6 +72,15 @@ public class GH_BasicSolver : GH_Component
         double timestamp = 0;
         if (!DA.GetData(2, ref timestamp)) return;
         long intTimestamp = Convert.ToInt64(timestamp);
+        
+        var run = false;
+        if (!DA.GetData(3, ref run)) return;
+        
+        // Check if the solver should run
+        if(_lastSolutionId != Guid.Empty && _solutionId != _lastSolutionId)
+        {
+            return;
+        }
 
         // Set up state manager
         StateManager stateManager = StateManager.Instance;
@@ -78,25 +90,21 @@ public class GH_BasicSolver : GH_Component
         stateManager.SetThisComponent(this);
 
         // Check if the solver should run
-        bool run = intTimestamp != _lastTimestamp;
-        if (run)
-        {
-            _didRun = false;
-        }
+        bool _run = (intTimestamp != 0 && intTimestamp != _lastTimestamp) || run;
 
         // Run the solver
-        if (run && !_didRun)
+        if (_run)
         {
             DA.SetData(0, null);
             _isRunning = true;
-            OnPingDocument().ScheduleSolution(10, ScheduleCallback);
+            OnPingDocument().ScheduleSolution(100, ScheduleCallback);
             _lastTimestamp = intTimestamp;
-            _didRun = true;
         }
     }
 
     void ScheduleCallback(GH_Document doc)
     {
+        _solutionId = Guid.NewGuid();
         Observer.Instance.Reset();
 
         var evolutionaryAlgorithm = new EvolutionaryAlgorithm(_privateSettings);
@@ -104,6 +112,7 @@ public class GH_BasicSolver : GH_Component
         evolutionaryAlgorithm.RunAlgorithm();
         _isRunning = false;
         ExpireSolution(false);
+        _lastSolutionId = _solutionId;
     }
 
     protected override void AfterSolveInstance()

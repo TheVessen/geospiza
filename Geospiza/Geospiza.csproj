@@ -63,6 +63,10 @@
     <EmbeddedResource Include="Resources\Icons\PoolSelection.png" />
     <EmbeddedResource Include="Resources\Icons\ReinstateIndividuum.png" />
     <EmbeddedResource Include="Resources\Icons\TerminationGenetic.png" />
+    <None Remove="Resources\Icons\DeconstructGene.png" />
+    <EmbeddedResource Include="Resources\Icons\DeconstructGene.png" />
+    <None Remove="Resources\Icons\StochasticUniversalSampling.png" />
+    <EmbeddedResource Include="Resources\Icons\StochasticUniversalSampling.png" />
 
 <!--    <EmbeddedResource Include="Resources\Icons\*.png">-->
 <!--      <CopyToOutputDirectory>Always</CopyToOutputDirectory>-->

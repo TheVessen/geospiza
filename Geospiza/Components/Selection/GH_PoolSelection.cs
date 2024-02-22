@@ -15,7 +15,8 @@ public class GH_PoolSelection : GH_Component
     /// </summary>
     public GH_PoolSelection()
         : base("PoolSelection", "PS",
-            "Performs a pool selection",
+            "Performs a pool selection. In Pool Selection, each individual in the population is assigned a selection probability " +
+            "proportional to its fitness. Then, a number of individuals are selected randomly based on these probabilities.",
             "Geospiza", "SelectionStrategy")
     {
     }

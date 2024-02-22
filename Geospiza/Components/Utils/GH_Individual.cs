@@ -36,6 +36,7 @@ public class GH_Individual : GH_Component
     protected override void RegisterOutputParams(GH_OutputParamManager pManager)
     {
         pManager.AddNumberParameter("Fitness", "F", "The fitness value", GH_ParamAccess.item);
+        pManager.AddGenericParameter("Genes", "G", "The genes", GH_ParamAccess.list);
         
     }
 
@@ -50,6 +51,7 @@ public class GH_Individual : GH_Component
         var individual = individualWrapper.Value as Individual;
         
         DA.SetData(0, individual.Fitness);
+        DA.SetDataList(1, individual.GenePool);
     }
 
     public override GH_Exposure Exposure => GH_Exposure.tertiary;

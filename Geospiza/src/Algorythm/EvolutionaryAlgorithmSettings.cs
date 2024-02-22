@@ -4,6 +4,7 @@ using Geospiza.Strategies.Mutation;
 using Geospiza.Strategies.Pairing;
 using Geospiza.Strategies.Selection;
 using Geospiza.Strategies.Termination;
+using Newtonsoft.Json;
 
 namespace Geospiza.Algorythm;
 
@@ -21,4 +22,14 @@ public class EvolutionaryAlgorithmSettings
     // Constructor to initialize default values
     public EvolutionaryAlgorithmSettings()
     { }
+    
+    public string ToJson()
+    {
+        return JsonConvert.SerializeObject(this, Formatting.Indented);
+    }
+    
+    public static EvolutionaryAlgorithmSettings FromJson(string json)
+    {
+        return JsonConvert.DeserializeObject<EvolutionaryAlgorithmSettings>(json);
+    }
 }

@@ -87,11 +87,6 @@ public class EvolutionaryAlgorithm : EvolutionBlueprint
             }
             //Test the population
             newPopulation.TestPopulation();
-            
-
-            var arg = populationCopy.GetAverageFitness();
-            var newAverageFitness = newPopulation.GetAverageFitness();
-            var diversity = newPopulation.GetDiversity();
 
             //Get stats of the current population
             StateManager.GetDocument().ExpirePreview(false);

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Data;
+using Grasshopper.Kernel.Special;
 using Grasshopper.Kernel.Types;
 using Rhino.Geometry;
 
@@ -11,14 +12,14 @@ namespace Geospiza.Comonents;
 public class GeneSelector : GH_Component
 {
     //REF "https://discourse.mcneel.com/t/gene-pool-component/59835/8"
-    
-    
+
+
     /// <summary>
     /// Initializes a new instance of the GeneSelector class.
     /// </summary>
     public GeneSelector()
         : base("GeneSelector", "GS",
-            "Collects the genes for the evolutionary algorithm",
+            "Collects the genes for the evolutionary algorithm. It is also possible to search the document for gene parameters these need the prefix GP_",
             "Geospiza", "Utils")
     {
     }
@@ -28,7 +29,11 @@ public class GeneSelector : GH_Component
     /// </summary>
     protected override void RegisterInputParams(GH_InputParamManager pManager)
     {
-        pManager.AddGenericParameter("GeneParams", "GP", "The gene parameters this can be number sliders or a galapagos gene list", GH_ParamAccess.tree);
+        pManager.AddGenericParameter("GeneParams", "GP",
+            "The gene parameters this can be number sliders or a galapagos gene list", GH_ParamAccess.tree);
+        pManager.AddBooleanParameter("SearchDocument", "SD", "Search the document for gene parameters",
+            GH_ParamAccess.item, false);
+        pManager.AddBooleanParameter("Clear", "C", "Clear the gene parameters from the doc search", GH_ParamAccess.item, false);
     }
 
     /// <summary>
@@ -38,6 +43,8 @@ public class GeneSelector : GH_Component
     {
         pManager.AddTextParameter("Genes", "GID", "The gene ids", GH_ParamAccess.list);
     }
+    
+    private List<string> docParams = new List<string>();
 
     /// <summary>
     /// This is the method that actually does the work.
@@ -45,20 +52,52 @@ public class GeneSelector : GH_Component
     /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
     protected override void SolveInstance(IGH_DataAccess DA)
     {
-
         var allGeneParams = this.Params.Input[0].Sources;
         var geneIds = new List<string>();
-
-        foreach (var param in allGeneParams)
-        {
-            geneIds.Add(param.InstanceGuid.ToString());
-        }
+        var searchDocument = false;
+        DA.GetData(1, ref searchDocument);
+        var clear = false;
+        DA.GetData(2, ref clear);
         
+        if (geneIds.Count == 0 || geneIds.Count != allGeneParams.Count)
+        {
+            geneIds.Clear();
+            foreach (var param in allGeneParams)
+            {
+                geneIds.Add(param.InstanceGuid.ToString());
+            }
+        }
+
+        if (searchDocument)
+        {
+            foreach (var ghobject in OnPingDocument().Objects)
+            {
+                var currentType = ghobject.GetType().ToString();
+
+                var isRightType = currentType == "Grasshopper.Kernel.Special.GH_NumberSlider" ||
+                                  currentType == "GalapagosComponents.GalapagosGeneListObject";
+                if (ghobject.NickName.StartsWith("GP_") && isRightType)
+                {
+                    if (!docParams.Contains(ghobject.InstanceGuid.ToString()))
+                    {
+                        docParams.Add(ghobject.InstanceGuid.ToString());
+                    }
+                }
+            }
+        }
+
+        if (clear)
+        {
+            docParams.Clear();
+        }
+
+        geneIds.AddRange(docParams);
         DA.SetDataList(0, geneIds);
     }
 
-    
+
     public override GH_Exposure Exposure => GH_Exposure.primary;
+
     /// <summary>
     /// Provides an Icon for the component.
     /// </summary>

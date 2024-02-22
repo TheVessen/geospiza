@@ -73,6 +73,16 @@ namespace Geospiza.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap DeconstructGene {
+            get {
+                object obj = ResourceManager.GetObject("DeconstructGene", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap Fitness {
             get {
                 object obj = ResourceManager.GetObject("Fitness", resourceCulture);
@@ -236,6 +246,16 @@ namespace Geospiza.Properties {
         internal static System.Drawing.Bitmap Solver {
             get {
                 object obj = ResourceManager.GetObject("Solver", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap StochasticUniversalSampling {
+            get {
+                object obj = ResourceManager.GetObject("StochasticUniversalSampling", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }

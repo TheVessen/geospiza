@@ -1,8 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Linq;
+using System.Net.Sockets;
 using Geospiza.Core;
 using Grasshopper.Kernel;
+using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
 using Rhino.Geometry;
 
@@ -25,7 +28,7 @@ public class ReinstateIndividual : GH_Component
     /// </summary>
     protected override void RegisterInputParams(GH_InputParamManager pManager)
     {
-        pManager.AddGenericParameter("Individual", "I", "The individual to reinstate", GH_ParamAccess.item);
+        pManager.AddGenericParameter("Individual", "I", "The individual to reinstate", GH_ParamAccess.tree);
         pManager.AddBooleanParameter("Reinstate", "R", "Reinstate the individual", GH_ParamAccess.item, false);
     }
 
@@ -44,10 +47,24 @@ public class ReinstateIndividual : GH_Component
     protected override void SolveInstance(IGH_DataAccess DA)
     {
         // Declare a variable for the input
-        GH_ObjectWrapper individualWrapper = new GH_ObjectWrapper();
+        GH_Structure<IGH_Goo> individualWrapper = new GH_Structure<IGH_Goo>();
+        if (!DA.GetDataTree(0, out individualWrapper)) return;
+        
+        
+        var data = individualWrapper.AllData(true).ToList();
+        if (data.Count == 0)
+        {
+            return;
+        }
+
+        if (data.Count != 1)
+        {
+            AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Please provide a single individual");
+            return;
+        }
+        
         // If the input is not retrieved, return
-        if (!DA.GetData(0, ref individualWrapper)) return;
-        individual = individualWrapper.Value as Individual;
+        individual = data[0].ScriptVariable() as Individual;
         bool reinstate = false;
         if (!DA.GetData(1, ref reinstate)) return;
 

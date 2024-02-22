@@ -60,6 +60,11 @@ public class PercentageMutation : MutationStrategy
         _mutationPercentage = mutationPercentage;
     }
 
+    /// <summary>
+    /// Overrides the Mutate method from the MutationStrategy base class.
+    /// This method applies a percentage-based mutation to each gene in the individual's gene pool.
+    /// </summary>
+    /// <param name="individual">The individual to be mutated.</param>
     public override void Mutate(Individual individual)
     {
         foreach (var t in individual.GenePool)

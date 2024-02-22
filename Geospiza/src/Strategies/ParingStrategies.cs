@@ -22,13 +22,13 @@ public class PairingStrategy
     /// Value 0 for Euchlidean distance and 1 for Manhattan distance
     /// </summary>
     private int DistanceFunction { get; set; } = 0;
-    public PairingStrategy(double inBreedingFactor, int distanceFunction = 0)
+    public PairingStrategy(double inBreedingFactor, int distanceFunction = 1)
     {
         InBreedingFactor = inBreedingFactor;
         
         if(distanceFunction > 1 || distanceFunction < 0)
         {
-            throw new ArgumentOutOfRangeException("Distance function must be 0 or 1");
+            throw new ArgumentOutOfRangeException("inBreedingFactor");
         } 
         DistanceFunction = distanceFunction;
     }

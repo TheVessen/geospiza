@@ -60,7 +60,6 @@ namespace Geospiza.Comonents
             MeshingParameters mParams = new MeshingParameters();
             mParams.SimplePlanes = true;
             //vars
-            List<Mesh> meshes = new List<Mesh>();
             List<ThreeMaterial> threeMaterials = new List<ThreeMaterial>();
             
             //Convert to ThreeMaterial
@@ -98,50 +97,9 @@ namespace Geospiza.Comonents
                 this.AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "The input data is not valid. The structure of the material and the geo must be the same or the material must contain only one object");
                 return;
             }
+
+            List<Mesh> meshes = Helpers.MeshConverter(GHBaseGeo);
             
-            //Convert to mesh
-            foreach (IGH_Goo goo in GHBaseGeo.AllData(true))
-            {
-                try
-                {
-                    object internalData = goo.ScriptVariable(); // This method gets the underlying geometry data.
-
-                    switch (internalData)
-                    {
-                        case Mesh mesh:
-                            meshes.Add(mesh);
-                            break;
-
-                        case Brep brep:
-                            Mesh[] brepMeshes = Mesh.CreateFromBrep(brep, mParams);
-                            var joinedMesh = new Mesh();
-                            foreach (var brepMesh in brepMeshes)
-                            {
-                                joinedMesh.Append(brepMesh);
-                            }
-                            meshes.Add(joinedMesh);
-                            break;
-
-                        case Surface surface:
-                            Mesh surfaceMesh = Mesh.CreateFromSurface(surface, mParams);
-                            meshes.Add(surfaceMesh);
-                            break;
-
-                        default:
-                            this.AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Could not convert geo to mesh");
-                            break;
-                    }
-                }
-                catch
-                {
-                    this.AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Something went wrong in the casting process");
-                }
-                
-                if (meshes.Count == 0)
-                {
-                    this.AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "No meshes to convert");
-                }
-            }
             
             foreach (var threeMaterialWrapper in materialWrappers.AllData(false))
             {
