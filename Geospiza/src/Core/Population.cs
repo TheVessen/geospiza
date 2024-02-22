@@ -34,9 +34,8 @@ public class Population
     }
 
 
-    public void TestPopulation()
+    public void TestPopulation(StateManager stateManager)
     {
-        StateManager stateManager = StateManager.Instance;
         var doc = stateManager.GetDocument();
 
         foreach (var individual in Inhabitants)
@@ -46,7 +45,7 @@ public class Population
                 var matchingGene = stateManager.Genotype[gene.GeneGuid];
                 if (matchingGene != null)
                 {
-                    matchingGene.SetTickValue(gene.TickValue);
+                    matchingGene.SetTickValue(gene.TickValue, stateManager);
                 }
             }
             stateManager.GetDocument().NewSolution(false);

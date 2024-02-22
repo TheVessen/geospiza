@@ -11,7 +11,7 @@ namespace Geospiza.Core;
 
 public class Observer
 {
-    private static Observer _instance;
+    private static Dictionary<GH_BasicSolver, Observer> _instances = new Dictionary<GH_BasicSolver, Observer>();
     public int CurrentGeneration { get; private set; }
     public Population CurrentPopulation { get; private set; }
     public List<double> AverageFitness { get; private set; } = new List<double>();
@@ -23,16 +23,13 @@ public class Observer
     public List<Individual> BestIndividuals { get; private set; } = new List<Individual>();
     public List<double> FitnessStandardDeviation { get; private set; } = new List<double>();
 
-    public static Observer Instance
+    public static Observer GetInstance(GH_BasicSolver solver)
     {
-        get
+        if (!_instances.ContainsKey(solver))
         {
-            if (_instance == null)
-            {
-                _instance = new Observer();
-            }
-            return _instance;
+            _instances[solver] = new Observer();
         }
+        return _instances[solver];
     }
     
     public void Snapshot(Population currentPopulation)

@@ -10,12 +10,12 @@ namespace Geospiza.Strategies.Termination;
 public interface ITerminationStrategy
 {
     public double TerminationThreshold { get; init; }
-    public bool Evaluate();
+    public bool Evaluate(Observer observer);
 }
 
 public abstract class TerminationStrategy : ITerminationStrategy
 {
-    public abstract bool Evaluate();
+    public abstract bool Evaluate(Observer observer);
     public double TerminationThreshold { get; init; }
 }
 
@@ -28,9 +28,8 @@ public class ProgressConvergence: TerminationStrategy
         ProgessRange = progessRange;
     }
     
-    public override bool Evaluate()
+    public override bool Evaluate(Observer observer)
     {
-        var observer = Observer.Instance;
         var averageFitness = observer.AverageFitness;
         var bestFitness = observer.BestFitness;
 
@@ -61,9 +60,9 @@ public class PopulationDiversity: TerminationStrategy
         TerminationThreshold = threshold;
     }
 
-    public override bool Evaluate()
+    public override bool Evaluate( Observer observer)
     {
-        var population = Observer.Instance.GetCurrentPopulation();
+        var population = observer.GetCurrentPopulation();
         var diversity = population.GetDiversity();
         
         return diversity <= TerminationThreshold;
@@ -77,9 +76,8 @@ public class MaxGenerations: TerminationStrategy
         TerminationThreshold = maxGenerations;
     }
 
-    public override bool Evaluate()
+    public override bool Evaluate(Observer observer)
     {
-        var observer = Observer.Instance;
         return observer.CurrentGeneration >= TerminationThreshold;
     }
 }

@@ -8,26 +8,25 @@ namespace Geospiza.Core;
 
 public class StateManager
 {
-    private static StateManager _instance;
+    private static Dictionary<GH_BasicSolver, StateManager> _instances = new Dictionary<GH_BasicSolver, StateManager>();
     private GH_Document _document;
     public GH_Component ThisComponent { get; private set; } = null;
     public int NumberOfGeneIds { get;set; } = 0;
-    
+
     public Fitness FitnessComponent { get; private set; }
-    public Dictionary<Guid, TemplateGene> Genotype { get; private set; } 
-    
+    public Dictionary<Guid, TemplateGene> Genotype { get; private set; }
+    public Dictionary<Guid, GH_NumberSlider> _allSliders;
+    public Dictionary<Guid, dynamic> _allGenePools;
+
     private StateManager() { }
 
-    public static StateManager Instance
+    public static StateManager GetInstance(GH_BasicSolver solver)
     {
-        get
+        if (!_instances.ContainsKey(solver))
         {
-            if (_instance == null)
-            {
-                _instance = new StateManager();
-            }
-            return _instance;
+            _instances[solver] = new StateManager();
         }
+        return _instances[solver];
     }
 
     public void SetDocument(GH_Document document)
@@ -60,19 +59,23 @@ public class StateManager
             FitnessComponent = fitness;
           }
         }
+        if(FitnessComponent == null)
+        {
+          ThisComponent.AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "No fitness component found");
+        }
     }
 
     public void SetGenes(List<string> geneIds)
     {
         if (Genotype == null)
         {
-            Genotype = InitializeGenePool(geneIds, _document);
+            InitializeGenePool(geneIds, _document);
             NumberOfGeneIds = geneIds.Count;
         } else if (NumberOfGeneIds != geneIds.Count)
         {
             Reset();
             NumberOfGeneIds = geneIds.Count;
-            Genotype = InitializeGenePool(geneIds, _document);
+            InitializeGenePool(geneIds, _document);
         }
     }
     
@@ -81,6 +84,8 @@ public class StateManager
         FitnessComponent = null;
         Genotype = null;
         ThisComponent = null;
+        _allSliders = null;
+        _allGenePools = null;
     }
     
     public void SetThisComponent(GH_Component component)
@@ -98,7 +103,7 @@ public class StateManager
     /// <param name="geneIds">A list of gene IDs to initialize the gene pool with.</param>
     /// <param name="doc">The GH_Document to use for finding objects.</param>
     /// <returns>A dictionary of genes where the key is a Guid and the value is a Gene object.</returns>
-    private static Dictionary<Guid, TemplateGene> InitializeGenePool(List<string> geneIds, GH_Document doc)
+    private void InitializeGenePool(List<string> geneIds, GH_Document doc)
     {
         var genes = new Dictionary<Guid, TemplateGene>();
         var genePools = new Dictionary<Guid, dynamic>();
@@ -137,7 +142,8 @@ public class StateManager
                 }
             }
         }
-        new TemplateGene(numberSliders, genePools);
-        return genes;
+        Genotype =  genes;
+        _allSliders = numberSliders;
+        _allGenePools = genePools;
     }
 }

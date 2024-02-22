@@ -1,8 +1,10 @@
-﻿namespace Geospiza.Algorythm;
+﻿using Geospiza.Core;
+
+namespace Geospiza.Algorythm;
 
 public interface IEvolutionarySolver
 {
     
-    void InitializePopulation();
+    void InitializePopulation(StateManager stateManager, Observer observer);
     void RunAlgorithm();
 }

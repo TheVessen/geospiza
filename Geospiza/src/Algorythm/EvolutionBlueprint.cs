@@ -18,8 +18,6 @@ public abstract class EvolutionBlueprint : IEvolutionarySolver
 {
     // Other shared properties
     protected readonly Random Random = new Random();
-    protected static readonly StateManager StateManager = StateManager.Instance;
-    protected Observer Observer { get; set; }
 
     //Inhabitants
     protected Population Population { get; set; } = new Population();
@@ -42,7 +40,6 @@ public abstract class EvolutionBlueprint : IEvolutionarySolver
     /// <param name="settings"></param>
     protected EvolutionBlueprint(EvolutionaryAlgorithmSettings settings)
     {
-        Observer = Observer.Instance;
         PopulationSize = settings.PopulationSize;
         MaxGenerations = settings.MaxGenerations;
         EliteSize = settings.EliteSize;
@@ -77,7 +74,7 @@ public abstract class EvolutionBlueprint : IEvolutionarySolver
     /// <summary>
     /// Initializes the population for the evolutionary algorithm.
     /// </summary>
-    public void InitializePopulation()
+    public void InitializePopulation(StateManager stateManager, Observer observer)
     {
         //Create an empty population
 
@@ -88,10 +85,10 @@ public abstract class EvolutionBlueprint : IEvolutionarySolver
             var individual = new Individual();
 
             //Go through the gene pool and create a new individual
-            foreach (var templateGene in StateManager.Genotype)
+            foreach (var templateGene in stateManager.Genotype)
             {
                 var ctg = templateGene.Value;
-                ctg.SetTickValue(Random.Next(ctg.TickCount));
+                ctg.SetTickValue(Random.Next(ctg.TickCount), stateManager);
 
                 var stableGene = new Gene(ctg.TickValue, ctg.GeneGuid,
                     ctg.TickCount, ctg.Name, ctg.GhInstanceGuid,
@@ -100,12 +97,12 @@ public abstract class EvolutionBlueprint : IEvolutionarySolver
                 individual.AddStableGene(stableGene);
             }
 
-            StateManager.GetDocument().NewSolution(false);
-            StateManager.GetDocument().ExpirePreview(false);
-            StateManager.FitnessComponent.ExpireSolution(false);
+            stateManager.GetDocument().NewSolution(false);
+            stateManager.GetDocument().ExpirePreview(false);
+            stateManager.FitnessComponent.ExpireSolution(false);
 
             //Get fitness from the state state manager and apply it to the individual
-            var currentFitness = StateManager.FitnessComponent.FitnessValue;
+            var currentFitness = stateManager.FitnessComponent.FitnessValue;
             individual.SetFitness(currentFitness);
             individual.SetGeneration(0);
 
@@ -113,8 +110,8 @@ public abstract class EvolutionBlueprint : IEvolutionarySolver
             newPopulation.AddIndividual(individual);
         }
 
-        Observer.Snapshot(newPopulation);
-        Observer.SetPopulation(newPopulation);
+        observer.Snapshot(newPopulation);
+        observer.SetPopulation(newPopulation);
         Population = newPopulation;
     }
 }

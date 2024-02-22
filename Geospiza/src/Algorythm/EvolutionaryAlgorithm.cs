@@ -8,14 +8,18 @@ namespace Geospiza.Algorythm;
 
 public class EvolutionaryAlgorithm : EvolutionBlueprint
 {
-    public EvolutionaryAlgorithm(EvolutionaryAlgorithmSettings settings) : base(settings)
+    private StateManager StateManager { get; set; }
+    private Observer Observer { get; set; }
+    public EvolutionaryAlgorithm(EvolutionaryAlgorithmSettings settings, StateManager stateManager, Observer observer) : base(settings)
     {
+        StateManager = stateManager;
+        Observer = observer;
     }
 
     public override void RunAlgorithm()
     {
         //Initialize the population
-        InitializePopulation();
+        InitializePopulation(StateManager, Observer);
 
         //Run the algorithm
         for (var i = 0; i < MaxGenerations - 1; i++)
@@ -84,7 +88,7 @@ public class EvolutionaryAlgorithm : EvolutionBlueprint
                 newPopulation.Inhabitants.RemoveRange(PopulationSize, removeCount);
             }
             //Test the population
-            newPopulation.TestPopulation();
+            newPopulation.TestPopulation(StateManager);
 
             //Get stats of the current population
             StateManager.GetDocument().ExpirePreview(false);
@@ -94,7 +98,7 @@ public class EvolutionaryAlgorithm : EvolutionBlueprint
 
             if (i > 5)
             {
-                if (TerminationStrategy.Evaluate()) break;
+                if (TerminationStrategy.Evaluate(Observer)) break;
             }
 
             Population = newPopulation;
@@ -102,6 +106,6 @@ public class EvolutionaryAlgorithm : EvolutionBlueprint
 
         //At end of algorithm, reinstate the best individual
         var best = Population.SelectTopIndividuals(1);
-        best[0].Reinstate();
+        best[0].Reinstate(StateManager);
     }
 }

@@ -23,6 +23,8 @@ public class GH_BasicSolver : GH_Component
             "Solver for single objective optimization problems",
             "Geospiza", "Solvers")
     {
+        _stateManager = StateManager.GetInstance(this);
+        _observer = Observer.GetInstance(this);;
     }
 
     /// <summary>
@@ -30,7 +32,7 @@ public class GH_BasicSolver : GH_Component
     /// </summary>
     protected override void RegisterInputParams(GH_InputParamManager pManager)
     {
-        pManager.AddTextParameter("Gene", "GID", "The gene ids from the GeneSelector", GH_ParamAccess.list);
+        pManager.AddTextParameter("Genes", "GID", "The gene ids from the GeneSelector", GH_ParamAccess.list);
         pManager.AddGenericParameter("Settings", "S", "The settings for the evolutionary algorithm",
             GH_ParamAccess.item);
         pManager.AddNumberParameter("Timestamp", "T", "Timestamp from the server to determine if the solver should run",
@@ -44,8 +46,12 @@ public class GH_BasicSolver : GH_Component
     protected override void RegisterOutputParams(GH_OutputParamManager pManager)
     {
         pManager.AddGenericParameter("Observer", "LP", "The last population", GH_ParamAccess.item);
+        pManager.AddGenericParameter("StateManager", "SM", "The state managers", GH_ParamAccess.item);
         pManager.AddNumberParameter("CurrentGeneration", "CG", "The current generation", GH_ParamAccess.item);
     }
+    
+    private StateManager _stateManager;
+    private Observer _observer;
 
     private long _lastTimestamp = 0;
     private EvolutionaryAlgorithmSettings _privateSettings;
@@ -53,8 +59,6 @@ public class GH_BasicSolver : GH_Component
     private  Guid _solutionId = Guid.NewGuid();
     private Guid _lastSolutionId;
     
-
-
     /// <summary>
     /// This is the method that actually does the work.
     /// </summary>
@@ -81,20 +85,37 @@ public class GH_BasicSolver : GH_Component
         {
             return;
         }
-
+        
         // Set up state manager
-        StateManager stateManager = StateManager.Instance;
-        stateManager.SetDocument(OnPingDocument());
-        stateManager.SetGenes(geneIds);
-        stateManager.SetFitnessComponent();
-        stateManager.SetThisComponent(this);
+        if (_stateManager.GetDocument() == null)
+        {
+            _stateManager.SetDocument(OnPingDocument());
+            _stateManager.SetThisComponent(this);
+            _stateManager.SetFitnessComponent();
+        }
+        
+        _stateManager.SetGenes(geneIds);
+
 
         // Check if the solver should run
         bool _run = (intTimestamp != 0 && intTimestamp != _lastTimestamp) || run;
+        
+        if(_stateManager.FitnessComponent == null)
+        {
+            _stateManager.SetThisComponent(this);
+            _stateManager.SetFitnessComponent();
+
+            if (_stateManager.FitnessComponent == null)
+            {
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "No fitness component found");
+                return;
+            }
+        }
 
         // Run the solver
         if (_run)
         {
+
             DA.SetData(0, null);
             _isRunning = true;
             OnPingDocument().ScheduleSolution(100, ScheduleCallback);
@@ -105,9 +126,9 @@ public class GH_BasicSolver : GH_Component
     void ScheduleCallback(GH_Document doc)
     {
         _solutionId = Guid.NewGuid();
-        Observer.Instance.Reset();
+        _observer.Reset();
 
-        var evolutionaryAlgorithm = new EvolutionaryAlgorithm(_privateSettings);
+        var evolutionaryAlgorithm = new EvolutionaryAlgorithm(_privateSettings, _stateManager, _observer);
 
         evolutionaryAlgorithm.RunAlgorithm();
         _isRunning = false;
@@ -121,11 +142,13 @@ public class GH_BasicSolver : GH_Component
         if (_isRunning == false)
         {
             Params.Output[0].ClearData();
-            Params.Output[0].AddVolatileData(new GH_Path(0), 0, Observer.Instance);
+            Params.Output[0].AddVolatileData(new GH_Path(0), 0, _observer);
+            Params.Output[1].ClearData();
+            Params.Output[1].AddVolatileData(new GH_Path(0), 0, _stateManager);
         }
 
-        Params.Output[1].ClearData();
-        Params.Output[1].AddVolatileData(new GH_Path(0), 0, Observer.Instance.CurrentGeneration);
+        Params.Output[2].ClearData();
+        Params.Output[2].AddVolatileData(new GH_Path(0), 0, _observer.CurrentGeneration);
     }
 
     /// <summary>

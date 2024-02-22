@@ -28,6 +28,7 @@ public class ReinstateIndividual : GH_Component
     /// </summary>
     protected override void RegisterInputParams(GH_InputParamManager pManager)
     {
+        pManager.AddGenericParameter("StateManager", "SM", "The state managers", GH_ParamAccess.item);
         pManager.AddGenericParameter("Individual", "I", "The individual to reinstate", GH_ParamAccess.tree);
         pManager.AddBooleanParameter("Reinstate", "R", "Reinstate the individual", GH_ParamAccess.item, false);
     }
@@ -39,6 +40,7 @@ public class ReinstateIndividual : GH_Component
     {
     }
     private Individual individual;
+    private StateManager stateManager;
 
     /// <summary>
     /// This is the method that actually does the work.
@@ -46,9 +48,14 @@ public class ReinstateIndividual : GH_Component
     /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
     protected override void SolveInstance(IGH_DataAccess DA)
     {
+        
+        GH_ObjectWrapper stateManagerWrapper = null;
+        if (!DA.GetData(0, ref stateManagerWrapper)) return;
+        stateManager = stateManagerWrapper.Value as StateManager;
+        
         // Declare a variable for the input
         GH_Structure<IGH_Goo> individualWrapper = new GH_Structure<IGH_Goo>();
-        if (!DA.GetDataTree(0, out individualWrapper)) return;
+        if (!DA.GetDataTree(1, out individualWrapper)) return;
         
         
         var data = individualWrapper.AllData(true).ToList();
@@ -66,7 +73,7 @@ public class ReinstateIndividual : GH_Component
         // If the input is not retrieved, return
         individual = data[0].ScriptVariable() as Individual;
         bool reinstate = false;
-        if (!DA.GetData(1, ref reinstate)) return;
+        if (!DA.GetData(2, ref reinstate)) return;
 
         if (reinstate)
         {
@@ -77,7 +84,7 @@ public class ReinstateIndividual : GH_Component
     void ScheduleCallback(GH_Document doc)
     {
         OnPingDocument().NewSolution(false);
-        individual.Reinstate();
+        individual.Reinstate(stateManager);
         ExpirePreview(false);
         ExpireSolution(false);
     }

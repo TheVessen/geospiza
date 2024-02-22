@@ -14,8 +14,7 @@ public class TemplateGene
     public Guid GeneGuid { get; private set; }
     public string Name { get; private set; }
     public int TickCount { get; private set; }
-    private static Dictionary<Guid, GH_NumberSlider> _allSliders;
-    private static Dictionary<Guid, dynamic> _allGenePools;
+
 
     //Slider relevant properties
     private GH_NumberSlider _slider;
@@ -23,12 +22,6 @@ public class TemplateGene
     //GenePool relevant properties
     private dynamic _genPoolList;
     public int GenePoolIndex { get; private set; }
-
-    public TemplateGene(Dictionary<Guid, GH_NumberSlider> geneSliders, Dictionary<Guid, dynamic> genePools)
-    {
-        _allSliders = geneSliders;
-        _allGenePools = genePools;
-    }
 
     public TemplateGene(dynamic genPoolList, int geneIndex)
     {
@@ -52,8 +45,10 @@ public class TemplateGene
         GenePoolIndex = -1;
     }
 
-    public void SetTickValue(int tickValue)
+    public void SetTickValue(int tickValue, StateManager stateManager)
     {
+        var _allSliders = stateManager._allSliders;
+        var _allGenePools = stateManager._allGenePools;
         if (_allSliders == null && _allGenePools == null)
         {
             throw new Exception("Gene class has not been initialized with a dictionary of sliders and gene pools.");

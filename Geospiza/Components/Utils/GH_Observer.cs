@@ -36,7 +36,7 @@ public class GH_Observer : GH_Component
     /// </summary>
     protected override void RegisterOutputParams(GH_OutputParamManager pManager)
     {
-        pManager.AddGenericParameter("Individuals", "I", "The individuals in the population", GH_ParamAccess.list);
+        pManager.AddGenericParameter("Individuals", "I", "All individual from the last generation", GH_ParamAccess.list);
         pManager.AddNumberParameter("AverageFitness", "AF", "Average fitness for each generation", GH_ParamAccess.list);
         pManager.AddNumberParameter("BestFitness", "BF", "Best fitness for each generation", GH_ParamAccess.list);
         pManager.AddNumberParameter("WorstFitness", "WF", "Worst fitness for each generation", GH_ParamAccess.list);

@@ -50,13 +50,12 @@ public class Individual
         Generation = generation;
     }
     
-    public void Reinstate()
+    public void Reinstate(StateManager stateManager)
     {
-        var stateManager = StateManager.Instance;
         foreach (var gene in GenePool)
         {
             var matchingGene = stateManager.Genotype[gene.GeneGuid];
-            matchingGene?.SetTickValue(gene.TickValue);
+            matchingGene?.SetTickValue(gene.TickValue, stateManager);
         }
     }
 

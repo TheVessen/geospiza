@@ -53,7 +53,6 @@ namespace Geospiza
                 Vertices,
                 Indices, 
                 Material,
-                Fitness = StateManager.Instance.FitnessComponent.FitnessValue
             };
         }
     }
