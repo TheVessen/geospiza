@@ -70,6 +70,7 @@ public abstract class EvolutionBlueprint : IEvolutionarySolver
         var copiedPopulation = Population.Inhabitants.Select(individual => new Individual(individual)).ToList();
 
         // Take the top 'eliteSize' individuals
+        copiedPopulation.Sort((a, b) => b.Fitness.CompareTo(a.Fitness));
         return copiedPopulation.Take(eliteSize).ToList();
     }
 

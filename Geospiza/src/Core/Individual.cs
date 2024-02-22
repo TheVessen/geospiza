@@ -27,7 +27,7 @@ public class Individual
     public Individual(Individual individual)
     {
         GenePool = individual.GenePool;
-        Fitness = 0;
+        Fitness = individual.Fitness;
         Probability = 0;
     }
 

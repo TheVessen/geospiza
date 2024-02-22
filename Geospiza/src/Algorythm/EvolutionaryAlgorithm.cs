@@ -37,8 +37,6 @@ public class EvolutionaryAlgorithm : EvolutionBlueprint
                 //Pair individuals in the mating pool
                 var matingPairs = PairingStrategy.PairIndividuals(matingPool);
                 
-                
-
                 foreach (var pair in matingPairs)
                 {
                     var children = new List<Individual>();
