@@ -43,7 +43,6 @@ namespace Geospiza.Comonents
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddNumberParameter("Solution", "S", "The solution", GH_ParamAccess.list);
         }
 
         /// <summary>

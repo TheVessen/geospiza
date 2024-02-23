@@ -48,16 +48,17 @@ public class GH_BasicSolver : GH_Component
         pManager.AddGenericParameter("Observer", "LP", "The last population", GH_ParamAccess.item);
         pManager.AddGenericParameter("StateManager", "SM", "The state managers", GH_ParamAccess.item);
         pManager.AddNumberParameter("CurrentGeneration", "CG", "The current generation", GH_ParamAccess.item);
+        pManager.AddBooleanParameter("IsRunning", "IR", "Is the solver running", GH_ParamAccess.item);
     }
     
     private StateManager _stateManager;
     private Observer _observer;
-
     private long _lastTimestamp = 0;
     private EvolutionaryAlgorithmSettings _privateSettings;
-    private bool _isRunning = true;
+    private bool _isRunning = false;
     private  Guid _solutionId = Guid.NewGuid();
     private Guid _lastSolutionId;
+    private TimeSpan _time;
     
     /// <summary>
     /// This is the method that actually does the work.
@@ -96,7 +97,6 @@ public class GH_BasicSolver : GH_Component
         
         _stateManager.SetGenes(geneIds);
 
-
         // Check if the solver should run
         bool _run = (intTimestamp != 0 && intTimestamp != _lastTimestamp) || run;
         
@@ -115,7 +115,6 @@ public class GH_BasicSolver : GH_Component
         // Run the solver
         if (_run)
         {
-
             DA.SetData(0, null);
             _isRunning = true;
             OnPingDocument().ScheduleSolution(100, ScheduleCallback);
@@ -125,6 +124,7 @@ public class GH_BasicSolver : GH_Component
 
     void ScheduleCallback(GH_Document doc)
     {
+        DateTime start = DateTime.Now;
         _solutionId = Guid.NewGuid();
         _observer.Reset();
 
@@ -134,6 +134,8 @@ public class GH_BasicSolver : GH_Component
         _isRunning = false;
         ExpireSolution(false);
         _lastSolutionId = _solutionId;
+        var end = DateTime.Now;
+        var time = end - start;
     }
 
     protected override void AfterSolveInstance()
@@ -149,6 +151,8 @@ public class GH_BasicSolver : GH_Component
 
         Params.Output[2].ClearData();
         Params.Output[2].AddVolatileData(new GH_Path(0), 0, _observer.CurrentGeneration);
+        Params.Output[3].ClearData();
+        Params.Output[3].AddVolatileData(new GH_Path(0), 0, _isRunning);
     }
 
     /// <summary>
