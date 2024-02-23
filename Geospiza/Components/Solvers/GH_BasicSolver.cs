@@ -51,8 +51,8 @@ public class GH_BasicSolver : GH_Component
         pManager.AddBooleanParameter("IsRunning", "IR", "Is the solver running", GH_ParamAccess.item);
     }
     
-    private StateManager _stateManager;
-    private Observer _observer;
+    private readonly StateManager _stateManager;
+    private readonly Observer _observer;
     private long _lastTimestamp = 0;
     private EvolutionaryAlgorithmSettings _privateSettings;
     private bool _isRunning = false;
@@ -98,7 +98,7 @@ public class GH_BasicSolver : GH_Component
         _stateManager.SetGenes(geneIds);
 
         // Check if the solver should run
-        bool _run = (intTimestamp != 0 && intTimestamp != _lastTimestamp) || run;
+        bool start = (intTimestamp != 0 && intTimestamp != _lastTimestamp) || run;
         
         if(_stateManager.FitnessComponent == null)
         {
@@ -113,7 +113,7 @@ public class GH_BasicSolver : GH_Component
         }
 
         // Run the solver
-        if (_run)
+        if (start)
         {
             DA.SetData(0, null);
             _isRunning = true;
@@ -122,9 +122,9 @@ public class GH_BasicSolver : GH_Component
         }
     }
 
-    void ScheduleCallback(GH_Document doc)
+    private void ScheduleCallback(GH_Document doc)
     {
-        DateTime start = DateTime.Now;
+        var start = DateTime.Now;
         _solutionId = Guid.NewGuid();
         _observer.Reset();
 
