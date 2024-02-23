@@ -95,7 +95,7 @@ public class TournamentSelection : SelectionStrategy
             }
 
             // Select the best individual from the tournament
-            var bestIndividual = tournament.MaxBy(ind => ind.Fitness);
+            var bestIndividual = tournament.OrderBy(ind => ind.Fitness).First();
             selectedIndividuals.Add(bestIndividual);
         }
 

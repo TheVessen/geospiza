@@ -9,14 +9,14 @@ namespace Geospiza.Strategies.Termination;
 
 public interface ITerminationStrategy
 {
-    public double TerminationThreshold { get; init; }
+    public double TerminationThreshold { get; set; }
     public bool Evaluate(Observer observer);
 }
 
 public abstract class TerminationStrategy : ITerminationStrategy
 {
     public abstract bool Evaluate(Observer observer);
-    public double TerminationThreshold { get; init; }
+    public double TerminationThreshold { get; set; }
 }
 
 public class ProgressConvergence: TerminationStrategy
@@ -42,8 +42,8 @@ public class ProgressConvergence: TerminationStrategy
 
         for (var i = 1; i <= ProgessRange; i++)
         {
-            var averageDelta = Math.Abs(averageFitness[^i] - averageFitness[^(i + 1)]);
-            var normalizedDelta = averageDelta / bestFitness[^i];
+            var averageDelta = Math.Abs(averageFitness[averageFitness.Count - i] - averageFitness[averageFitness.Count - (i + 1)]);
+            var normalizedDelta = averageDelta / bestFitness[bestFitness.Count - i];
             totalNormalizedDelta += normalizedDelta;
         }
 

@@ -6,13 +6,13 @@ namespace Geospiza.Strategies.Crossover;
 
 public interface ICrossoverStrategy
 {
-    public double CrossoverRate { get; init; }
+    public double CrossoverRate { get;  set; }
     public List<Individual> Crossover(Individual parent1, Individual parent2);
 }
 
 public abstract class CrossoverStrategy: ICrossoverStrategy
 {
-    public double CrossoverRate { get; init; }
+    public double CrossoverRate { get; set; }
     protected readonly Random Random = new Random();
     
     public abstract List<Individual> Crossover(Individual parent1, Individual parent2);

@@ -7,13 +7,13 @@ using Rhino.Geometry;
 
 namespace Geospiza;
 
-public class GH_IsotropicSelection : GH_Component
+public class OBSOLETE_GH_IsotropicSelection : GH_Component
 {
 
     /// <summary>
     /// Initializes a new instance of the GH_IsotropicSelection class.
     /// </summary>
-    public GH_IsotropicSelection()
+    public OBSOLETE_GH_IsotropicSelection()
         : base("IsotropicSelection", "IS",
             "Performs an isotropic selection",
             "Geospiza", "SelectionStrategy")

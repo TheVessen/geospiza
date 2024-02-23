@@ -8,13 +8,13 @@ public interface IMutationStrategy
 {
     
     public void Mutate(Individual individual);
-    public double MutationRate { get; init; }
+    public double MutationRate { get; set; }
 }
 
 public abstract class MutationStrategy: IMutationStrategy
 {
     protected readonly Random Random = new Random();
-    public double MutationRate { get; init; }
+    public double MutationRate { get; set; }
     public abstract void Mutate(Individual individual);
 }
 

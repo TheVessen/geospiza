@@ -11,13 +11,13 @@ namespace Geospiza;
 /// <summary>
 /// 
 /// </summary>
-public class GH_ExclusiveSelection : GH_Component
+public class OBSOLETE_GH_ExclusiveSelection : GH_Component
 {
 
     /// <summary>
     /// Initializes a new instance of the GH_ExclusiveSelection class.
     /// </summary>
-    public GH_ExclusiveSelection()
+    public OBSOLETE_GH_ExclusiveSelection()
         : base("ExclusiveSelection", "ES",
             "Performs an exclusive selection",
             "Geospiza", "SelectionStrategy")

@@ -1,11 +1,13 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	
   <PropertyGroup>
-    <TargetFramework>net7.0</TargetFramework>
+    <TargetFrameworks>net48; net7.0</TargetFrameworks>
     <Version>1.0</Version>
     <Title>Geospiza</Title>
     <Description>Description of Geospiza</Description>
     <TargetExt>.gha</TargetExt>
+    <LangVersion>10</LangVersion>
+    <GenerateResourceUsePreserializedResources>true</GenerateResourceUsePreserializedResources>
   </PropertyGroup>
 	
   <ItemGroup>
@@ -14,14 +16,16 @@
   </ItemGroup>
   
   <ItemGroup>
-    <PackageReference Include="Grasshopper" Version="8.3.24009.15001" IncludeAssets="compile;build" />
+    <PackageReference Include="Grasshopper" Version="7.35.23346.11001" IncludeAssets="compile;build" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="System.Drawing.Common" Version="8.0.1" />
     <PackageReference Include="System.Resources.Extensions" Version="8.0.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+<!--    <FrameworkReference Include="Microsoft.AspNetCore.App" />-->
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Net.Http" />
   </ItemGroup>
 
   <ItemGroup>

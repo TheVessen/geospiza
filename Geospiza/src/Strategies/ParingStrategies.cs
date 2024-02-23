@@ -16,7 +16,7 @@ public class PairingStrategy
     /// for selecting mates that are genetically similar (closer to 0) or dissimilar (closer to 1)
     /// to the current individual. This factor is used in the FindMate method to select a mate from a sorted list of potential mates.
     /// </remarks>
-    public double InBreedingFactor { get; init; }
+    public double InBreedingFactor { get; set; }
     
     /// <summary>
     /// Value 0 for Euchlidean distance and 1 for Manhattan distance

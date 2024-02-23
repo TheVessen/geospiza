@@ -5,7 +5,6 @@ using Geospiza.Strategies.Pairing;
 using GH_IO.Serialization;
 using Grasshopper.Kernel;
 using Rhino.Geometry;
-using System.Windows.Forms;
 
 namespace Geospiza.Comonents.Pairing;
 

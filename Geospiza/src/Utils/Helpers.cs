@@ -68,7 +68,6 @@ namespace Geospiza
 
                         default:
                             throw new System.Exception("Could not convert geo to mesh");
-                            break;
                     }
                 }
                 catch

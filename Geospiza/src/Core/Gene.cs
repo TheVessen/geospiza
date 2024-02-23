@@ -10,8 +10,8 @@ public class Gene
     public Guid GeneGuid { get; private set; }
     public int TickCount { get; private set; }
     public string GeneName { get; private set; }
-    public Guid GhInstanceGuid { get; init; }
-    public int GenePoolIndex { get; init; }
+    public Guid GhInstanceGuid { get; set; }
+    public int GenePoolIndex { get; set; }
     
     public Gene(int tickValue, Guid geneGuid, int tickCount, string geneName, Guid ghInstanceGuid, int genePoolIndex)
         {

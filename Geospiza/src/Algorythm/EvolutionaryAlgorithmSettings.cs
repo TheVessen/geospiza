@@ -10,14 +10,14 @@ namespace Geospiza.Algorythm;
 
 public class EvolutionaryAlgorithmSettings
 {
-    public ISelectionStrategy SelectionStrategy { get; init; }
-    public ICrossoverStrategy CrossoverStrategy { get; init; }
-    public IMutationStrategy MutationStrategy { get; init; }
-    public PairingStrategy PairingStrategy { get; init; }
-    public ITerminationStrategy TerminationStrategy { get; init; }
-    public int PopulationSize { get; init; }
-    public int MaxGenerations { get; init; }
-    public int EliteSize { get; init; }
+    public ISelectionStrategy SelectionStrategy { get; set; }
+    public ICrossoverStrategy CrossoverStrategy { get; set; }
+    public IMutationStrategy MutationStrategy { get; set; }
+    public PairingStrategy PairingStrategy { get; set; }
+    public ITerminationStrategy TerminationStrategy { get; set; }
+    public int PopulationSize { get; set; }
+    public int MaxGenerations { get; set; }
+    public int EliteSize { get; set; }
     
     // Constructor to initialize default values
     public EvolutionaryAlgorithmSettings()
