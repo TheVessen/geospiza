@@ -2,7 +2,7 @@
 	
   <PropertyGroup>
     <TargetFrameworks>net48; net7.0</TargetFrameworks>
-    <Version>1.0</Version>
+    <Version>0.1.0</Version>
     <Title>Geospiza</Title>
     <Description>Description of Geospiza</Description>
     <TargetExt>.gha</TargetExt>
@@ -23,7 +23,6 @@
   </ItemGroup>
 
   <ItemGroup>
-<!--    <FrameworkReference Include="Microsoft.AspNetCore.App" />-->
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Net.Http" />
   </ItemGroup>

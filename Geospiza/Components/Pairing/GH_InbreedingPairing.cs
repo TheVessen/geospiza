@@ -52,12 +52,22 @@ public class GH_InbreedingPairing : GH_Component
         double distanceFunction = 0;
         if (!DA.GetData(1, ref distanceFunction)) return;
         int distanceFunctionInt = Convert.ToInt32(distanceFunction);
-        if(distanceFunctionInt > 1 || distanceFunctionInt < 0)
+        if(distanceFunctionInt is > 1 or < 0)
         {
             AddRuntimeMessage(GH_RuntimeMessageLevel.Error,"Distance function must be 0 or 1");
         }
+
+        DistanceFunctionType df;
+        if(distanceFunction == 0)
+        {
+            df = DistanceFunctionType.Euclidean;
+        }
+        else
+        {
+            df = DistanceFunctionType.Manhattan;
+        }
         
-        var pairing = new PairingStrategy(inBreedingFactor, distanceFunctionInt);
+        var pairing = new PairingStrategy(inBreedingFactor, df);
         
         DA.SetData(0, pairing);
     }

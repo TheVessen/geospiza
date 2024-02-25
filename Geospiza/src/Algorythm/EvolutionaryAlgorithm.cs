@@ -48,11 +48,11 @@ public class EvolutionaryAlgorithm : EvolutionBlueprint
                     //Crossover
                     if (!(Random.NextDouble() < CrossoverStrategy.CrossoverRate))
                     {
-                        children = CrossoverStrategy.Crossover(pair.Item1, pair.Item2);
+                        children = CrossoverStrategy.Crossover(pair.Individual1, pair.Individual2);
                     }else
                     {
-                        children.Add(pair.Item1);
-                        children.Add(pair.Item2);
+                        children.Add(pair.Individual1);
+                        children.Add(pair.Individual2);
                     }
                   
                     //Mutate the children

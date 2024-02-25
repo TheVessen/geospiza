@@ -92,7 +92,7 @@ public class Settings : GH_Component
         DA.GetData(7, ref terminationStrategyContainer);
 
         selectionStrategy = selectionStrategyContainer?.Value as ISelectionStrategy ?? new StochasticUniversalSampling();
-        pairingStrategy = pairingStrategyContainer?.Value as PairingStrategy ?? new PairingStrategy(0.2, 1);
+        pairingStrategy = pairingStrategyContainer?.Value as PairingStrategy ?? new PairingStrategy(0.2);
         crossoverStrategy = crossoverStrategyContainer?.Value as ICrossoverStrategy ?? new TwoPointCrossover(0.6);
         mutationStrategy = mutationStrategyContainer?.Value as IMutationStrategy ?? new RandomMutation(0.01);
         terminationStrategy = terminationStrategyContainer?.Value as ITerminationStrategy ?? new PopulationDiversity(2);

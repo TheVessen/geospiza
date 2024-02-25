@@ -5,6 +5,11 @@ using Geospiza.Core;
 
 namespace Geospiza.Strategies.Pairing;
 
+public enum DistanceFunctionType
+{
+    Euclidean,
+    Manhattan
+}
 
 public class PairingStrategy 
 {
@@ -17,19 +22,14 @@ public class PairingStrategy
     /// to the current individual. This factor is used in the FindMate method to select a mate from a sorted list of potential mates.
     /// </remarks>
     public double InBreedingFactor { get; set; }
+    private DistanceFunctionType DistanceFunction { get; set; }
     
     /// <summary>
     /// Value 0 for Euchlidean distance and 1 for Manhattan distance
     /// </summary>
-    private int DistanceFunction { get; set; } = 0;
-    public PairingStrategy(double inBreedingFactor, int distanceFunction = 1)
+    public PairingStrategy(double inBreedingFactor, DistanceFunctionType distanceFunction = DistanceFunctionType.Manhattan)
     {
         InBreedingFactor = inBreedingFactor;
-        
-        if(distanceFunction > 1 || distanceFunction < 0)
-        {
-            throw new ArgumentOutOfRangeException("inBreedingFactor");
-        } 
         DistanceFunction = distanceFunction;
     }
     
@@ -38,13 +38,13 @@ public class PairingStrategy
     /// </summary>
     /// <param name="selectedIndividuals"></param>
     /// <returns></returns>
-    public List<Tuple<Individual, Individual>> PairIndividuals(List<Individual> selectedIndividuals)
+    public List<Pair> PairIndividuals(List<Individual> selectedIndividuals)
     {
-        var pairs = new List<Tuple<Individual, Individual>>();
+        var pairs = new List<Pair>();
         foreach (var individual in selectedIndividuals)
         {
             Individual mate = FindMate(individual, selectedIndividuals, InBreedingFactor);
-            pairs.Add(new Tuple<Individual, Individual>(individual, mate));
+            pairs.Add(new Pair(individual, mate));
         }
         return pairs;
     }
@@ -56,21 +56,21 @@ public class PairingStrategy
     /// <param name="potentialMates"></param>
     /// <param name="inBreedingFactor"></param>
     /// <returns></returns>
-    private Individual FindMate(Individual individual, List<Individual> potentialMates, double inBreedingFactor)
+    private Individual FindMate(Individual individual, IEnumerable<Individual> potentialMates, double inBreedingFactor)
     {
         List<Individual> sortedMates;
 
         // Sort potential mates by genomic distance
-        if (DistanceFunction == 0)
+        
+        if (DistanceFunction == DistanceFunctionType.Euclidean)
         {
-            sortedMates = potentialMates.OrderBy(mate => EuchlideanDistance(individual, mate)).ToList();
+            sortedMates = potentialMates.OrderBy(mate => EuclideanDistance(individual, mate)).ToList();
         }
         else
         {
             sortedMates = potentialMates.OrderBy(mate => ManhattanDistance(individual, mate)).ToList();
         }
 
-        // Select mate based on in-breeding factor
         var mateIndex = (int)((inBreedingFactor + 1) / 2 * (sortedMates.Count - 1));
         return sortedMates[mateIndex];
     }
@@ -84,7 +84,7 @@ public class PairingStrategy
     /// <remarks>
     /// This method uses the Euclidean distance calculation to determine the genomic distance.
     /// </remarks>
-    private double EuchlideanDistance(Individual ind1, Individual ind2)
+    private static double EuclideanDistance(Individual ind1, Individual ind2)
     {
         // Initialize distance to 0
         double distance = 0;
@@ -109,7 +109,7 @@ public class PairingStrategy
     /// <remarks>
     /// This method uses the Manhattan distance calculation to determine the genomic distance.
     /// </remarks>
-    private double ManhattanDistance(Individual ind1, Individual ind2)
+    private static double ManhattanDistance(Individual ind1, Individual ind2)
     {
         // Initialize distance to 0
         double distance = 0;
