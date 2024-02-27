@@ -8,6 +8,7 @@
     <TargetExt>.gha</TargetExt>
     <LangVersion>10</LangVersion>
     <GenerateResourceUsePreserializedResources>true</GenerateResourceUsePreserializedResources>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
   </PropertyGroup>
 	
   <ItemGroup>
@@ -21,6 +22,16 @@
     <PackageReference Include="System.Drawing.Common" Version="8.0.1" />
     <PackageReference Include="System.Resources.Extensions" Version="8.0.0" />
   </ItemGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU' And '$(TargetFramework)'=='net7.0'">
+    <OutputPath>Dist/package-manager/rhino8</OutputPath>
+    <OutputPath>Dist/food4rhino/rhino8</OutputPath>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU' And '$(TargetFramework)'=='net48'">
+    <OutputPath>Dist/package-manager/rhino7</OutputPath>
+    <OutputPath>Dist/food4rhino/rhino7</OutputPath>
+  </PropertyGroup>
 
   <ItemGroup>
     <Reference Include="Microsoft.CSharp" />
@@ -74,6 +85,11 @@
 <!--    <EmbeddedResource Include="Resources\Icons\*.png">-->
 <!--      <CopyToOutputDirectory>Always</CopyToOutputDirectory>-->
 <!--    </EmbeddedResource>-->
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Dist\food4rhino\rhino7\" />
+    <Folder Include="Dist\food4rhino\rhino8\" />
   </ItemGroup>
 
 
