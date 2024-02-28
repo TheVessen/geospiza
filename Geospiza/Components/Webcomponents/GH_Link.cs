@@ -32,10 +32,12 @@ namespace Geospiza.Comonents
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddGenericParameter("Geo", "G", "Geo to display", GH_ParamAccess.tree);
-            pManager.AddGenericParameter("ThreeMaterial", "TM", "ThreeMaterial", GH_ParamAccess.tree);
-            pManager.AddBooleanParameter("Listen", "L", "Listen for the solution", GH_ParamAccess.item, false);
+            pManager.AddGenericParameter("WebGeo", "WG", "Geo to display", GH_ParamAccess.tree);
+            pManager.AddGenericParameter("AdditionalData", "AD", "Additional data to send", GH_ParamAccess.tree);
             pManager.AddTextParameter("Endpoint", "E", "The endpoint to send the solution to", GH_ParamAccess.item, "");
+            pManager.AddBooleanParameter("Listen", "L", "Listen for the solution", GH_ParamAccess.item, false);
+
+            pManager[3].Optional = true;
         }
 
         /// <summary>
@@ -52,90 +54,55 @@ namespace Geospiza.Comonents
         /// to store data in output parameters.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-
-            GH_Structure<IGH_Goo> GHBaseGeo = new GH_Structure<IGH_Goo>();
-            if (!DA.GetDataTree(0, out GHBaseGeo)) return;
-            //Base params
-            MeshingParameters mParams = new MeshingParameters();
-            mParams.SimplePlanes = true;
-            //vars
-            List<ThreeMaterial> threeMaterials = new List<ThreeMaterial>();
+            GH_Structure<IGH_Goo> meshBodiesStruct = new GH_Structure<IGH_Goo>();
+            if (!DA.GetDataTree(0, out meshBodiesStruct)) return;
+            var meshBodiesWrapper = meshBodiesStruct.AllData(false).ToList();
+            List<WebIndividual> meshBodies = new List<WebIndividual>();
             
-            //Convert to ThreeMaterial
-            GH_Structure<IGH_Goo> materialWrappers = new GH_Structure<IGH_Goo>();
-            DA.GetDataTree(1, out materialWrappers);
+            foreach (var meshBodyWrapper in meshBodiesWrapper)
+            {
+                object internalData = meshBodyWrapper.ScriptVariable();
+                if (internalData is WebIndividual individual)
+                {
+                    meshBodies.Add(individual);
+                }
+            }
 
-            var listen = false;
-            if (!DA.GetData(2, ref listen)) return;
+            GH_Structure<IGH_Goo> additionalDataWrappers = new GH_Structure<IGH_Goo>();
+            DA.GetDataTree(1, out additionalDataWrappers);
+            
+            var additionalData = new List<Tuple<string, string>>();
+
+            if (additionalDataWrappers.AllData(false).Count() != 0)
+            {
+                foreach (var additionalDataWrapper in additionalDataWrappers.AllData(false))
+                {
+                    object internalData = additionalDataWrapper.ScriptVariable();
+                    if (internalData is Tuple<string, string> aditionalData)
+                    {
+                        additionalData.Add(aditionalData);
+                    }
+                }
+            }
             
             var endpoint = "";
-            if (!DA.GetData(3, ref endpoint)) return;
-            
-            
-            bool isValid = false;
+            if (!DA.GetData(2, ref endpoint)) return;
 
-            if (GHBaseGeo.get_Branch(0) != null && materialWrappers.get_Branch(0) != null)
-            {
-                // Check if both have the same structure
-                
-                var sameCount = GHBaseGeo.AllData(false).ToList().Count == materialWrappers.AllData(false).ToList().Count();
-                if(sameCount || materialWrappers.AllData(false).ToList().Count == 1)
-                {
-                    isValid = true;
-                }
+            var listen = false;
+            if (!DA.GetData(3, ref listen)) return;
 
-                // If not the same structure, check if materialWrappers contains only one object
-                if (!isValid)
-                {
-                    isValid = materialWrappers.AllData(true).Count() == 1;
-                }
-            }
-
-            if (!isValid)
-            {
-                this.AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "The input data is not valid. The structure of the material and the geo must be the same or the material must contain only one object");
-                return;
-            }
-
-            List<Mesh> meshes = Helpers.MeshConverter(GHBaseGeo);
-            
-            
-            foreach (var threeMaterialWrapper in materialWrappers.AllData(false))
-            {
-                object internalData = threeMaterialWrapper.ScriptVariable();
-                if (internalData is ThreeMaterial threeMaterial)
-                {
-                    threeMaterials.Add(threeMaterial);
-                }
-            }
-
-            var meshBodies = new List<WebIndividual>();
-           for (var i = 0; i < meshes.Count; i++)
-            {
-                var mesh = meshes[i];
-                ThreeMaterial threeMaterial;
-                if (threeMaterials.Count == 1)
-                {
-                    threeMaterial = threeMaterials[0];
-                }
-                else
-                {
-                    threeMaterial = threeMaterials[i];
-                    
-                }
-                meshBodies.Add(new WebIndividual(mesh, threeMaterial));
-            }
-            
             if (endpoint == "")
             {
                 endpoint = "http://127.0.0.1:5173/api/geokernel";
             }
-            
+
             if (listen)
             {
-                Helpers.SendRequest(meshBodies, endpoint);
+                Helpers.SendRequest(meshBodies, additionalData, endpoint);
             }
         }
+
+        public override GH_Exposure Exposure => GH_Exposure.primary;
 
 
         /// <summary>

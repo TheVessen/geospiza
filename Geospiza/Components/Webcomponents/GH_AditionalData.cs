@@ -1,22 +1,20 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
-using Geospiza.Core;
 using Grasshopper.Kernel;
-using Grasshopper.Kernel.Types;
 using Rhino.Geometry;
 
-namespace Geospiza.Comonents;
+namespace Geospiza;
 
-public class IndividualToJson : GH_Component
+public class GH_AditionalData : GH_Component
 {
 
     /// <summary>
-    /// Initializes a new instance of the IndividualToJson class.
+    /// Initializes a new instance of the GH_AditionalData class.
     /// </summary>
-    public IndividualToJson()
-        : base("IndividualToJson", "Nickname",
-            "Converts an individual to a JSON string",
+    public GH_AditionalData()
+        : base("AditionalData", "AD",
+            "Add aditional data to the weboutput",
             "Geospiza", "Webcomponents")
     {
     }
@@ -26,7 +24,8 @@ public class IndividualToJson : GH_Component
     /// </summary>
     protected override void RegisterInputParams(GH_InputParamManager pManager)
     {
-        pManager.AddGenericParameter("Individual", "I", "The individual to convert to JSON", GH_ParamAccess.item);
+        pManager.AddTextParameter("Key", "K", "The key of the data", GH_ParamAccess.item);
+        pManager.AddTextParameter("Value", "V", "The value of the data", GH_ParamAccess.item);
     }
 
     /// <summary>
@@ -34,9 +33,8 @@ public class IndividualToJson : GH_Component
     /// </summary>
     protected override void RegisterOutputParams(GH_OutputParamManager pManager)
     {
-        pManager.AddTextParameter("JSON", "J", "The JSON string", GH_ParamAccess.item);
+        pManager.AddGenericParameter("AditionalData", "AD", "The aditional data", GH_ParamAccess.item);
     }
-    
 
     /// <summary>
     /// This is the method that actually does the work.
@@ -44,31 +42,26 @@ public class IndividualToJson : GH_Component
     /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
     protected override void SolveInstance(IGH_DataAccess DA)
     {
-        // Declare a variable for the input
-        GH_ObjectWrapper individualWrapper = new GH_ObjectWrapper();
-        // If the input is not retrieved, return
-        if (!DA.GetData(0, ref individualWrapper)) return;
-
-        if (individualWrapper.Value is Individual individual)
-        {
-            var json = individual.ToJson();
+        string key = "";
+        if (!DA.GetData(0, ref key)) return;
+        string value = "";
+        if (!DA.GetData(1, ref value)) return;
+        Tuple<string, string> aditionalData = new Tuple<string, string>(key, value);
         
-            DA.SetData(0, json);
-        }
+        DA.SetData(0, aditionalData);
     }
-    
     public override GH_Exposure Exposure => GH_Exposure.tertiary;
 
     /// <summary>
     /// Provides an Icon for the component.
     /// </summary>
-    protected override Bitmap Icon => Properties.Resources.IndividualToJSON;
+    protected override Bitmap Icon => Properties.Resources.AdditionalData;
 
     /// <summary>
     /// Gets the unique ID for this component. Do not change this ID after release.
     /// </summary>
     public override Guid ComponentGuid
     {
-        get { return new Guid("FDB78846-7982-42E4-B8ED-EF37AC136612"); }
+        get { return new Guid("85B91440-7C06-4923-A8BC-4A0D0C4DDF9C"); }
     }
 }

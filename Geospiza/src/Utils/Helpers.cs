@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
@@ -11,10 +12,22 @@ namespace Geospiza
 {
     public static class Helpers
     {
-        public static void SendRequest(List<WebIndividual> dataList, string endpoint)
+        public static void SendRequest(List<WebIndividual> dataList, List<Tuple<string,string>> additionalData, string endpoint)
         {
-            var jsonList = dataList.Select(individual => individual.ToAnonymousObject()).ToList();
-            var json = JsonConvert.SerializeObject(jsonList);
+            var meshes = dataList.Select(individual => individual.ToAnonymousObject()).ToList();
+
+            var rootObject = new Dictionary<string, object>
+            {
+                { "Meshes", meshes }
+            };
+
+            foreach (var data in additionalData)
+            {
+                rootObject.Add(data.Item1, data.Item2);
+            }
+
+            var json = JsonConvert.SerializeObject(rootObject);
+            
 
             using (var client = new HttpClient())
             {

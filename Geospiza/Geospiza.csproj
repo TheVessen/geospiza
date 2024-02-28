@@ -33,6 +33,14 @@
     <OutputPath>Dist/food4rhino/rhino7</OutputPath>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU' And '$(TargetFramework)'=='net7.0'">
+    <OutputPath>bin\Debug\net7.0</OutputPath>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU' And '$(TargetFramework)'=='net48'">
+    <OutputPath>bin\Debug\net48</OutputPath>
+  </PropertyGroup>
+
   <ItemGroup>
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Net.Http" />
@@ -81,6 +89,8 @@
     <EmbeddedResource Include="Resources\Icons\DeconstructGene.png" />
     <None Remove="Resources\Icons\StochasticUniversalSampling.png" />
     <EmbeddedResource Include="Resources\Icons\StochasticUniversalSampling.png" />
+    <None Remove="Resources\Icons\AdditionalData.png" />
+    <EmbeddedResource Include="Resources\Icons\AdditionalData.png" />
 
 <!--    <EmbeddedResource Include="Resources\Icons\*.png">-->
 <!--      <CopyToOutputDirectory>Always</CopyToOutputDirectory>-->

@@ -1,8 +1,11 @@
 ﻿export type WebIndividual = {
-    Indices: number[];
-    Vertices: number[];
-    Material: Material;
-    Fitness: number;
+    Meshes: {
+        Indices: number[];
+        Vertices: number[];
+        Material: Material;
+        Fitness: number;
+    }[];
+    // Additional data declared in grasshopper
 };
 
 export type Material = {

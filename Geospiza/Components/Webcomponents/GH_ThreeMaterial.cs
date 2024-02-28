@@ -59,28 +59,6 @@ public class GH_ThreeMAterial : GH_Component
         GH_Structure<GH_Number> opacityWrapper = null;
         DA.GetDataTree(3, out opacityWrapper);
         
-        // List<Color> allColors = colorWrapper.AllData(true)
-        //     .OfType<GH_Colour>() // Ensure the item is of type GH_Colour.
-        //     .Select(ghColour => ghColour.Value) // Access the Value property.
-        //     .ToList();
-        // List<double> allMetalness = metalnessWrapper.AllData(true)
-        //     .OfType<GH_Number>() // Ensure the item is of type GH_Number.
-        //     .Select(ghNumber => ghNumber.Value) // Access the Value property.
-        //     .ToList();
-        // List<double> allRoughness = roughnessWrapper.AllData(true)
-        //     .OfType<GH_Number>() // Ensure the item is of type GH_Number.
-        //     .Select(ghNumber => ghNumber.Value) // Access the Value property.
-        //     .ToList();
-        // List<double> allOpacity = opacityWrapper.AllData(true)
-        //     .OfType<GH_Number>() // Ensure the item is of type GH_Number.
-        //     .Select(ghNumber => ghNumber.Value) // Access the Value property.
-        //     .ToList();
-        
-        // int firstListLength = allColors.Count;
-        // bool areAllSameLengthOrOne = new List<int> { allMetalness.Count, allRoughness.Count, allOpacity.Count }
-        //     .All(count => count == firstListLength || count == 1);
-        // if (!areAllSameLengthOrOne) this.AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "All lists must be the same length or have a length of 1");
-
         DataTree<ThreeMaterial> materials = new DataTree<ThreeMaterial>();
 
         foreach (GH_Path path in colorWrapper.Paths)
@@ -108,9 +86,13 @@ public class GH_ThreeMAterial : GH_Component
                 materials.Add(material, path);
             }
         }
+        
+        
 
         DA.SetDataTree(0, materials);
     }
+    
+    public override GH_Exposure Exposure => GH_Exposure.secondary;
 
     /// <summary>
     /// Provides an Icon for the component.
