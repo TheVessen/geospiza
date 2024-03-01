@@ -9,9 +9,21 @@ namespace Geospiza.Core;
 
 public class Individual
 {
+    /// <summary>
+    /// Gene pool of the individual
+    /// </summary>
     public List<Gene> GenePool { get; private set; }
+    /// <summary>
+    /// Fitness of the individual
+    /// </summary>
     public double Fitness { get; private set; }
+    /// <summary>
+    /// How likely the individual is to be selected for reproduction
+    /// </summary>
     public double Probability { get; private set; }
+    /// <summary>
+    /// Generation of the individual
+    /// </summary>
     public int Generation { get; private set; }
     
     public Individual()
@@ -31,20 +43,37 @@ public class Individual
         Probability = 0;
     }
 
+    /// <summary>
+    /// Add a gene to the gene pool
+    /// </summary>
+    /// <param name="gene"></param>
     public void AddStableGene(Gene gene)
     {
         GenePool.Add(gene);
     }
+    
+    /// <summary>
+    /// Set the fitness of the individual
+    /// </summary>
+    /// <param name="fitness"></param>
     public void SetFitness(double fitness)
     {
         Fitness = fitness;
     }
     
+    /// <summary>
+    /// Set the probability of the individual
+    /// </summary>
+    /// <param name="normalizedFitness"></param>
     public void SetProbability(double normalizedFitness)
     {
         Probability = normalizedFitness;
     }
     
+    /// <summary>
+    /// Set the generation of the individual
+    /// </summary>
+    /// <param name="generation"></param>
     public void SetGeneration(int generation)
     {
         Generation = generation;
@@ -59,6 +88,11 @@ public class Individual
         }
     }
 
+    /// <summary>
+    /// Reinstate the individual in the gh canvas
+    /// </summary>
+    /// <param name="doc"></param>
+    /// <exception cref="Exception"></exception>
     public void Reinstate(GH_Document doc)
     {
         foreach (var gene in GenePool)
@@ -99,6 +133,10 @@ public class Individual
         return hash;
     }
     
+    /// <summary>
+    /// Returns a string representation of the individual
+    /// </summary>
+    /// <returns></returns>
     public string ToJson()
     {
         var settings = new JsonSerializerSettings

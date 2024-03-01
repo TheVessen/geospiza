@@ -15,7 +15,8 @@ public class GH_TwoPointCrossover : GH_Component
     /// </summary>
     public GH_TwoPointCrossover()
         : base("TwoPointCrossover", "TPC",
-            "Performs a two point crossover",
+            "Two-point crossover is a genetic algorithm operation that generates new offspring by combining the genetic information of two parents." +
+            " It selects two points on the parent chromosomes and swaps the data between these points from both parents, resulting in two offspring with mixed genetic information.",
             "Geospiza", "CrossoverStrategies")
     {
     }

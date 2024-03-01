@@ -34,7 +34,7 @@ namespace Geospiza.Comonents
         {
             pManager.AddGenericParameter("WebGeo", "WG", "Geo to display", GH_ParamAccess.tree);
             pManager.AddGenericParameter("AdditionalData", "AD", "Additional data to send", GH_ParamAccess.tree);
-            pManager.AddTextParameter("Endpoint", "E", "The endpoint to send the solution to", GH_ParamAccess.item, "");
+            pManager.AddTextParameter("Endpoint", "E", "The endpoint to send the solution to eg. http://127.0.0.1:5173/api/someEndpoint ", GH_ParamAccess.item);
             pManager.AddBooleanParameter("Listen", "L", "Listen for the solution", GH_ParamAccess.item, false);
 
             pManager[3].Optional = true;
@@ -90,15 +90,10 @@ namespace Geospiza.Comonents
 
             var listen = false;
             if (!DA.GetData(3, ref listen)) return;
-
-            if (endpoint == "")
-            {
-                endpoint = "http://127.0.0.1:5173/api/geokernel";
-            }
-
+            
             if (listen)
             {
-                Helpers.SendRequest(meshBodies, additionalData, endpoint);
+                Helpers.SendRequest(meshBodies, additionalData, endpoint, this);
             }
         }
 

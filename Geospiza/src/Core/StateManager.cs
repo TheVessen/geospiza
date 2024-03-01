@@ -12,6 +12,7 @@ public class StateManager
     private GH_Document _document;
     public GH_Component ThisComponent { get; private set; } = null;
     public int NumberOfGeneIds { get;set; } = 0;
+    public int PreviewLevel { get; set; } = 0;
 
     public Fitness FitnessComponent { get; private set; }
     public Dictionary<Guid, TemplateGene> Genotype { get; private set; }

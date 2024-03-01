@@ -17,20 +17,22 @@
   </ItemGroup>
   
   <ItemGroup>
-    <PackageReference Include="Grasshopper" Version="7.35.23346.11001" IncludeAssets="compile;build" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="System.Drawing.Common" Version="8.0.1" />
     <PackageReference Include="System.Resources.Extensions" Version="8.0.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Grasshopper" Version="7.35.23346.11001" Condition="'$(TargetFramework)'=='net48'" IncludeAssets="compile;build" />
+    <PackageReference Include="Grasshopper" Version="8.0.23304.9001" Condition="'$(TargetFramework)'=='net7.0'" IncludeAssets="compile;build" />
+  </ItemGroup>
+
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU' And '$(TargetFramework)'=='net7.0'">
     <OutputPath>Dist/package-manager/rhino8</OutputPath>
-    <OutputPath>Dist/food4rhino/rhino8</OutputPath>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU' And '$(TargetFramework)'=='net48'">
     <OutputPath>Dist/package-manager/rhino7</OutputPath>
-    <OutputPath>Dist/food4rhino/rhino7</OutputPath>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU' And '$(TargetFramework)'=='net7.0'">
@@ -64,7 +66,7 @@
     <!-- Embedded resource files -->
     <EmbeddedResource Include="Resources\Icons\Fitness.png" />
     <EmbeddedResource Include="Resources\Icons\FixValueMutation.png" />
-    <EmbeddedResource Include="Resources\Icons\GeenePool.png" />
+    <EmbeddedResource Include="Resources\Icons\GenePool.png" />
     <EmbeddedResource Include="Resources\Icons\GeneSelector.png" />
     <EmbeddedResource Include="Resources\Icons\InBreedingStrategy.png" />
     <EmbeddedResource Include="Resources\Icons\Individual.png" />

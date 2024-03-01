@@ -1,16 +1,16 @@
 ﻿name: Geospiza
 version: 0.1.0
 authors:
-  - Felix Brunold 
+  - Felix Brunold
   - VektorNode Design AG
 description: >
   Geospiza is a plugin designed for Grasshopper that implements evolutionary algorithms, and is compatible with headless Rhino environments eg. rhino.compute. 
   It includes a range of selection, mutation, and crossover methods, allowing for versatility in addressing different types of computational problems. 
   This tool is primarily aimed at facilitating the exploration and optimization of solutions in design and architecture-related computational tasks.
 keywords:
-  - Evolutionary Algorithm
-  - Genetic Algorithm
-  - Rhino.Compute
+  - Evolutionary_Algorithm
+  - Genetic_Algorithm
+  - Rhino_Compute
   - Web
   - Solver
   - Optimization

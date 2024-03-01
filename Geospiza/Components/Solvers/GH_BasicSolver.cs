@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Geospiza.Algorythm;
 using Geospiza.Core;
 using Grasshopper.Kernel.Data;
+using Grasshopper.Kernel.Parameters;
 using Grasshopper.Kernel.Types;
 
 namespace Geospiza.Comonents;
@@ -35,6 +36,23 @@ public class GH_BasicSolver : GH_Component
         pManager.AddTextParameter("Genes", "GID", "The gene ids from the GeneSelector", GH_ParamAccess.list);
         pManager.AddGenericParameter("Settings", "S", "The settings for the evolutionary algorithm",
             GH_ParamAccess.item);
+        
+        //Preview level
+        Param_Integer updateParam = new Param_Integer();
+        updateParam.AddNamedValue("All", 0);
+        updateParam.AddNamedValue("EveryGeneration", 1);
+        updateParam.AddNamedValue("IfBetter", 2);
+        updateParam.AddNamedValue("None", 3);
+        updateParam.PersistentData.Append(new GH_Integer(0));
+        pManager.AddParameter(updateParam, "PreviewLevel", "PL", "Set how often the preview should update." +
+                                                                 "" +
+                                                                 ": 0 if every solution should be shown" +
+                                                                 ": 1 if only on every generation the preview should update" +
+                                                                 ": 2 if only better solutions should be shown" +
+                                                                 ": 4 for no preview" +
+                                                                 "" +
+                                                                 "The more the preview updated the longer it takes ", GH_ParamAccess.item);
+        
         pManager.AddNumberParameter("Timestamp", "T", "Timestamp from the server to determine if the solver should run",
             GH_ParamAccess.item, 0);
         pManager.AddBooleanParameter("Run", "R", "Run the solver for running locally", GH_ParamAccess.item, false);
@@ -73,13 +91,16 @@ public class GH_BasicSolver : GH_Component
         var settings = new EvolutionaryAlgorithmSettings();
         if (!DA.GetData(1, ref settings)) return;
         _privateSettings = settings;
+        
+        var previewLevel = 0;
+        if (!DA.GetData(2, ref previewLevel)) return;
 
         double timestamp = 0;
-        if (!DA.GetData(2, ref timestamp)) return;
+        if (!DA.GetData(3, ref timestamp)) return;
         long intTimestamp = Convert.ToInt64(timestamp);
         
         var run = false;
-        if (!DA.GetData(3, ref run)) return;
+        if (!DA.GetData(4, ref run)) return;
         
         // Check if the solver should run
         if(_lastSolutionId != Guid.Empty && _solutionId != _lastSolutionId)
@@ -96,6 +117,7 @@ public class GH_BasicSolver : GH_Component
         }
         
         _stateManager.SetGenes(geneIds);
+        _stateManager.PreviewLevel = previewLevel;
 
         // Check if the solver should run
         bool start = (intTimestamp != 0 && intTimestamp != _lastTimestamp) || run;
@@ -121,7 +143,7 @@ public class GH_BasicSolver : GH_Component
             _lastTimestamp = intTimestamp;
         }
     }
-
+    
     private void ScheduleCallback(GH_Document doc)
     {
         var start = DateTime.Now;

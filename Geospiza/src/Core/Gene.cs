@@ -39,6 +39,10 @@ public class Gene
         TickValue = mutation;
     }
     
+    /// <summary>
+    /// Returns a string representation of the gene
+    /// </summary>
+    /// <returns></returns>
     public string ToJson()
     {
         var settings = new JsonSerializerSettings

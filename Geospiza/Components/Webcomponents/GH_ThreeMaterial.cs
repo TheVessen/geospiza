@@ -20,7 +20,7 @@ public class GH_ThreeMAterial : GH_Component
     /// </summary>
     public GH_ThreeMAterial()
         : base("ThreeMaterial", "TM",
-            "ThreeMaterial",
+            "Builds an object for the three.js material",
             "Geospiza", "Webcomponents")
     {
     }

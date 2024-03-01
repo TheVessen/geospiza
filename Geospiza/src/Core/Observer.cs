@@ -32,6 +32,10 @@ public class Observer
         return _instances[solver];
     }
     
+    /// <summary>
+    /// Creates a snapshot of the current population
+    /// </summary>
+    /// <param name="currentPopulation"></param>
     public void Snapshot(Population currentPopulation)
     {
         if (BestFitness == null)
@@ -77,15 +81,20 @@ public class Observer
     {
         CurrentPopulation = population;
         var bestIndividual = CurrentPopulation.SelectTopIndividuals(1)[0];
-        
         BestIndividuals.Add(bestIndividual);
     }
 
+    /// <summary>
+    /// Sets the new generation int
+    /// </summary>
     public void UpdateGenerationCounter()
     {
         CurrentGeneration++;
     }
     
+    /// <summary>
+    /// Reset the observer
+    /// </summary>
     public void Reset()
     {
         AverageFitness = new List<double>();
@@ -99,6 +108,10 @@ public class Observer
         Diversity = new List<int>();
     }
     
+    /// <summary>
+    /// Gets the current population
+    /// </summary>
+    /// <returns></returns>
     public Population GetCurrentPopulation()
     {
         return CurrentPopulation;

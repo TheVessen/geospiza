@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using Grasshopper.Kernel;
 using Newtonsoft.Json;
 
 namespace Geospiza.Core;
@@ -9,34 +10,47 @@ public class Population
     public List<Individual> Inhabitants { get; private set; } = new List<Individual>();
     public int Count => Inhabitants.Count;
 
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="individual"></param>
     public void AddIndividual(Individual individual)
     {
         Inhabitants.Add(individual);
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="individual"></param>
     public void AddIndividuals(List<Individual> individual)
     {
         Inhabitants.AddRange(individual);
     }
-    
+
     public Population()
     {
     }
-    
+
     public Population(Population population)
     {
         Inhabitants = new List<Individual>(population.Inhabitants);
     }
-    
+
     public void ReplaceIndividuals(List<Individual> individuals)
     {
         Inhabitants = individuals;
     }
 
-
-    public void TestPopulation(StateManager stateManager)
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="stateManager"></param>
+    public void TestPopulation(StateManager stateManager, Observer observer)
     {
         var doc = stateManager.GetDocument();
+        
+        var max = observer.BestFitness.Max();
 
         foreach (var individual in Inhabitants)
         {
@@ -48,23 +62,52 @@ public class Population
                     matchingGene.SetTickValue(gene.TickValue, stateManager);
                 }
             }
-            stateManager.GetDocument().NewSolution(false);
-            stateManager.GetDocument().ExpirePreview(false);
+            
+            if (stateManager.PreviewLevel == 0)
+            {
+                stateManager.GetDocument().NewSolution(false);
+            }
+            else
+            {
+                stateManager.GetDocument().NewSolution(false, GH_SolutionMode.Silent);
+            }
+
             stateManager.FitnessComponent.ExpireSolution(false);
             individual.SetFitness(stateManager.FitnessComponent.FitnessValue);
+            
+            if (stateManager.PreviewLevel == 2)
+            {
+                if(max < individual.Fitness)
+                {
+                    stateManager.GetDocument().ExpirePreview(true);
+                    max = individual.Fitness;
+                }
+            }
         }
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <returns></returns>
     public double CalculateTotalFitness()
     {
         return Inhabitants.Sum(ind => ind.Fitness);
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <returns></returns>
     public double GetAverageFitness()
     {
         return CalculateTotalFitness() / Count;
     }
-    
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <returns></returns>
     public int GetDiversity()
     {
         int diversity = 0;
@@ -81,6 +124,11 @@ public class Population
         return diversity;
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="eliteSize"></param>
+    /// <returns></returns>
     public List<Individual> SelectTopIndividuals(int eliteSize)
     {
         var bestIndividuals = new List<Individual>();
@@ -93,6 +141,9 @@ public class Population
         return bestIndividuals;
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
     public void CalculateProbability()
     {
         double totalFitness = CalculateTotalFitness();
@@ -101,7 +152,7 @@ public class Population
             individual.SetProbability(individual.Fitness / totalFitness);
         }
     }
-    
+
     public string ToJson()
     {
         return JsonConvert.SerializeObject(this);

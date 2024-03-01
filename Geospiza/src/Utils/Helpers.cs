@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
+using Grasshopper.Kernel;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
 using Newtonsoft.Json;
@@ -12,7 +13,7 @@ namespace Geospiza
 {
     public static class Helpers
     {
-        public static void SendRequest(List<WebIndividual> dataList, List<Tuple<string,string>> additionalData, string endpoint)
+        public static void SendRequest(List<WebIndividual> dataList, List<Tuple<string,string>> additionalData, string endpoint, GH_Component component)
         {
             var meshes = dataList.Select(individual => individual.ToAnonymousObject()).ToList();
 
@@ -31,6 +32,24 @@ namespace Geospiza
 
             using (var client = new HttpClient())
             {
+                HttpResponseMessage response = null;
+
+                try
+                {
+                    response = client.GetAsync(endpoint).Result;
+                }
+                catch (Exception ex)
+                {
+                    component.AddRuntimeMessage(GH_RuntimeMessageLevel.Error, $"Error: {ex.Message}");
+                    return;
+                }
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    component.AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "API endpoint is not online.");
+                    return;
+                }
+
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
 
                 var result = client.PostAsync(endpoint, content).Result;

@@ -66,5 +66,4 @@ public class TemplateGene
             if (_allGenePools != null) _allGenePools[GhInstanceGuid].ExpireSolutionTopLevel(false);
         }
     }
-
 }

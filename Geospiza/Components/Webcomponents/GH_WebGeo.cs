@@ -18,7 +18,7 @@ public class GH_WebGeo : GH_Component
     /// </summary>
     public GH_WebGeo()
         : base("WebIndividual", "WI",
-            "Collects data to be displayed in the weboutput",
+            "Collects data to be displayed in the web output",
             "Geospiza", "Webcomponents")
     {
     }

@@ -77,6 +77,7 @@ public abstract class EvolutionBlueprint : IEvolutionarySolver
     public void InitializePopulation(StateManager stateManager, Observer observer)
     {
         //Create an empty population
+        double fistGenBestFitness = 0;
 
         var newPopulation = new Population();
         for (var i = 0; i < PopulationSize; i++)
@@ -97,12 +98,30 @@ public abstract class EvolutionBlueprint : IEvolutionarySolver
                 individual.AddStableGene(stableGene);
             }
 
-            stateManager.GetDocument().NewSolution(false);
-            stateManager.GetDocument().ExpirePreview(false);
-            stateManager.FitnessComponent.ExpireSolution(false);
-
+            if (stateManager.PreviewLevel == 0)
+            {
+                stateManager.GetDocument().NewSolution(false);
+            }
+            else
+            {
+                stateManager.GetDocument().NewSolution(false, GH_SolutionMode.Silent);
+            }
+           
             //Get fitness from the state state manager and apply it to the individual
             var currentFitness = stateManager.FitnessComponent.FitnessValue;
+            
+            if(i  == 0)
+            {
+                fistGenBestFitness = currentFitness;
+            }else if (currentFitness > fistGenBestFitness)
+            {
+                fistGenBestFitness = currentFitness;
+                if(stateManager.PreviewLevel == 2)
+                {
+                    stateManager.GetDocument().ExpirePreview(true);
+                }
+            }
+            
             individual.SetFitness(currentFitness);
             individual.SetGeneration(0);
 
@@ -113,5 +132,9 @@ public abstract class EvolutionBlueprint : IEvolutionarySolver
         observer.Snapshot(newPopulation);
         observer.SetPopulation(newPopulation);
         Population = newPopulation;
+        if (stateManager.PreviewLevel == 1)
+        {
+            stateManager.GetDocument().ExpirePreview(true);
+        }
     }
 }
