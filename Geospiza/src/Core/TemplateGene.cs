@@ -15,7 +15,6 @@ public class TemplateGene
     public string Name { get; private set; }
     public int TickCount { get; private set; }
 
-
     //Slider relevant properties
     private GH_NumberSlider _slider;
 

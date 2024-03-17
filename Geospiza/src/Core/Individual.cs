@@ -79,13 +79,21 @@ public class Individual
         Generation = generation;
     }
     
+    /// <summary>
+    /// Reinstate the state of the individual based on the provided state manager.
+    /// </summary>
+    /// <param name="stateManager">The state manager containing the genotype to match with the individual's gene pool.</param>
     public void Reinstate(StateManager stateManager)
     {
-        foreach (var gene in GenePool)
-        {
-            var matchingGene = stateManager.Genotype[gene.GeneGuid];
-            matchingGene?.SetTickValue(gene.TickValue, stateManager);
-        }
+      // Iterate over each gene in the individual's gene pool
+      foreach (var gene in GenePool)
+      {
+        // Find the matching gene in the state manager's genotype
+        var matchingGene = stateManager.Genotype[gene.GeneGuid];
+
+        // If a matching gene is found, set its tick value to the one from the individual's gene
+        matchingGene?.SetTickValue(gene.TickValue, stateManager);
+      }
     }
 
     /// <summary>
