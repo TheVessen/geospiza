@@ -93,7 +93,7 @@ namespace Geospiza.Comonents
             
             if (listen)
             {
-                Helpers.SendRequest(meshBodies, additionalData, endpoint, this);
+                Helpers.SendWebRequest(meshBodies, additionalData, endpoint, this);
             }
         }
 

@@ -13,7 +13,7 @@ namespace Geospiza;
 
 public static class Helpers
 {
-  public static void SendRequest(List<WebIndividual> dataList, List<Tuple<string, string>> additionalData,
+  public static void SendWebRequest(List<WebIndividual> dataList, List<Tuple<string, string>> additionalData,
     string endpoint, GH_Component component)
   {
     var meshes = dataList.Select(individual => individual.ToAnonymousObject()).ToList();
