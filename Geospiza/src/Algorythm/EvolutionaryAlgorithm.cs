@@ -1,17 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using Geospiza.Core;
-using Geospiza.Strategies.Termination;
-using Grasshopper.Kernel.Data;
 
 namespace Geospiza.Algorythm;
 
 public class EvolutionaryAlgorithm : EvolutionBlueprint
 {
-  private StateManager StateManager { get; set; }
-  private Observer Observer { get; set; }
-  
   private const int TerminationEvaluationThreshold = 5;
 
   public EvolutionaryAlgorithm(EvolutionaryAlgorithmSettings settings, StateManager stateManager, Observer observer) :
@@ -20,6 +14,9 @@ public class EvolutionaryAlgorithm : EvolutionBlueprint
     StateManager = stateManager;
     Observer = observer;
   }
+
+  private StateManager StateManager { get; }
+  private Observer Observer { get; }
 
   public override void RunAlgorithm()
   {
@@ -45,7 +42,7 @@ public class EvolutionaryAlgorithm : EvolutionBlueprint
         while (newPopulation.Count < PopulationSize)
         {
           // Select individuals for the mating pool
-          List<Individual> matingPool = SelectionStrategy.Select(populationCopy, PopulationSize);
+          var matingPool = SelectionStrategy.Select(populationCopy, PopulationSize);
 
           // Pair individuals in the mating pool
           var matingPairs = PairingStrategy.PairIndividuals(matingPool);
@@ -74,15 +71,12 @@ public class EvolutionaryAlgorithm : EvolutionBlueprint
           newPopulation.Inhabitants.Sort((inhabitant1, inhabitant2) =>
             inhabitant1.Fitness.CompareTo(inhabitant2.Fitness));
           // Remove the individuals with the worst fitness
-          int removeCount = newPopulation.Count - PopulationSize;
+          var removeCount = newPopulation.Count - PopulationSize;
           newPopulation.Inhabitants.RemoveRange(PopulationSize, removeCount);
         }
 
         // Set the generation number for each individual in the new population
-        foreach (var inhabitant in newPopulation.Inhabitants)
-        {
-          inhabitant.SetGeneration(i + 1);
-        }
+        foreach (var inhabitant in newPopulation.Inhabitants) inhabitant.SetGeneration(i + 1);
 
         // Test the fitness of the new population
         newPopulation.TestPopulation(StateManager, Observer);
@@ -95,16 +89,12 @@ public class EvolutionaryAlgorithm : EvolutionBlueprint
 
         // If the termination condition is met, stop the algorithm
         if (i > TerminationEvaluationThreshold)
-        {
-          if (TerminationStrategy.Evaluate(Observer)) break;
-        }
+          if (TerminationStrategy.Evaluate(Observer))
+            break;
 
         // Replace the current population with the new population
         Population = newPopulation;
-        if (StateManager.PreviewLevel == 1)
-        {
-          StateManager.GetDocument().ExpirePreview(true);
-        }
+        if (StateManager.PreviewLevel == 1) StateManager.GetDocument().ExpirePreview(true);
       }
 
       // At the end of the algorithm, reinstate the best individual
@@ -132,23 +122,14 @@ public class EvolutionaryAlgorithm : EvolutionBlueprint
     Func<Individual, Individual, List<Individual>> operation)
   {
     if (!(Random.NextDouble() < rate))
-    {
       return operation(pair.Individual1, pair.Individual2);
-    }
-    else
-    {
-      return new List<Individual> { pair.Individual1, pair.Individual2 };
-    }
+    return new List<Individual> { pair.Individual1, pair.Individual2 };
   }
 
   private void PerformOperation(List<Individual> individuals, double rate, Action<Individual> operation)
   {
     foreach (var individual in individuals)
-    {
       if (Random.NextDouble() < rate)
-      {
         operation(individual);
-      }
-    }
   }
 }
