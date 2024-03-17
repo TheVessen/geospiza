@@ -77,18 +77,16 @@ public class MaxGenerations : TerminationStrategy
   }
 }
 
-public class GeneDiversity : TerminationStrategy
-{
-  public GeneDiversity(double threshold = 1)
-  {
-    TerminationThreshold = threshold;
-  }
-
-  public override bool Evaluate(Observer observer)
-  {
-    var population = observer.GetCurrentPopulation();
-
-
-
-  }
-}
+// public class GeneDiversity : TerminationStrategy
+// {
+//   public GeneDiversity(double threshold = 1)
+//   {
+//     TerminationThreshold = threshold;
+//   }
+//
+//   public override bool Evaluate(Observer observer)
+//   {
+//     var population = observer.GetCurrentPopulation();
+//
+//   }
+// }

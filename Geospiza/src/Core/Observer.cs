@@ -19,11 +19,18 @@ public class Observer
   public List<int> Diversity { get; private set; }
   public List<Individual> BestIndividuals { get; private set; } = new();
   public List<double> FitnessStandardDeviation { get; private set; } = new();
+  private static readonly object padlock = new object();
 
   public static Observer GetInstance(GH_BasicSolver solver)
   {
-    if (!_instances.ContainsKey(solver)) _instances[solver] = new Observer();
-    return _instances[solver];
+    lock (padlock)
+    {
+      if (!_instances.ContainsKey(solver))
+      {
+        _instances[solver] = new Observer();
+      }
+      return _instances[solver];
+    }
   }
 
   /// <summary>
@@ -83,6 +90,18 @@ public class Observer
     TotalFitness = new List<double>();
     NumberOfUniqueIndividuals = new List<int>();
     Diversity = new List<int>();
+  }
+  
+  public void Destroy()
+  {
+    lock (padlock)
+    {
+      var keys = new List<GH_BasicSolver>(_instances.Keys);
+      foreach (var key in keys)
+      {
+        _instances[key] = null;
+      }
+    }
   }
 
   /// <summary>

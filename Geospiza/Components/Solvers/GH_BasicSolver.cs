@@ -102,6 +102,16 @@ public class GH_BasicSolver : GH_Component
         var run = false;
         if (!DA.GetData(4, ref run)) return;
         
+            _observer.Destroy();
+        // Check if the solver was triggered by the button or timestamp
+        if (run)
+        {
+            // Solver was triggered by the button
+        }
+        else if (intTimestamp != 0 && intTimestamp != _lastTimestamp)
+        {
+        }
+        
         // Check if the solver should run
         if(_lastSolutionId != Guid.Empty && _solutionId != _lastSolutionId)
         {

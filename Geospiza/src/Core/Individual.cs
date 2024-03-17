@@ -25,6 +25,15 @@ public class Individual
     Fitness = individual.Fitness;
     Probability = 0;
   }
+  
+  public Individual(string json)
+  {
+    var parsed = FromJson(json);
+    GenePool = parsed.GenePool;
+    Fitness = parsed.Fitness;
+    Probability = parsed.Probability;
+    Generation = parsed.Generation;
+  }
 
   /// <summary>
   ///   Gene pool of the individual
@@ -164,10 +173,8 @@ public class Individual
     return JsonConvert.SerializeObject(obj, settings);
   }
 
-  public void FromJson(string json)
+  public static Individual FromJson(string json)
   {
-    var individual = JsonConvert.DeserializeObject<Individual>(json);
-    Fitness = individual.Fitness;
-    GenePool = individual.GenePool;
+    return JsonConvert.DeserializeObject<Individual>(json);
   }
 }

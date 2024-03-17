@@ -99,10 +99,5 @@
 <!--    </EmbeddedResource>-->
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Dist\food4rhino\rhino7\" />
-    <Folder Include="Dist\food4rhino\rhino8\" />
-  </ItemGroup>
-
 
 </Project>
