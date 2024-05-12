@@ -7,6 +7,7 @@ using Grasshopper.Kernel;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
 using Rhino.Geometry;
+using Rhino.Compute;
 
 namespace Geospiza;
 
@@ -48,7 +49,6 @@ public class GH_WebGeo : GH_Component
     /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
     protected override void SolveInstance(IGH_DataAccess DA)
     {
-        
         GH_Structure<IGH_Goo> GHBaseGeo = new GH_Structure<IGH_Goo>();
         if (!DA.GetDataTree(0, out GHBaseGeo)) return;
         //Base params
