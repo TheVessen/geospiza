@@ -117,4 +117,9 @@ public class Observer
   {
     return JsonConvert.SerializeObject(this, Formatting.Indented);
   }
+  
+  public static Observer FromJson(string json)
+  {
+    return JsonConvert.DeserializeObject<Observer>(json);
+  }
 }

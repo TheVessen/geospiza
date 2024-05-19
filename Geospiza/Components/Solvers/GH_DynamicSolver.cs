@@ -1,8 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Linq;
+using Geospiza.Algorythm;
 using Grasshopper.Kernel;
+using Grasshopper.Kernel.Types;
+using Newtonsoft.Json;
 using Rhino.Geometry;
+using Rhino.Compute;
 
 namespace Geospiza;
 
@@ -13,9 +18,9 @@ public class GH_DynamicSolver : GH_Component
     /// Initializes a new instance of the GH_DynamicSolver class.
     /// </summary>
     public GH_DynamicSolver()
-        : base("GH_DynamicSolver", "GH_DynamicSolver",
-            "Description",
-            "Geospiza", "Subcategory")
+        : base("DynamicSolver", "DynamicSolver",
+            "Solves multiple genetic algorithms in parallel with different settings",
+            "Geospiza", "Solvers")
     {
     }
 
@@ -24,6 +29,11 @@ public class GH_DynamicSolver : GH_Component
     /// </summary>
     protected override void RegisterInputParams(GH_InputParamManager pManager)
     {
+        pManager.AddGenericParameter("Settings", "S", "The settings for the evolutionary algorithm",
+            GH_ParamAccess.list);
+        pManager.AddTextParameter("FilePath", "FP", "The file path to grasshopper filed that should be solved", GH_ParamAccess.item);
+        pManager.AddBooleanParameter("Run", "R", "Run the solver for running locally", GH_ParamAccess.item, false);
+        
     }
 
     /// <summary>
@@ -31,6 +41,8 @@ public class GH_DynamicSolver : GH_Component
     /// </summary>
     protected override void RegisterOutputParams(GH_OutputParamManager pManager)
     {
+        // pManager.AddGenericParameter("Obervers", "O", "The observers for the evolutionary algorithms", GH_ParamAccess.list);
+        pManager.AddTextParameter("Results", "R", "The results of the evolutionary algorithms", GH_ParamAccess.item);
     }
 
     /// <summary>
@@ -39,6 +51,59 @@ public class GH_DynamicSolver : GH_Component
     /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
     protected override void SolveInstance(IGH_DataAccess DA)
     {
+        // Variables
+        List<GH_ObjectWrapper> settingsWrappers = new();
+        string filePath = "";
+        bool run = false;
+
+        // Set variables
+        DA.GetDataList(0, settingsWrappers);
+        DA.GetData(1, ref filePath);
+        DA.GetData(2, ref run);
+
+        var settings = settingsWrappers.Select(s => s.Value).Cast<EvolutionaryAlgorithmSettings>().ToList();
+
+        if (settings.Count == 0)
+        {
+            AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "No settings provided");
+        }
+
+        ComputeServer.ApiKey = "YOUR_AP";
+        ComputeServer.AuthToken = "YOUR_TOKEN";
+        ComputeServer.WebAddress = "http://localhost:6500";
+        
+        var trees = new List<GrasshopperDataTree>();
+
+        var random = new Random();
+        var randomNumber = new GrasshopperObject(random.Next(0, 1000));
+        var trigger = new GrasshopperDataTree("trigger");
+        trigger.Add("0", new List<GrasshopperObject> { randomNumber });
+        trees.Add(trigger);
+
+        var settingsTree = new GrasshopperDataTree("settings");
+        var settingsJson = settings.Select(s => new GrasshopperObject(s.ToJson())).ToList();
+        settingsTree.Add("0", settingsJson);
+        trees.Add(settingsTree);
+
+        //Call the server
+        var result = GrasshopperCompute.EvaluateDefinition(filePath, trees);
+        
+        var data1 = result[0].InnerTree.First().Value[0].Data;
+        var data2 = result[1].InnerTree.First().Value[0].Data;
+        
+        // var data1 = result[1].InnerTree.First().Value[0].Data;
+        // var data = result[0].InnerTree.First().Value[0].Data;
+        //
+        // var parsed = JsonConvert.DeserializeObject<Dictionary<string, string>>(data);
+        // var obj = Rhino.FileIO.File3dmObject.FromJSON(parsed);
+        //
+        // var geo = obj as Rhino.Geometry.Brep;
+        //
+        // Console.WriteLine(geo.GetArea());
+        //
+        // Console.WriteLine(data1);
+        
+        DA.SetData(0, data1 );
     }
 
     /// <summary>

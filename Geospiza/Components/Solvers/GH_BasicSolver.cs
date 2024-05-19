@@ -154,6 +154,10 @@ public class GH_BasicSolver : GH_Component
         }
     }
     
+    /// <summary>
+    /// Scedules the callback for the solver => Starts a new grasshopper solution
+    /// </summary>
+    /// <param name="doc"></param>
     private void ScheduleCallback(GH_Document doc)
     {
         var start = DateTime.Now;
@@ -170,6 +174,9 @@ public class GH_BasicSolver : GH_Component
         var time = end - start;
     }
 
+    /// <summary>
+    /// Clean the component
+    /// </summary>
     protected override void AfterSolveInstance()
     {
         base.AfterSolveInstance();
