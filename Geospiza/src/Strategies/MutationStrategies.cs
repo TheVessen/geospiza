@@ -18,12 +18,12 @@ public abstract class MutationStrategy : IMutationStrategy
 
 public class FixedValueMutation : MutationStrategy
 {
-  private readonly int _mutationValue; // A fixed value for mutation, e.g., 2
+  public int MutationValue { get; } // A fixed value for mutation, e.g., 2
 
   public FixedValueMutation(double mutationRate, int mutationValue)
   {
     MutationRate = mutationRate;
-    _mutationValue = mutationValue;
+    MutationValue = mutationValue;
   }
 
   public override void Mutate(Individual individual)
@@ -32,9 +32,9 @@ public class FixedValueMutation : MutationStrategy
       if (Random.NextDouble() < MutationRate)
       {
         var currentValue = t.TickValue;
-        var newValue = currentValue + Random.Next(-_mutationValue, _mutationValue);
+        var newValue = currentValue + Random.Next(-MutationValue, MutationValue);
         while (newValue < 0 || newValue > t.TickCount)
-          newValue = currentValue + Random.Next(-_mutationValue, _mutationValue);
+          newValue = currentValue + Random.Next(-MutationValue, MutationValue);
 
         t.MutatedValue(newValue);
       }
@@ -46,12 +46,12 @@ public class PercentageMutation : MutationStrategy
   /// <summary>
   ///   Mutation in percentage eg. 0.1 for 10%
   /// </summary>
-  private readonly double _mutationPercentage;
+  public double MutationPercentage { get; }
 
   public PercentageMutation(double mutationRate, double mutationPercentage)
   {
     MutationRate = mutationRate;
-    _mutationPercentage = mutationPercentage;
+    MutationPercentage = mutationPercentage;
   }
 
   /// <summary>
@@ -64,7 +64,7 @@ public class PercentageMutation : MutationStrategy
     foreach (var t in individual.GenePool)
     {
       var currentValue = t.TickValue;
-      var mutationAmount = (int)(currentValue * _mutationPercentage);
+      var mutationAmount = (int)(currentValue * MutationPercentage);
       var newValue = currentValue + Random.Next(-mutationAmount, mutationAmount + 1);
 
       while (newValue < 0 || newValue > t.TickCount)

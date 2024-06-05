@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Geospiza.Core;
+using Newtonsoft.Json;
 
 namespace Geospiza.Strategies.Crossover;
 
@@ -8,6 +9,8 @@ public interface ICrossoverStrategy
 {
   public double CrossoverRate { get; set; }
   public List<Individual> Crossover(Individual parent1, Individual parent2);
+  string ToJson();
+  ICrossoverStrategy FromJson(string json);
 }
 
 public abstract class CrossoverStrategy : ICrossoverStrategy
@@ -16,6 +19,24 @@ public abstract class CrossoverStrategy : ICrossoverStrategy
   public double CrossoverRate { get; set; }
 
   public abstract List<Individual> Crossover(Individual parent1, Individual parent2);
+  public  string ToJson()
+  {
+    var settings = new JsonSerializerSettings
+    {
+      TypeNameHandling = TypeNameHandling.Objects
+    };
+    return JsonConvert.SerializeObject(this, settings);
+  }
+
+  public ICrossoverStrategy FromJson(string json)
+  {
+    var settings = new JsonSerializerSettings
+    {
+      TypeNameHandling = TypeNameHandling.Objects
+    };
+    return JsonConvert.DeserializeObject<ICrossoverStrategy>(json, settings);
+  }
+
 }
 
 /// <summary>
@@ -70,6 +91,9 @@ public class SinglePointCrossover : CrossoverStrategy
 
     return new List<Individual> { child1, child2 };
   }
+  
+
+  
 }
 
 /// <summary>

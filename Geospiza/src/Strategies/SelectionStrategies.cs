@@ -58,7 +58,7 @@ public class TournamentSelection : SelectionStrategy
   ///   It's essential to choose an appropriate tournament size based on the problem being solved. Experimentation and
   ///   parameter tuning may be required to find the optimal size for a specific application.
   /// </remarks>
-  private readonly int _tournamentSize;
+  public  int TournamentSize { get; }
 
   /// <summary>
   ///   Initializes a new instance of the <see cref="TournamentSelection" /> class.
@@ -68,7 +68,7 @@ public class TournamentSelection : SelectionStrategy
   {
     if (tournamentSize <= 0) throw new ArgumentException("Tournament size must be greater than 0");
 
-    _tournamentSize = tournamentSize;
+    TournamentSize = tournamentSize;
   }
 
 
@@ -83,10 +83,10 @@ public class TournamentSelection : SelectionStrategy
 
     for (var i = 0; i < numberOfSelections; i++)
     {
-      var tournament = new List<Individual>(_tournamentSize);
+      var tournament = new List<Individual>(TournamentSize);
 
       // Randomly select individuals for the tournament
-      for (var j = 0; j < _tournamentSize; j++)
+      for (var j = 0; j < TournamentSize; j++)
       {
         var randomIndex = Random.Next(population.Inhabitants.Count);
         tournament.Add(population.Inhabitants[randomIndex]);

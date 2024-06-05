@@ -34,7 +34,7 @@ public class PairingStrategy
   /// </remarks>
   public double InBreedingFactor { get; set; }
 
-  private DistanceFunctionType DistanceFunction { get; }
+  public DistanceFunctionType DistanceFunction { get; }
 
   /// <summary>
   ///   Selects pairs of individuals to mate based on the in-breeding factor.

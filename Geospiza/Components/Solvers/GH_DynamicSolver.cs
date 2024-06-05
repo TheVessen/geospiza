@@ -68,12 +68,11 @@ public class GH_DynamicSolver : GH_Component
             AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "No settings provided");
         }
 
-        ComputeServer.ApiKey = "YOUR_AP";
-        ComputeServer.AuthToken = "YOUR_TOKEN";
+        ComputeServer.ApiKey = "API";
+        ComputeServer.AuthToken = "TOKEN";
         ComputeServer.WebAddress = "http://localhost:6500";
         
         var trees = new List<GrasshopperDataTree>();
-
         var random = new Random();
         var randomNumber = new GrasshopperObject(random.Next(0, 1000));
         var trigger = new GrasshopperDataTree("trigger");
@@ -88,24 +87,22 @@ public class GH_DynamicSolver : GH_Component
         //Call the server
         var result = GrasshopperCompute.EvaluateDefinition(filePath, trees);
         
-        var data1 = result[0].InnerTree.First().Value[0].Data;
-        var data2 = result[1].InnerTree.First().Value[0].Data;
+        //Get fitness
+        var fitness = result[0].InnerTree.First().Value[0].Data;
         
-        // var data1 = result[1].InnerTree.First().Value[0].Data;
-        // var data = result[0].InnerTree.First().Value[0].Data;
-        //
-        // var parsed = JsonConvert.DeserializeObject<Dictionary<string, string>>(data);
+        DA.SetData(0, fitness );
+    }
+
+        // var data2 = result[1].InnerTree.First().Value[0].Data;
+        
+        // var parsed = JsonConvert.DeserializeObject<Dictionary<string, string>>(data2);
         // var obj = Rhino.FileIO.File3dmObject.FromJSON(parsed);
         //
         // var geo = obj as Rhino.Geometry.Brep;
         //
         // Console.WriteLine(geo.GetArea());
-        //
-        // Console.WriteLine(data1);
         
-        DA.SetData(0, data1 );
-    }
-
+        
     /// <summary>
     /// Provides an Icon for the component.
     /// </summary>

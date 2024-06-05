@@ -155,7 +155,7 @@ public class GH_BasicSolver : GH_Component
     }
     
     /// <summary>
-    /// Scedules the callback for the solver => Starts a new grasshopper solution
+    /// Scedules the callback for the solver
     /// </summary>
     /// <param name="doc"></param>
     private void ScheduleCallback(GH_Document doc)
@@ -167,8 +167,13 @@ public class GH_BasicSolver : GH_Component
         var evolutionaryAlgorithm = new EvolutionaryAlgorithm(_privateSettings, _stateManager, _observer);
 
         evolutionaryAlgorithm.RunAlgorithm();
-        _isRunning = false;
-        ExpireSolution(false);
+
+        OnPingDocument().ScheduleSolution(100, doc =>
+        {
+            _isRunning = false;
+            ExpireSolution(false);
+        });
+
         _lastSolutionId = _solutionId;
         var end = DateTime.Now;
         var time = end - start;
@@ -177,22 +182,22 @@ public class GH_BasicSolver : GH_Component
     /// <summary>
     /// Clean the component
     /// </summary>
-    protected override void AfterSolveInstance()
-    {
-        base.AfterSolveInstance();
-        if (_isRunning == false)
-        {
-            Params.Output[0].ClearData();
-            Params.Output[0].AddVolatileData(new GH_Path(0), 0, _observer);
-            Params.Output[1].ClearData();
-            Params.Output[1].AddVolatileData(new GH_Path(0), 0, _stateManager);
-        }
-
-        Params.Output[2].ClearData();
-        Params.Output[2].AddVolatileData(new GH_Path(0), 0, _observer.CurrentGeneration);
-        Params.Output[3].ClearData();
-        Params.Output[3].AddVolatileData(new GH_Path(0), 0, _isRunning);
-    }
+    // protected override void AfterSolveInstance()
+    // {
+    //     base.AfterSolveInstance();
+    //     if (_isRunning == false)
+    //     {
+    //         Params.Output[0].ClearData();
+    //         Params.Output[0].AddVolatileData(new GH_Path(0), 0, _observer);
+    //         Params.Output[1].ClearData();
+    //         Params.Output[1].AddVolatileData(new GH_Path(0), 0, _stateManager);
+    //     }
+    //
+    //     Params.Output[2].ClearData();
+    //     Params.Output[2].AddVolatileData(new GH_Path(0), 0, _observer.CurrentGeneration);
+    //     Params.Output[3].ClearData();
+    //     Params.Output[3].AddVolatileData(new GH_Path(0), 0, _isRunning);
+    // }
 
     /// <summary>
     /// Provides an Icon for the component.
