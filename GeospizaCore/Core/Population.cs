@@ -138,6 +138,16 @@ public class Population
             return hash;
         }
     }
+    
+    public static Population FromJson(string json)
+    {
+        if (string.IsNullOrEmpty(json))
+        {
+            throw new ArgumentException("JSON string cannot be null or empty", nameof(json));
+        }
+
+        return JsonConvert.DeserializeObject<Population>(json);
+    }
 
     public string ToJson()
     {

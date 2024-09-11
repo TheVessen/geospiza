@@ -1,4 +1,5 @@
 ﻿
+using GeospizaManager.Core;
 using GeospizaManager.GeospizaCordinator;
 
 public class Program
@@ -8,13 +9,15 @@ public class Program
         var coordinator = EvolutionarySolverCoordinator.Instance("Test", 1);
         coordinator.StartHttpServer();
 
-        var data = new
-        {
-            pro1 = "dhowsiehpf"
-        };
+        var individual = new Individual();
+        individual.SetGeneration(10);
+        individual.SetFitness(0.5);
 
-        await DataSender.SendDataAsync(data);
+        string json = individual.ToJson();
+        Individual deserializedIndividual = Individual.FromJson(json);
         
+        
+        await DataSender.SendDataAsync(json);
         
         coordinator.StopHttpServer();
 

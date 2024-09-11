@@ -146,10 +146,6 @@ public class Individual
         return hash;
     }
 
-    /// <summary>
-    ///   Returns a string representation of the individual
-    /// </summary>
-    /// <returns></returns>
     public string ToJson()
     {
         var settings = new JsonSerializerSettings
@@ -158,21 +154,25 @@ public class Individual
             {
                 IgnoreSerializableInterface = true,
                 IgnoreSerializableAttribute = true
-            }
+            },
+            NullValueHandling = NullValueHandling.Ignore
         };
 
-        var obj = new
-        {
-            Fitness,
-            GenePool,
-            Generation
-        };
-
-        return JsonConvert.SerializeObject(obj, settings);
+        return JsonConvert.SerializeObject(this, settings);
     }
 
     public static Individual FromJson(string json)
     {
-        return JsonConvert.DeserializeObject<Individual>(json);
+        if (string.IsNullOrEmpty(json))
+        {
+            throw new ArgumentException("JSON string cannot be null or empty", nameof(json));
+        }
+
+        var settings = new JsonSerializerSettings
+        {
+            NullValueHandling = NullValueHandling.Ignore
+        };
+
+        return JsonConvert.DeserializeObject<Individual>(json, settings);
     }
 }

@@ -1,5 +1,6 @@
 ﻿using System.Net;
 using System.Text;
+using GeospizaManager.Core;
 
 namespace GeospizaManager.GeospizaCordinator;
 
@@ -45,7 +46,30 @@ public class HttpServer
                     using (var reader = new System.IO.StreamReader(request.InputStream, request.ContentEncoding))
                     {
                         string json = reader.ReadToEnd();
-                        Console.WriteLine(json);
+                        json = json.Trim();
+                        if (json.StartsWith("\"") && json.EndsWith("\""))
+                        {
+                            json = json.Substring(1, json.Length - 2);
+                            json = System.Text.RegularExpressions.Regex.Unescape(json);
+                        }
+                        
+                        Console.WriteLine($"Raw JSON received: {json}");
+                        try
+                        {
+                            var individual = Individual.FromJson(json);
+                            if (individual != null)
+                            {
+                                Console.WriteLine(individual.Fitness);
+                            }
+                            else
+                            {
+                                Console.WriteLine("No individual found.");
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"Error processing JSON: {ex.Message}");
+                        }
                     }
 
                     string responseString = "Data received and processed.";
