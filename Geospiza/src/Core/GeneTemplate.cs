@@ -3,7 +3,7 @@ using Grasshopper.Kernel.Special;
 
 namespace Geospiza.Core;
 
-public class TemplateGene
+public class GeneTemplate
 {
   //GenePool relevant properties
   private dynamic _genPoolList;
@@ -11,7 +11,7 @@ public class TemplateGene
   //Slider relevant properties
   private GH_NumberSlider _slider;
 
-  public TemplateGene(dynamic genPoolList, int geneIndex)
+  public GeneTemplate(dynamic genPoolList, int geneIndex)
   {
     _genPoolList = genPoolList;
     GenePoolIndex = geneIndex;
@@ -22,7 +22,7 @@ public class TemplateGene
     GhInstanceGuid = genPoolList.InstanceGuid;
   }
 
-  public TemplateGene(GH_NumberSlider slider)
+  public GeneTemplate(GH_NumberSlider slider)
   {
     _slider = slider;
     TickCount = slider.TickCount;
@@ -42,6 +42,12 @@ public class TemplateGene
   public int TickCount { get; private set; }
   public int GenePoolIndex { get; }
 
+  /// <summary>
+  /// Sets the tick value for the gene and updates the corresponding slider or gene pool in the state manager.
+  /// </summary>
+  /// <param name="tickValue">The new tick value to set.</param>
+  /// <param name="stateManager">The state manager containing all sliders and gene pools.</param>
+  /// <exception cref="Exception">Thrown if the gene class has not been initialized with a dictionary of sliders and gene pools.</exception>
   public void SetTickValue(int tickValue, StateManager stateManager)
   {
     var _allSliders = stateManager.AllSliders;

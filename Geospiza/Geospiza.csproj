@@ -6,7 +6,7 @@
     <Title>Geospiza</Title>
     <Description>Description of Geospiza</Description>
     <TargetExt>.gha</TargetExt>
-    <LangVersion>10</LangVersion>
+    <LangVersion>11</LangVersion>
     <GenerateResourceUsePreserializedResources>true</GenerateResourceUsePreserializedResources>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
   </PropertyGroup>

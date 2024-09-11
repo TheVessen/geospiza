@@ -4,6 +4,6 @@ namespace Geospiza.Algorythm;
 
 public interface IEvolutionarySolver
 {
-  void InitializePopulation(StateManager stateManager, Observer observer);
-  void RunAlgorithm();
+    void InitializePopulation(StateManager stateManager, EvolutionObserver evolutionObserver);
+    void RunAlgorithm();
 }

@@ -7,7 +7,7 @@ using Grasshopper.Kernel.Special;
 namespace Geospiza.Core
 {
     /// <summary>
-    /// Manages the state of the application, including the gene pools and sliders.
+    /// Manages the state of the application, including the gene pools and sliders. It is grasshopper file specific.
     /// </summary>
     public class StateManager
     {
@@ -16,24 +16,27 @@ namespace Geospiza.Core
         public Dictionary<Guid, dynamic> AllGenePools;
         public Dictionary<Guid, GH_NumberSlider> AllSliders;
         private GH_Document _document;
-
-        private StateManager()
-        {
-        }
-
         public GH_Component ThisComponent { get; private set; }
         public int NumberOfGeneIds { get; set; }
         public int PreviewLevel { get; set; } = 0;
         public Fitness FitnessComponent { get; private set; }
-        public Dictionary<Guid, TemplateGene> Genotype { get; private set; }
+        public Dictionary<Guid, GeneTemplate> Genotype { get; private set; }
+        private static readonly object Padlock = new object();
+
+        private StateManager()
+        {
+        }
 
         /// <summary>
         /// Returns the instance of StateManager for the given solver.
         /// </summary>
         public static StateManager GetInstance(GH_BasicSolver solver)
         {
-            if (!Instances.ContainsKey(solver)) Instances[solver] = new StateManager();
-            return Instances[solver];
+            lock (Padlock)
+            {
+                if (!Instances.ContainsKey(solver)) Instances[solver] = new StateManager();
+                return Instances[solver];
+            }
         }
 
         /// <summary>
@@ -115,7 +118,7 @@ namespace Geospiza.Core
         /// <returns>A dictionary of genes where the key is a Guid and the value is a Gene object.</returns>
         private void InitializeGenePool(List<string> geneIds, GH_Document doc)
         {
-            var genes = new Dictionary<Guid, TemplateGene>();
+            var genes = new Dictionary<Guid, GeneTemplate>();
             var genePools = new Dictionary<Guid, dynamic>();
             var numberSliders = new Dictionary<Guid, GH_NumberSlider>();
 
@@ -134,7 +137,7 @@ namespace Geospiza.Core
                         if (genePool.Count != 0)
                             for (var i = 0; i < genePool.Count; i++)
                             {
-                                var gene = new TemplateGene(genePool, i);
+                                var gene = new GeneTemplate(genePool, i);
                                 genes[gene.GeneGuid] = gene;
                             }
 
@@ -144,7 +147,7 @@ namespace Geospiza.Core
                     {
                         var sliderGene = currentParam as GH_NumberSlider;
                         numberSliders[guid] = sliderGene;
-                        var gene = new TemplateGene(sliderGene);
+                        var gene = new GeneTemplate(sliderGene);
                         genes[gene.GeneGuid] = gene;
                         break;
                     }

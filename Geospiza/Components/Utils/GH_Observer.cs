@@ -54,9 +54,9 @@ public class GH_Observer : GH_Component
         // Reference the input
         if (!DA.GetData(0, ref wrapper)) return;
         
-        if(wrapper.Value is Observer)
+        if(wrapper.Value is EvolutionObserver)
         {
-            var obs = (Observer)wrapper.Value;
+            var obs = (EvolutionObserver)wrapper.Value;
             if (obs.CurrentPopulation == null || obs.CurrentPopulation.Count == 0)
             {
                 return;

@@ -10,7 +10,7 @@ public static class Utils
   /// </summary>
   /// <param name="genes">A dictionary of genes where the key is a Guid and the value is a Gene object.</param>
   /// <returns>A dictionary of stable genes where the key is a Guid and the value is a StableGene object.</returns>
-  public static Dictionary<Guid, Gene> GetGeneSnapshot(Dictionary<Guid, TemplateGene> genes)
+  public static Dictionary<Guid, Gene> GetGeneSnapshot(Dictionary<Guid, GeneTemplate> genes)
   {
     var stableGenes = new Dictionary<Guid, Gene>();
     foreach (var gene in genes)

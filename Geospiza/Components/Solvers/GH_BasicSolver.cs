@@ -25,7 +25,7 @@ public class GH_BasicSolver : GH_Component
             "Geospiza", "Solvers")
     {
         _stateManager = StateManager.GetInstance(this);
-        _observer = Observer.GetInstance(this);;
+        _evolutionObserver = EvolutionObserver.GetInstance(this);;
     }
 
     /// <summary>
@@ -70,7 +70,7 @@ public class GH_BasicSolver : GH_Component
     }
     
     private readonly StateManager _stateManager;
-    private readonly Observer _observer;
+    private readonly EvolutionObserver _evolutionObserver;
     private long _lastTimestamp = 0;
     private EvolutionaryAlgorithmSettings _privateSettings;
     private bool _isRunning = false;
@@ -102,7 +102,7 @@ public class GH_BasicSolver : GH_Component
         var run = false;
         if (!DA.GetData(4, ref run)) return;
         
-            _observer.Destroy();
+            _evolutionObserver.Destroy();
         // Check if the solver was triggered by the button or timestamp
         if (run)
         {
@@ -162,9 +162,9 @@ public class GH_BasicSolver : GH_Component
     {
         var start = DateTime.Now;
         _solutionId = Guid.NewGuid();
-        _observer.Reset();
+        _evolutionObserver.Reset();
 
-        var evolutionaryAlgorithm = new EvolutionaryAlgorithm(_privateSettings, _stateManager, _observer);
+        var evolutionaryAlgorithm = new EvolutionaryAlgorithm(_privateSettings, _stateManager, _evolutionObserver);
 
         evolutionaryAlgorithm.RunAlgorithm();
 
@@ -179,9 +179,9 @@ public class GH_BasicSolver : GH_Component
         var time = end - start;
     }
 
-    /// <summary>
-    /// Clean the component
-    /// </summary>
+    // /// <summary>
+    // /// Clean the component
+    // /// </summary>
     // protected override void AfterSolveInstance()
     // {
     //     base.AfterSolveInstance();

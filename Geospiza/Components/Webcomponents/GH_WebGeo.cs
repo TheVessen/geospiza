@@ -7,7 +7,6 @@ using Grasshopper.Kernel;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
 using Rhino.Geometry;
-using Rhino.Compute;
 
 namespace Geospiza;
 

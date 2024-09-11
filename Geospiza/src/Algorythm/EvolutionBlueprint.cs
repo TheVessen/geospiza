@@ -56,7 +56,7 @@ public abstract class EvolutionBlueprint : IEvolutionarySolver
   /// <summary>
   ///   Initializes the population for the evolutionary algorithm.
   /// </summary>
-  public void InitializePopulation(StateManager stateManager, Observer observer)
+  public void InitializePopulation(StateManager stateManager, EvolutionObserver evolutionObserver)
   {
     //Create an empty population
     double fistGenBestFitness = 0;
@@ -67,10 +67,10 @@ public abstract class EvolutionBlueprint : IEvolutionarySolver
       //Create a new solution and individual
       var individual = new Individual();
 
-      //Go through the gene pool and create a new individual
-      foreach (var templateGene in stateManager.Genotype)
+      //Go through the gene pool and create a new individual (Totaly random)
+      foreach (var geneTemplate in stateManager.Genotype)
       {
-        var ctg = templateGene.Value;
+        var ctg = geneTemplate.Value;
         ctg.SetTickValue(Random.Next(ctg.TickCount), stateManager);
 
         var stableGene = new Gene(ctg.TickValue, ctg.GeneGuid,
@@ -85,7 +85,7 @@ public abstract class EvolutionBlueprint : IEvolutionarySolver
       else
         stateManager.GetDocument().NewSolution(false, GH_SolutionMode.Silent);
 
-      //Get fitness from the state state manager and apply it to the individual
+      //Get fitness from the state  manager and apply it to the individual
       var currentFitness = stateManager.FitnessComponent.FitnessValue;
 
       if (i == 0)
@@ -105,8 +105,8 @@ public abstract class EvolutionBlueprint : IEvolutionarySolver
       newPopulation.AddIndividual(individual);
     }
 
-    observer.Snapshot(newPopulation);
-    observer.SetPopulation(newPopulation);
+    evolutionObserver.Snapshot(newPopulation);
+    evolutionObserver.SetPopulation(newPopulation);
     Population = newPopulation;
     if (stateManager.PreviewLevel == 1) stateManager.GetDocument().ExpirePreview(true);
   }

@@ -5,6 +5,10 @@ VisualStudioVersion = 17.8.34511.84
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Geospiza", "Geospiza\Geospiza.csproj", "{74BB2D61-2764-47CC-B512-84C7989D9B71}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GeospizaCore", "GeospizaCore\GeospizaCore.csproj", "{07B3F0E2-FCFC-412D-8B8D-B8EED6DADDD2}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SpizaRunner", "SpizaRunner\SpizaRunner.csproj", "{2A76C906-538A-4659-8220-A45BD997725C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +19,22 @@ Global
 		{74BB2D61-2764-47CC-B512-84C7989D9B71}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{74BB2D61-2764-47CC-B512-84C7989D9B71}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{74BB2D61-2764-47CC-B512-84C7989D9B71}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2700A9FF-65AC-4DF9-974E-48FADFA2C0CF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2700A9FF-65AC-4DF9-974E-48FADFA2C0CF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2700A9FF-65AC-4DF9-974E-48FADFA2C0CF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2700A9FF-65AC-4DF9-974E-48FADFA2C0CF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A0DA6D15-4083-429B-AC03-D13722080DBA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A0DA6D15-4083-429B-AC03-D13722080DBA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A0DA6D15-4083-429B-AC03-D13722080DBA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A0DA6D15-4083-429B-AC03-D13722080DBA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{07B3F0E2-FCFC-412D-8B8D-B8EED6DADDD2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{07B3F0E2-FCFC-412D-8B8D-B8EED6DADDD2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{07B3F0E2-FCFC-412D-8B8D-B8EED6DADDD2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{07B3F0E2-FCFC-412D-8B8D-B8EED6DADDD2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2A76C906-538A-4659-8220-A45BD997725C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2A76C906-538A-4659-8220-A45BD997725C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2A76C906-538A-4659-8220-A45BD997725C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2A76C906-538A-4659-8220-A45BD997725C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

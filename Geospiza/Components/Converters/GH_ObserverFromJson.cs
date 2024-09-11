@@ -49,7 +49,7 @@ public class GH_ObserverFromJson : GH_Component
         
         if(json == "") return;
 
-        var observer = Observer.FromJson(json);
+        var observer = EvolutionObserver.FromJson(json);
     
         DA.SetData(0, observer);
     }

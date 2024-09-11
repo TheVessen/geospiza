@@ -31,9 +31,6 @@ public class GeneSelector : GH_Component
     {
         pManager.AddGenericParameter("GeneParams", "GP",
             "The gene parameters this can be number sliders or a galapagos gene list", GH_ParamAccess.tree);
-        pManager.AddBooleanParameter("SearchDocument", "SD", "Search the document for gene parameters",
-            GH_ParamAccess.item, false);
-        pManager.AddBooleanParameter("Clear", "C", "Clear the gene parameters from the doc search", GH_ParamAccess.item, false);
     }
 
     /// <summary>
@@ -54,10 +51,6 @@ public class GeneSelector : GH_Component
     {
         var allGeneParams = this.Params.Input[0].Sources;
         var geneIds = new List<string>();
-        var searchDocument = false;
-        DA.GetData(1, ref searchDocument);
-        var clear = false;
-        DA.GetData(2, ref clear);
         
         if (geneIds.Count == 0 || geneIds.Count != allGeneParams.Count)
         {
@@ -68,30 +61,6 @@ public class GeneSelector : GH_Component
             }
         }
 
-        if (searchDocument)
-        {
-            foreach (var ghobject in OnPingDocument().Objects)
-            {
-                var currentType = ghobject.GetType().ToString();
-
-                var isRightType = currentType == "Grasshopper.Kernel.Special.GH_NumberSlider" ||
-                                  currentType == "GalapagosComponents.GalapagosGeneListObject";
-                if (ghobject.NickName.StartsWith("GP_") && isRightType)
-                {
-                    if (!docParams.Contains(ghobject.InstanceGuid.ToString()))
-                    {
-                        docParams.Add(ghobject.InstanceGuid.ToString());
-                    }
-                }
-            }
-        }
-
-        if (clear)
-        {
-            docParams.Clear();
-        }
-
-        geneIds.AddRange(docParams);
         DA.SetDataList(0, geneIds);
     }
 
