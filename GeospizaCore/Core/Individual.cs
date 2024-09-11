@@ -1,11 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using Grasshopper.Kernel;
+﻿using Grasshopper.Kernel;
 using Grasshopper.Kernel.Special;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 
-namespace Geospiza.Core;
+namespace GeospizaManager.Core;
 
 public class Individual
 {
@@ -112,7 +110,7 @@ public class Individual
     ///   Reinstate the individual in the gh canvas
     /// </summary>
     /// <param name="doc"></param>
-    /// <exception cref="Exception"></exception>
+    /// <exception cref="System.Exception"></exception>
     public void Reinstate(GH_Document doc)
     {
         foreach (var gene in GenePool)

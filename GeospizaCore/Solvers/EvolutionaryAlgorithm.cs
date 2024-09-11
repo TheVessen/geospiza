@@ -1,17 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.Threading.Tasks;
-using Geospiza.Algorythm;
-using Geospiza.Core;
+﻿using GeospizaManager.Core;
 
-public class ParallelEvolutionarySolver : EvolutionBlueprint
+namespace GeospizaManager.Solvers;
+
+public class EvolutionaryAlgorithm : EvolutionBlueprint
 {
     private const int TerminationEvaluationThreshold = 5;
 
-    public ParallelEvolutionarySolver(EvolutionaryAlgorithmSettings settings, StateManager stateManager,
-        EvolutionObserver evolutionObserver) :
+    public EvolutionaryAlgorithm(EvolutionaryAlgorithmSettings settings, StateManager stateManager, EvolutionObserver evolutionObserver) :
         base(settings)
     {
         StateManager = stateManager;
@@ -25,7 +20,6 @@ public class ParallelEvolutionarySolver : EvolutionBlueprint
     {
         // Initialize the population
         InitializePopulation(StateManager, EvolutionObserver);
-        
         try
         {
             // Run the algorithm for the specified number of generations
@@ -90,8 +84,6 @@ public class ParallelEvolutionarySolver : EvolutionBlueprint
                 EvolutionObserver.SetPopulation(newPopulation);
                 EvolutionObserver.UpdateGenerationCounter();
                 
-                var populationHash = newPopulation.GetHashCode();
-
                 //TODO: For multi processing here would be the point to send the observer to the main thread
 
                 // If the termination condition is met, stop the algorithm
@@ -114,7 +106,7 @@ public class ParallelEvolutionarySolver : EvolutionBlueprint
             Console.WriteLine($@"An error occurred: {ex.Message}");
         }
     }
-    
+
     private List<Individual> PerformCrossover(Pair pair)
     {
         return PerformOperation(pair, CrossoverStrategy.CrossoverRate, CrossoverStrategy.Crossover);

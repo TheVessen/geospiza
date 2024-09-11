@@ -1,6 +1,6 @@
-﻿using Geospiza.Core;
+﻿using GeospizaManager.Core;
 
-namespace Geospiza.Algorythm;
+namespace GeospizaManager.Solvers;
 
 public interface IEvolutionarySolver
 {

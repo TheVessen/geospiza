@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using Geospiza.Core;
+﻿using GeospizaManager.Core;
 
-namespace Geospiza.Strategies.Pairing;
+namespace GeospizaManager.Strategies;
 
 public enum DistanceFunctionType
 {

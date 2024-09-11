@@ -1,9 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using Geospiza.Core;
+﻿using GeospizaManager.Core;
 using Newtonsoft.Json;
 
-namespace Geospiza.Strategies.Crossover;
+namespace GeospizaManager.Strategies;
 
 public interface ICrossoverStrategy
 {
@@ -62,7 +60,7 @@ public class SinglePointCrossover : CrossoverStrategy
   /// <param name="parent1">The first parent.</param>
   /// <param name="parent2">The second parent.</param>
   /// <returns>A list of offspring resulting from the crossover.</returns>
-  /// <exception cref="ArgumentException">Thrown when the parents have genomes of different lengths.</exception>
+  /// <exception cref="System.ArgumentException">Thrown when the parents have genomes of different lengths.</exception>
   /// <remarks>
   ///   Source: https://en.wikipedia.org/wiki/Crossover_(genetic_algorithm)
   /// </remarks>
@@ -116,7 +114,7 @@ public class TwoPointCrossover : CrossoverStrategy
   /// <param name="parent1">The first parent.</param>
   /// <param name="parent2">The second parent.</param>
   /// <returns>A list of offspring resulting from the crossover.</returns>
-  /// <exception cref="ArgumentException">Thrown when the parents have genomes of different lengths.</exception>
+  /// <exception cref="System.ArgumentException">Thrown when the parents have genomes of different lengths.</exception>
   public override List<Individual> Crossover(Individual parent1, Individual parent2)
   {
     // Ensure parents have the same number of genes

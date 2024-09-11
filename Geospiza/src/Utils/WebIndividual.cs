@@ -1,5 +1,5 @@
 ﻿using System.Collections.Generic;
-using Geospiza.Core;
+using GeospizaManager.Core;
 using Rhino.Geometry;
 
 namespace Geospiza;

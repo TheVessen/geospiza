@@ -1,7 +1,6 @@
-﻿using System;
-using Geospiza.Core;
+﻿using GeospizaManager.Core;
 
-namespace Geospiza.Strategies.Mutation;
+namespace GeospizaManager.Strategies;
 
 public interface IMutationStrategy
 {

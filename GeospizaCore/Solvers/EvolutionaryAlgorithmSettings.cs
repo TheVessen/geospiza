@@ -1,14 +1,8 @@
-﻿using System;
-using System.Text.RegularExpressions;
-using Geospiza.Strategies.Crossover;
-using Geospiza.Strategies.Mutation;
-using Geospiza.Strategies.Pairing;
-using Geospiza.Strategies.Selection;
-using Geospiza.Strategies.Termination;
+﻿using GeospizaManager.Strategies;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
-namespace Geospiza.Algorythm;
+namespace GeospizaManager.Solvers;
 
 public class EvolutionaryAlgorithmSettings
 {

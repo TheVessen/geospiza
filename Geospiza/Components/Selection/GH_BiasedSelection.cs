@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
-using Geospiza.Strategies.Selection;
+using GeospizaManager.Strategies;
 using Grasshopper.Kernel;
 using Rhino.Geometry;
 

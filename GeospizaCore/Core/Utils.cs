@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace Geospiza.Core;
+﻿namespace GeospizaManager.Core;
 
 public static class Utils
 {

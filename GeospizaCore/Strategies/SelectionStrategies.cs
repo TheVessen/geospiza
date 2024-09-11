@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using Geospiza.Core;
+﻿using GeospizaManager.Core;
 
-namespace Geospiza.Strategies.Selection;
+namespace GeospizaManager.Strategies;
 
 public interface ISelectionStrategy
 {
@@ -133,7 +130,7 @@ public class RouletteWheelSelection : SelectionStrategy
   /// <param name="population"></param>
   /// <param name="numberOfSelections"></param>
   /// <returns></returns>
-  /// <exception cref="InvalidOperationException"></exception>
+  /// <exception cref="System.InvalidOperationException"></exception>
   public override List<Individual> Select(Population population, int numberOfSelections)
   {
     var selectedIndividuals = new List<Individual>();
@@ -193,7 +190,7 @@ public class PoolSelection : SelectionStrategy
   /// <param name="population"></param>
   /// <param name="numberOfSelections"></param>
   /// <returns></returns>
-  /// <exception cref="ArgumentException"></exception>
+  /// <exception cref="System.ArgumentException"></exception>
   public override List<Individual> Select(Population population, int numberOfSelections)
   {
     // Validate inputs

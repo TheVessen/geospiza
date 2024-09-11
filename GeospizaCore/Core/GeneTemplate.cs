@@ -1,7 +1,6 @@
-﻿using System;
-using Grasshopper.Kernel.Special;
+﻿using Grasshopper.Kernel.Special;
 
-namespace Geospiza.Core;
+namespace GeospizaManager.Core;
 
 public class GeneTemplate
 {
@@ -47,7 +46,7 @@ public class GeneTemplate
   /// </summary>
   /// <param name="tickValue">The new tick value to set.</param>
   /// <param name="stateManager">The state manager containing all sliders and gene pools.</param>
-  /// <exception cref="Exception">Thrown if the gene class has not been initialized with a dictionary of sliders and gene pools.</exception>
+  /// <exception cref="System.Exception">Thrown if the gene class has not been initialized with a dictionary of sliders and gene pools.</exception>
   public void SetTickValue(int tickValue, StateManager stateManager)
   {
     var _allSliders = stateManager.AllSliders;

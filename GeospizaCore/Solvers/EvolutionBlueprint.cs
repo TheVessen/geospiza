@@ -1,15 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using Geospiza.Core;
-using Geospiza.Strategies.Crossover;
-using Geospiza.Strategies.Mutation;
-using Geospiza.Strategies.Pairing;
-using Geospiza.Strategies.Selection;
-using Geospiza.Strategies.Termination;
+﻿using GeospizaManager.Core;
+using GeospizaManager.Strategies;
 using Grasshopper.Kernel;
 
-namespace Geospiza.Algorythm;
+namespace GeospizaManager.Solvers;
 
 public abstract class EvolutionBlueprint : IEvolutionarySolver
 {
@@ -60,6 +53,7 @@ public abstract class EvolutionBlueprint : IEvolutionarySolver
   {
     //Create an empty population
     double fistGenBestFitness = 0;
+    Fitness fitnessInstance = Fitness.Instance;
 
     var newPopulation = new Population();
     for (var i = 0; i < PopulationSize; i++)
@@ -86,7 +80,7 @@ public abstract class EvolutionBlueprint : IEvolutionarySolver
         stateManager.GetDocument().NewSolution(false, GH_SolutionMode.Silent);
 
       //Get fitness from the state  manager and apply it to the individual
-      var currentFitness = stateManager.FitnessComponent.FitnessValue;
+      var currentFitness = fitnessInstance.GetFitness();
 
       if (i == 0)
       {

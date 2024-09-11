@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	
   <PropertyGroup>
-    <TargetFrameworks>net48; net7.0</TargetFrameworks>
+    <TargetFrameworks> net7.0</TargetFrameworks>
     <Version>0.1.0</Version>
     <Title>Geospiza</Title>
     <Description>Description of Geospiza</Description>
@@ -99,6 +99,16 @@
 <!--    <EmbeddedResource Include="Resources\Icons\*.png">-->
 <!--      <CopyToOutputDirectory>Always</CopyToOutputDirectory>-->
 <!--    </EmbeddedResource>-->
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="src\Algorythm\" />
+    <Folder Include="src\Core\" />
+    <Folder Include="src\Strategies\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\GeospizaCore\GeospizaCore.csproj" />
   </ItemGroup>
 
 

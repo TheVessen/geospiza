@@ -1,10 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using Grasshopper.Kernel;
+﻿using Grasshopper.Kernel;
 using Newtonsoft.Json;
 
-namespace Geospiza.Core;
+namespace GeospizaManager.Core;
 
 public class Population
 {
@@ -65,7 +62,8 @@ public class Population
                 stateManager.GetDocument().NewSolution(false, GH_SolutionMode.Silent);
 
             stateManager.FitnessComponent.ExpireSolution(false);
-            individual.SetFitness(stateManager.FitnessComponent.FitnessValue);
+            //Test if Fitness is initialized
+            individual.SetFitness(Fitness.Instance.GetFitness());
 
             if (stateManager.PreviewLevel != 2) continue;
 

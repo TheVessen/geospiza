@@ -1,15 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using Geospiza.Comonents;
+﻿using Grasshopper.Kernel;
 using Newtonsoft.Json;
-using Rhino.Compute;
 
-namespace Geospiza.Core;
+namespace GeospizaManager.Core;
 
 public class EvolutionObserver
 {
-    private static readonly Dictionary<GH_BasicSolver, EvolutionObserver> _instances = new();
+    private static readonly Dictionary<GH_Component, EvolutionObserver> _instances = new();
     public int CurrentGenerationIndex { get; private set; }
     public Population CurrentPopulation { get; private set; }
     public List<double> AverageFitness { get; private set; } = new();
@@ -28,7 +24,7 @@ public class EvolutionObserver
     /// </summary>
     /// <param name="solver">The GH_BasicSolver for which the Observer instance is required.</param>
     /// <returns>The Observer instance associated with the given solver.</returns>
-    public static EvolutionObserver GetInstance(GH_BasicSolver solver)
+    public static EvolutionObserver GetInstance(GH_Component solver)
     {
         lock (Padlock)
         {
@@ -37,10 +33,6 @@ public class EvolutionObserver
                 _instances[solver] = new EvolutionObserver();
             }
 
-            ComputeServer.ApiKey = "API";
-            ComputeServer.AuthToken = "TOKEN";
-            ComputeServer.WebAddress = "http://localhost:6500";
-            var trees = new List<GrasshopperDataTree>();
 
             return _instances[solver];
         }
@@ -123,7 +115,7 @@ public class EvolutionObserver
     {
         lock (Padlock)
         {
-            var keys = new List<GH_BasicSolver>(_instances.Keys);
+            var keys = new List<GH_Component>(_instances.Keys);
             foreach (var key in keys)
             {
                 _instances[key] = null;

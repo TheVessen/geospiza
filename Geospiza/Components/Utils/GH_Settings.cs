@@ -1,13 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
-using Geospiza.Algorythm;
-using Geospiza.Strategies;
-using Geospiza.Strategies.Crossover;
-using Geospiza.Strategies.Mutation;
-using Geospiza.Strategies.Pairing;
-using Geospiza.Strategies.Selection;
-using Geospiza.Strategies.Termination;
+using GeospizaManager.Solvers;
+using GeospizaManager.Strategies;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Types;
 using Rhino.Geometry;

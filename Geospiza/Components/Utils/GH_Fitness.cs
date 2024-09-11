@@ -1,18 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using GeospizaManager.Core;
 using Grasshopper.Kernel;
 using Rhino.Geometry;
 
 namespace Geospiza.Comonents;
 
-public class Fitness : GH_Component
+public class GH_Fitness : GH_Component
 {
 
     /// <summary>
     /// Initializes a new instance of the Fitness class.
     /// </summary>
-    public Fitness()
+    public GH_Fitness()
         : base("Fitness", "F",
             "Fitness value for the evolutionary algorithm. This component links the fitness value to the main solver",
             "Geospiza", "Utils")
@@ -47,7 +48,7 @@ public class Fitness : GH_Component
         if (!DA.GetData(0, ref fitness)) return;
 
         // Add the new fitness value
-        FitnessValue = fitness;
+        Fitness.Instance.SetFitness(fitness);
 
 
         

@@ -1,14 +1,21 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net7.0</TargetFramework>
+        <TargetFrameworks>net7.0</TargetFrameworks>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <RootNamespace>GeospizaManager</RootNamespace>
+        <LangVersion>10</LangVersion>
     </PropertyGroup>
 
+
     <ItemGroup>
-      <ProjectReference Include="..\Geospiza\Geospiza.csproj" />
+      <PackageReference Include="Grasshopper" Version="8.0.23304.9001" />
+      <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Reference Include="Microsoft.CSharp" />
     </ItemGroup>
 
 </Project>

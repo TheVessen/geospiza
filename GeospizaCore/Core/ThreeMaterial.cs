@@ -1,6 +1,6 @@
 ﻿using System.Drawing;
 
-namespace Geospiza.Core;
+namespace GeospizaManager.Core;
 
 public class ThreeMaterial
 {

@@ -1,7 +1,6 @@
-﻿using System;
-using Geospiza.Core;
+﻿using GeospizaManager.Core;
 
-namespace Geospiza.Strategies.Termination;
+namespace GeospizaManager.Strategies;
 
 public interface ITerminationStrategy
 {

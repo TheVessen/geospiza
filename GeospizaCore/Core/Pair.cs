@@ -1,4 +1,4 @@
-﻿namespace Geospiza.Core;
+﻿namespace GeospizaManager.Core;
 
 public class Pair
 {

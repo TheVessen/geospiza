@@ -2,13 +2,13 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
-using Geospiza.Core;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
 using Microsoft.ML;
 using Microsoft.ML.Data;
 using Accord.MachineLearning;
+using GeospizaManager.Core;
 
 namespace Geospiza;
 

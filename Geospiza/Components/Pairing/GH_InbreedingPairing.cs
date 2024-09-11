@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
-using Geospiza.Strategies.Pairing;
+using GeospizaManager.Strategies;
 using GH_IO.Serialization;
 using Grasshopper.Kernel;
 using Rhino.Geometry;

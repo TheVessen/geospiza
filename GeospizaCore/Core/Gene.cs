@@ -1,8 +1,7 @@
-﻿using System;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 
-namespace Geospiza.Core;
+namespace GeospizaManager.Core;
 
 public class Gene
 {
@@ -46,6 +45,7 @@ public class Gene
   public string ToJson()
   {
     var settings = new JsonSerializerSettings
+      
     {
       ContractResolver = new DefaultContractResolver
       {
