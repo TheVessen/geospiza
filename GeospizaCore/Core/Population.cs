@@ -139,14 +139,14 @@ public class Population
         }
     }
     
-    public static Population FromJson(string json)
+    public static Population? FromJson(string json)
     {
-        if (string.IsNullOrEmpty(json))
+        var settings = new JsonSerializerSettings
         {
-            throw new ArgumentException("JSON string cannot be null or empty", nameof(json));
-        }
+            ContractResolver = new PrivateSetterContractResolver()
+        };
 
-        return JsonConvert.DeserializeObject<Population>(json);
+        return JsonConvert.DeserializeObject<Population>(json, settings);
     }
 
     public string ToJson()

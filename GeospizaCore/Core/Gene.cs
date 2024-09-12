@@ -67,6 +67,16 @@ public class Gene
     return JsonConvert.SerializeObject(obj, settings);
   }
 
+  public static Gene? FromJson(string json)
+  {
+    var settings = new JsonSerializerSettings
+    {
+      ContractResolver = new PrivateSetterContractResolver()
+    };
+
+    return JsonConvert.DeserializeObject<Gene>(json, settings);
+  }
+
   public override int GetHashCode()
   {
     var hash = 17;

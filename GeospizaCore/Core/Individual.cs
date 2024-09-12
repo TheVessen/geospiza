@@ -1,4 +1,5 @@
-﻿using Grasshopper.Kernel;
+﻿using System.Reflection;
+using Grasshopper.Kernel;
 using Grasshopper.Kernel.Special;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
@@ -160,17 +161,14 @@ public class Individual
 
         return JsonConvert.SerializeObject(this, settings);
     }
+    
+
 
     public static Individual FromJson(string json)
     {
-        if (string.IsNullOrEmpty(json))
-        {
-            throw new ArgumentException("JSON string cannot be null or empty", nameof(json));
-        }
-
         var settings = new JsonSerializerSettings
         {
-            NullValueHandling = NullValueHandling.Ignore
+            ContractResolver = new PrivateSetterContractResolver()
         };
 
         return JsonConvert.DeserializeObject<Individual>(json, settings);

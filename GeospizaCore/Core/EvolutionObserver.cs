@@ -132,12 +132,21 @@ public class EvolutionObserver
         return CurrentPopulation;
     }
 
+    /// <summary>
+    /// Serializes the EvolutionObserver instance to a JSON string.
+    /// </summary>
+    /// <returns>A JSON string representing the EvolutionObserver instance.</returns>
     public string ToJson()
     {
         return JsonConvert.SerializeObject(this, Formatting.Indented);
     }
 
-    public static EvolutionObserver FromJson(string json)
+    /// <summary>
+    /// Deserializes a JSON string to an EvolutionObserver instance.
+    /// </summary>
+    /// <param name="json">The JSON string to deserialize.</param>
+    /// <returns>An EvolutionObserver instance.</returns>
+    public static EvolutionObserver? FromJson(string json)
     {
         return JsonConvert.DeserializeObject<EvolutionObserver>(json);
     }
