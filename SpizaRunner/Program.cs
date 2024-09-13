@@ -7,22 +7,21 @@ public class Program
     private static Dictionary<Task, TaskCompletionSource<string>> _taskCompletionSources = new Dictionary<Task, TaskCompletionSource<string>>();
     public static async Task Main(string[] args)
     {
-        var individual = new Individual();
-        individual.SetGeneration(10);
-        individual.SetFitness(0.5);
-        var json = individual.ToJson();
+      // Define the prefixes (e.g., the URL and port the HTTP listener will listen to)
+      string[] prefixes = { "http://localhost:8080/" };
 
-        var coordinator = EvolutionarySolverCoordinator.Instance("Test", 3);
-        coordinator.DataProcessed += OnDataProcessed; 
-        coordinator.StartHttpServer();
+      // Create an instance of the PostRequestHandler class
+      var postRequestHandler = new EvolutionCordinator(prefixes,2);
+
+      // Start the listener and process incoming requests
+      await postRequestHandler.StartListeningAsync();
+      
+      
+      Console.WriteLine("Press any key to exit...");
+      Console.ReadKey();
+      
         
-        Console.WriteLine("Server started. Press Enter to stop the server...");
-
-
-        // Wait for the user to press Enter
-        Console.ReadLine();
-
-        coordinator.StopHttpServer();
+        
     }
     
     private static void OnDataProcessed(string result)
