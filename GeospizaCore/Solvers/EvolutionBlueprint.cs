@@ -105,18 +105,5 @@ public abstract class EvolutionBlueprint : IEvolutionarySolver
     if (stateManager.PreviewLevel == 1) stateManager.GetDocument().ExpirePreview(true);
   }
 
-  /// <summary>
-  ///   Selects the top individuals from the population.
-  /// </summary>
-  /// <param name="eliteSize"></param>
-  /// <returns></returns>
-  protected List<Individual> SelectTopIndividuals(int eliteSize)
-  {
-    // Sort the population by fitness in descending order
-    var copiedPopulation = Population.Inhabitants.Select(individual => new Individual(individual)).ToList();
-
-    // Take the top 'eliteSize' individuals
-    copiedPopulation.Sort((a, b) => b.Fitness.CompareTo(a.Fitness));
-    return copiedPopulation.Take(eliteSize).ToList();
-  }
+  
 }

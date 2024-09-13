@@ -16,6 +16,8 @@ public class Population
 
     public List<Individual> Inhabitants { get; private set; } = new();
     public int Count => Inhabitants.Count;
+    
+    public int Generation { get; set; }
 
     /// <summary>
     /// </summary>
@@ -72,6 +74,7 @@ public class Population
             stateManager.GetDocument().ExpirePreview(true);
             max = individual.Fitness;
         }
+        
     }
 
     /// <summary>

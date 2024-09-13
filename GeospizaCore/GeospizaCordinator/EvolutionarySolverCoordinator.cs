@@ -2,8 +2,10 @@
 using System.Collections.Concurrent;
 using GeospizaManager.Core;
 using GeospizaManager.GeospizaCordinator;
+using GeospizaManager.Utils;
 using GH_IO.Serialization;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Rhino.Compute;
 
 namespace GeospizaManager.GeospizaCordinator
@@ -16,8 +18,12 @@ namespace GeospizaManager.GeospizaCordinator
         private int _numberOfSolvers;
         private string _ghFilePath;
         private HttpServer _httpServer;
-        private ConcurrentBag<Individual> _receivedPopulations = new ConcurrentBag<Individual>();
-        private TaskCompletionSource<bool> _allDataReceived = new TaskCompletionSource<bool>();
+        private ConcurrentBag<ReducedObserver> _receivedObserver = new ConcurrentBag<ReducedObserver>();
+        private TaskCompletionSource<bool> _allObserversReceived = new TaskCompletionSource<bool>();
+
+        private ConcurrentDictionary<string, TaskCompletionSource<string>> _pendingRequests =
+            new ConcurrentDictionary<string, TaskCompletionSource<string>>();
+
         public event Action<string> DataProcessed;
 
         private EvolutionarySolverCoordinator(string ghFilePath, int numberOfSolvers)
@@ -26,8 +32,25 @@ namespace GeospizaManager.GeospizaCordinator
             _numberOfSolvers = numberOfSolvers;
             _httpServer = HttpServer.Instance;
         }
-        
-        public void InitCompute(string apiKey ="API", string authToken = "TOKEN", string webAddress = "http://localhost:6500")
+
+        public static EvolutionarySolverCoordinator Instance(string ghFilePath, int numberOfSolvers)
+        {
+            lock (Padlock)
+            {
+                if (_instance == null)
+                {
+                    _instance = new EvolutionarySolverCoordinator(ghFilePath, numberOfSolvers);
+                }
+
+                return _instance;
+            }
+        }
+
+        /// ////////////////////////////////////////////
+        /// Compute
+        /// ////////////////////////////////////////////
+        public void InitCompute(string apiKey = "API", string authToken = "TOKEN",
+            string webAddress = "http://localhost:6500")
         {
             ComputeServer.ApiKey = apiKey;
             ComputeServer.AuthToken = authToken;
@@ -41,7 +64,7 @@ namespace GeospizaManager.GeospizaCordinator
             {
                 throw new Exception("Compute not initialized");
             }
-            
+
             var trees = new List<GrasshopperDataTree>();
             if (trees == null) throw new ArgumentNullException(nameof(trees));
             var random = new Random();
@@ -58,83 +81,89 @@ namespace GeospizaManager.GeospizaCordinator
             GrasshopperCompute.EvaluateDefinition(_ghFilePath, trees);
         }
 
-        public static EvolutionarySolverCoordinator Instance(string ghFilePath, int numberOfSolvers)
-        {
-            lock (Padlock)
-            {
-                if (_instance == null)
-                {
-                    _instance = new EvolutionarySolverCoordinator(ghFilePath, numberOfSolvers);
-                }
-                return _instance;
-            }
-        }
-
+        /// ////////////////////////////////////////////
+        /// HTTP Server
+        /// ////////////////////////////////////////////
         public async Task StartHttpServer()
         {
-            await _httpServer.StartAsync("http://localhost:8080/", OnDataReceived);
+            await _httpServer.StartAsync($"{SharedVars.RootURL}/", OnDataReceived);
         }
 
         private async Task<string> OnDataReceived(string json)
         {
-          Console.WriteLine("OnDataReceived called with JSON: " + json);
-          try
-          {
-            var pop = Individual.FromJson(json);
-            _receivedPopulations.Add(pop);
-            Console.WriteLine("Population added. Current count: " + _receivedPopulations.Count);
-
-            // Temporarily adjust the condition for testing
-            if (_receivedPopulations.Count >= 1) // Change this back to _numberOfSolvers for actual use
+            try
             {
-              // Process the accumulated data
-              var result = ProcessData(_receivedPopulations.ToList());
-              Console.WriteLine("Data processed. Result: " + result);
+                Console.WriteLine("Write Data");
+                var observerString = ReducedObserver.FromJson(json);
+                _receivedObserver.Add(observerString);
+                Console.WriteLine($"Received observer: {_receivedObserver.Count}");
 
-              // Notify subscribers with the result
-              DataProcessed?.Invoke(result);
+                var requestId = observerString.RequestId;
 
-              // Signal that all data has been received and processed
-              if (!_allDataReceived.Task.IsCompleted)
-              {
-                _allDataReceived.SetResult(true);
-              }
+                if (_receivedObserver.Count >= 2) // Adjust this condition as needed
+                {
+                    List<ReducedObserver> observers;
+                    lock (_receivedObserver)
+                    {
+                        observers = _receivedObserver.ToList();
+                        _receivedObserver.Clear();
+                    }
 
-              return result; // Return the result
+                    var result = ProcessData(observers);
+                    DataProcessed?.Invoke(result);
+
+                    // Find and complete all pending requests
+                    foreach (var observer in observers)
+                    {
+                        if (_pendingRequests.TryRemove(observer.RequestId, out var tcs))
+                        {
+                            tcs.TrySetResult(result);
+                        }
+                    }
+
+                    Console.WriteLine("All observers received and processed.");
+                    return result;
+                }
+                else
+                {
+                    // Create a new TaskCompletionSource for this request if it doesn't exist
+                    var tcs = _pendingRequests.GetOrAdd(requestId, _ => new TaskCompletionSource<string>());
+                    Console.WriteLine("Request added to pending list.");
+                    // Wait for the result, but with a timeout
+                    var timeoutTask = Task.Delay(TimeSpan.FromSeconds(2)); // Adjust timeout as needed
+                    var completedTask = await Task.WhenAny(tcs.Task, timeoutTask);
+
+                    if (completedTask == timeoutTask)
+                    {
+                        _pendingRequests.TryRemove(requestId, out _);
+                        return "Timeout waiting for all observers.";
+                    }
+                    
+                    _pendingRequests = new ConcurrentDictionary<string, TaskCompletionSource<string>>();
+
+                    return await tcs.Task;
+                }
             }
-
-            return "Data received but not yet processed.";
-          }
-          catch (Exception ex)
-          {
-            Console.WriteLine($"Error processing received data: {ex.Message}");
-            return $"Error: {ex.Message}"; // Return the error message
-          }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+                return $"Error: {ex.Message}";
+            }
         }
-        
+
         /// <summary>
         /// Processes the accumulated data.
         /// </summary>
-        /// <param name="populations">The list of received populations.</param>
+        /// <param name="observer">The list of received populations.</param>
         /// <returns>The result of the processing.</returns>
-        private string ProcessData(List<Individual> populations)
+        private string ProcessData(List<ReducedObserver> observer)
         {
-            // Implement your data processing logic here
-            // For example, you can calculate the average fitness of all individuals
-            double totalFitness = populations.Sum(ind => ind.Fitness);
-            double averageFitness = totalFitness / populations.Count;
-
-            return $"Average Fitness: {averageFitness}";
+            return "Processing data...";
         }
-        
+
         public async Task StopHttpServer()
         {
             await _httpServer.StopAsync();
-        }
-
-        public static bool IsInstantiated()
-        {
-            return _instance != null;
         }
     }
 }

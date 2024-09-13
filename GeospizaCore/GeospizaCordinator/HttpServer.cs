@@ -4,7 +4,6 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using System.Collections.Concurrent;
 using Newtonsoft.Json;
 
 namespace GeospizaManager.GeospizaCordinator
@@ -15,104 +14,103 @@ namespace GeospizaManager.GeospizaCordinator
         private readonly HttpListener _listener;
         private CancellationTokenSource _cancellationTokenSource;
         private readonly ILogger<HttpServer> _logger;
-        private readonly SemaphoreSlim _maxConcurrentRequests;
-        private readonly ConcurrentDictionary<Task, byte> _runningTasks = new ConcurrentDictionary<Task, byte>();
 
         private HttpServer()
         {
             _listener = new HttpListener();
             _logger = LoggerFactory.Create(builder => builder.AddConsole()).CreateLogger<HttpServer>();
-            _maxConcurrentRequests = new SemaphoreSlim(Environment.ProcessorCount * 2); // Adjust as needed
         }
 
         public static HttpServer Instance => _instance.Value;
 
         public async Task StartAsync(string urlPrefix, Func<string, Task<string>> onDataReceived)
         {
-          if (_listener.IsListening)
-          {
-            _logger.LogWarning("Server is already running.");
-            return;
-          }
+            if (_listener.IsListening)
+            {
+                _logger.LogWarning("Server is already running.");
+                return;
+            }
 
-          _cancellationTokenSource = new CancellationTokenSource();
-          _listener.Prefixes.Add(urlPrefix);
-          _listener.Start();
-          _logger.LogInformation($"Listening for connections on {urlPrefix}");
+            _cancellationTokenSource = new CancellationTokenSource();
+            _listener.Prefixes.Add(urlPrefix);
+            _listener.Start();
+            _logger.LogInformation($"Listening for connections on {urlPrefix}");
 
-          await ListenForConnectionsAsync(onDataReceived, _cancellationTokenSource.Token);
+            await ListenForConnectionsAsync(onDataReceived, _cancellationTokenSource.Token);
         }
 
-        
         private async Task ListenForConnectionsAsync(Func<string, Task<string>> onDataReceived, CancellationToken cancellationToken)
         {
-          while (!cancellationToken.IsCancellationRequested)
-          {
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                try
+                {
+                    var context = await _listener.GetContextAsync();
+                    if (context.Request.HttpMethod == "GET" && context.Request.Url.AbsolutePath == "/server-info")
+                    {
+                        await ProcessServerInfoRequestAsync(context, cancellationToken);
+                    }
+                    else if (context.Request.HttpMethod == "POST" && context.Request.Url.AbsolutePath == "/data")
+                    {
+                        Console.WriteLine("Data received");
+                        await ProcessDataRequestAsync(context, onDataReceived, cancellationToken);
+                    }
+                    else
+                    {
+                        context.Response.StatusCode = (int)HttpStatusCode.NotFound;
+                        context.Response.Close();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error accepting client connection");
+                }
+            }
+        }
+
+        private async Task ProcessServerInfoRequestAsync(HttpListenerContext context, CancellationToken cancellationToken)
+        {
             try
             {
-              await _maxConcurrentRequests.WaitAsync(cancellationToken);
-              HttpListenerContext context = await _listener.GetContextAsync();
+                var serverInfo = new
+                {
+                    Status = "Running",
+                    UrlPrefixes = _listener.Prefixes
+                };
 
-              var processTask = ProcessRequestAsync(context, onDataReceived, cancellationToken);
-              _ = TrackTaskCompletion(processTask);
-            }
-            catch (OperationCanceledException)
-            {
-              // Expected when cancellation is requested, break the loop
-              break;
+                var json = JsonConvert.SerializeObject(serverInfo);
+                await SendResponseAsync(context.Response, json, cancellationToken);
             }
             catch (Exception ex)
             {
-              _logger.LogError(ex, "Error accepting client connection");
-            }
-          }
-
-          await Task.WhenAll(_runningTasks.Keys);
-        }
-
-        private async Task TrackTaskCompletion(Task task)
-        {
-            _runningTasks.TryAdd(task, 0);
-            try
-            {
-                await task;
+                _logger.LogError(ex, "Error processing server info request");
+                context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
             }
             finally
             {
-                _runningTasks.TryRemove(task, out _);
-                _maxConcurrentRequests.Release();
+                context.Response.Close();
             }
         }
 
-        private async Task ProcessRequestAsync(HttpListenerContext context, Func<string, Task<string>> onDataReceived, CancellationToken cancellationToken)
+        private async Task ProcessDataRequestAsync(HttpListenerContext context, Func<string, Task<string>> onDataReceived, CancellationToken cancellationToken)
         {
-          try
-          {
-            if (context.Request.HttpMethod != "POST" || context.Request.Url.AbsolutePath != "/data")
+            try
             {
-              context.Response.StatusCode = (int)HttpStatusCode.NotFound;
-              return;
+                using var reader = new StreamReader(context.Request.InputStream, context.Request.ContentEncoding);
+                string json = await reader.ReadToEndAsync();
+                string result = await onDataReceived(json);
+                await SendResponseAsync(context.Response, result, cancellationToken);
+
             }
-
-            using var reader = new StreamReader(context.Request.InputStream, context.Request.ContentEncoding);
-            string json = await reader.ReadToEndAsync();
-            string unescapedJson = JsonConvert.DeserializeObject<string>(json);
-
-            // Capture the result from onDataReceived
-            string result = await onDataReceived(unescapedJson);
-
-            // Send the result back in the HTTP response
-            await SendResponseAsync(context.Response, result, cancellationToken);
-          }
-          catch (Exception ex)
-          {
-            _logger.LogError(ex, "Error processing request");
-            context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
-          }
-          finally
-          {
-            context.Response.Close();
-          }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error processing data request");
+                context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
+            }
+            finally
+            {
+                context.Response.Close();
+            }
         }
 
         private async Task SendResponseAsync(HttpListenerResponse response, string message, CancellationToken cancellationToken)
@@ -120,6 +118,8 @@ namespace GeospizaManager.GeospizaCordinator
             byte[] buffer = Encoding.UTF8.GetBytes(message);
             response.ContentLength64 = buffer.Length;
             await response.OutputStream.WriteAsync(buffer, 0, buffer.Length, cancellationToken);
+            Console.WriteLine("Data received");
+
         }
 
         public async Task StopAsync()
@@ -128,7 +128,6 @@ namespace GeospizaManager.GeospizaCordinator
             {
                 _cancellationTokenSource.Cancel();
                 _listener.Stop();
-                await Task.WhenAll(_runningTasks.Keys);
                 _logger.LogInformation("HTTP server stopped.");
             }
         }
@@ -138,7 +137,6 @@ namespace GeospizaManager.GeospizaCordinator
             StopAsync().GetAwaiter().GetResult();
             _cancellationTokenSource?.Dispose();
             _listener.Close();
-            _maxConcurrentRequests.Dispose();
         }
     }
 }

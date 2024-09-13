@@ -179,25 +179,25 @@ public class GH_BasicSolver : GH_Component
         var time = end - start;
     }
 
-    // /// <summary>
-    // /// Clean the component
-    // /// </summary>
-    // protected override void AfterSolveInstance()
-    // {
-    //     base.AfterSolveInstance();
-    //     if (_isRunning == false)
-    //     {
-    //         Params.Output[0].ClearData();
-    //         Params.Output[0].AddVolatileData(new GH_Path(0), 0, _observer);
-    //         Params.Output[1].ClearData();
-    //         Params.Output[1].AddVolatileData(new GH_Path(0), 0, _stateManager);
-    //     }
-    //
-    //     Params.Output[2].ClearData();
-    //     Params.Output[2].AddVolatileData(new GH_Path(0), 0, _observer.CurrentGeneration);
-    //     Params.Output[3].ClearData();
-    //     Params.Output[3].AddVolatileData(new GH_Path(0), 0, _isRunning);
-    // }
+    /// <summary>
+    /// Clean the component
+    /// </summary>
+    protected override void AfterSolveInstance()
+    {
+        base.AfterSolveInstance();
+        if (_isRunning == false)
+        {
+            Params.Output[0].ClearData();
+            Params.Output[0].AddVolatileData(new GH_Path(0), 0, _evolutionObserver);
+            Params.Output[1].ClearData();
+            Params.Output[1].AddVolatileData(new GH_Path(0), 0, _stateManager);
+        }
+    
+        Params.Output[2].ClearData();
+        Params.Output[2].AddVolatileData(new GH_Path(0), 0, _evolutionObserver.CurrentGenerationIndex);
+        Params.Output[3].ClearData();
+        Params.Output[3].AddVolatileData(new GH_Path(0), 0, _isRunning);
+    }
 
     /// <summary>
     /// Provides an Icon for the component.

@@ -38,8 +38,6 @@ public class EvolutionObserver
         }
     }
     
-
-
     /// <summary>
     /// Creates a snapshot of the current population, recording various fitness metrics.
     /// </summary>
@@ -132,22 +130,25 @@ public class EvolutionObserver
         return CurrentPopulation;
     }
 
-    /// <summary>
-    /// Serializes the EvolutionObserver instance to a JSON string.
-    /// </summary>
-    /// <returns>A JSON string representing the EvolutionObserver instance.</returns>
     public string ToJson()
     {
-        return JsonConvert.SerializeObject(this, Formatting.Indented);
+        var settings = new JsonSerializerSettings
+        {
+            Formatting = Formatting.Indented,
+            Converters = new List<JsonConverter> { new Individual.IndividualConverter() }
+        };
+
+        return JsonConvert.SerializeObject(this, settings);
     }
 
-    /// <summary>
-    /// Deserializes a JSON string to an EvolutionObserver instance.
-    /// </summary>
-    /// <param name="json">The JSON string to deserialize.</param>
-    /// <returns>An EvolutionObserver instance.</returns>
     public static EvolutionObserver? FromJson(string json)
     {
-        return JsonConvert.DeserializeObject<EvolutionObserver>(json);
+        var settings = new JsonSerializerSettings
+        {
+            Converters = new List<JsonConverter> { new Individual.IndividualConverter() },
+            ContractResolver = new PrivateSetterContractResolver()
+        };
+
+        return JsonConvert.DeserializeObject<EvolutionObserver>(json, settings);
     }
 }

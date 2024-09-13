@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using GeospizaManager.Core;
 using Grasshopper.Kernel;
+using Grasshopper.Kernel.Types;
 using Rhino.Geometry;
 
 namespace Geospiza;
@@ -24,6 +26,7 @@ public class GH_ObserverToJson : GH_Component
     /// </summary>
     protected override void RegisterInputParams(GH_InputParamManager pManager)
     {
+        pManager.AddGenericParameter("Observer", "O", "The observer to convert to JSON", GH_ParamAccess.item);
     }
 
     /// <summary>
@@ -31,6 +34,7 @@ public class GH_ObserverToJson : GH_Component
     /// </summary>
     protected override void RegisterOutputParams(GH_OutputParamManager pManager)
     {
+        pManager.AddTextParameter("JSON", "J", "The observer as a JSON string", GH_ParamAccess.item);
     }
 
     /// <summary>
@@ -39,6 +43,16 @@ public class GH_ObserverToJson : GH_Component
     /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
     protected override void SolveInstance(IGH_DataAccess DA)
     {
+        // Get inputs
+        GH_ObjectWrapper observer = null;
+        if (!DA.GetData(0, ref observer)) return;
+        var observerType = observer.ScriptVariable() as EvolutionObserver;
+
+        // Convert the observer to a JSON string
+        string json = observerType.ToJson();
+
+        // Set the output
+        DA.SetData(0, json);
     }
 
     /// <summary>

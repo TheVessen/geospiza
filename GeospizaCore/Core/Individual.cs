@@ -2,6 +2,7 @@
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Special;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
 
 namespace GeospizaManager.Core;
@@ -146,29 +147,38 @@ public class Individual
 
         return hash;
     }
+    
+    public class IndividualConverter : JsonConverter<Individual>
+    {
+        public override void WriteJson(JsonWriter writer, Individual value, JsonSerializer serializer)
+        {
+            writer.WriteRawValue(value.ToJson());
+        }
+
+        public override Individual ReadJson(JsonReader reader, Type objectType, Individual existingValue, bool hasExistingValue, JsonSerializer serializer)
+        {
+            var jsonObject = JObject.Load(reader);
+            return Individual.FromJson(jsonObject.ToString());
+        }
+    }
 
     public string ToJson()
     {
         var settings = new JsonSerializerSettings
         {
-            ContractResolver = new DefaultContractResolver
-            {
-                IgnoreSerializableInterface = true,
-                IgnoreSerializableAttribute = true
-            },
-            NullValueHandling = NullValueHandling.Ignore
+            Formatting = Formatting.Indented,
+            Converters = new List<JsonConverter> { new Gene.GeneConverter() }
         };
 
         return JsonConvert.SerializeObject(this, settings);
     }
-    
-
 
     public static Individual FromJson(string json)
     {
         var settings = new JsonSerializerSettings
         {
-            ContractResolver = new PrivateSetterContractResolver()
+            ContractResolver = new PrivateSetterContractResolver(),
+            Converters = new List<JsonConverter> { new Gene.GeneConverter() }
         };
 
         return JsonConvert.DeserializeObject<Individual>(json, settings);

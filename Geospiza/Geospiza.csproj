@@ -14,6 +14,9 @@
   <ItemGroup>
     <None Remove="Resources\Icons\PopulationDiversity.png" />
     <None Remove="Resources\Icons\RandomMutation.png" />
+    <None Remove="src\Algorythm\**" />
+    <None Remove="src\Core\**" />
+    <None Remove="src\Strategies\**" />
   </ItemGroup>
   
   <ItemGroup>
@@ -56,6 +59,9 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
+    <Compile Remove="src\Algorythm\**" />
+    <Compile Remove="src\Core\**" />
+    <Compile Remove="src\Strategies\**" />
   </ItemGroup>
 
   <ItemGroup>
@@ -95,16 +101,13 @@
     <EmbeddedResource Include="Resources\Icons\StochasticUniversalSampling.png" />
     <None Remove="Resources\Icons\AdditionalData.png" />
     <EmbeddedResource Include="Resources\Icons\AdditionalData.png" />
+    <EmbeddedResource Remove="src\Algorythm\**" />
+    <EmbeddedResource Remove="src\Core\**" />
+    <EmbeddedResource Remove="src\Strategies\**" />
 
 <!--    <EmbeddedResource Include="Resources\Icons\*.png">-->
 <!--      <CopyToOutputDirectory>Always</CopyToOutputDirectory>-->
 <!--    </EmbeddedResource>-->
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="src\Algorythm\" />
-    <Folder Include="src\Core\" />
-    <Folder Include="src\Strategies\" />
   </ItemGroup>
 
   <ItemGroup>

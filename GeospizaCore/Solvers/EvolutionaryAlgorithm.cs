@@ -1,4 +1,5 @@
 ﻿using GeospizaManager.Core;
+using GeospizaManager.Strategies;
 
 namespace GeospizaManager.Solvers;
 
@@ -32,7 +33,7 @@ public class EvolutionaryAlgorithm : EvolutionBlueprint
                 var newPopulation = new Population();
 
                 // Select the top individuals from the current population (elitism)
-                var elite = SelectTopIndividuals(EliteSize);
+                var elite = Elitism.SelectTopIndividuals(EliteSize, Population.Inhabitants );
                 newPopulation.AddIndividuals(elite);
 
                 // Continue generating new individuals until the new population is full
