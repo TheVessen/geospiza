@@ -75,33 +75,41 @@ namespace GeospizaManager.GeospizaCordinator
             await _httpServer.StartAsync("http://localhost:8080/", OnDataReceived);
         }
 
-        private async Task OnDataReceived(string json)
+        private async Task<string> OnDataReceived(string json)
         {
-            try
+          Console.WriteLine("OnDataReceived called with JSON: " + json);
+          try
+          {
+            var pop = Individual.FromJson(json);
+            _receivedPopulations.Add(pop);
+            Console.WriteLine("Population added. Current count: " + _receivedPopulations.Count);
+
+            // Temporarily adjust the condition for testing
+            if (_receivedPopulations.Count >= 1) // Change this back to _numberOfSolvers for actual use
             {
-                var pop = Individual.FromJson(json);
-                _receivedPopulations.Add(pop);
+              // Process the accumulated data
+              var result = ProcessData(_receivedPopulations.ToList());
+              Console.WriteLine("Data processed. Result: " + result);
 
-                // Check if all data has been received
-                if (_receivedPopulations.Count >= _numberOfSolvers)
-                {
-                    // Process the accumulated data
-                    var result = ProcessData(_receivedPopulations.ToList());
+              // Notify subscribers with the result
+              DataProcessed?.Invoke(result);
 
-                    // Notify subscribers with the result
-                    DataProcessed?.Invoke(result);
+              // Signal that all data has been received and processed
+              if (!_allDataReceived.Task.IsCompleted)
+              {
+                _allDataReceived.SetResult(true);
+              }
 
-                    // Signal that all data has been received and processed
-                    if (!_allDataReceived.Task.IsCompleted)
-                    {
-                        _allDataReceived.SetResult(true);
-                    }
-                }
+              return result; // Return the result
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error processing received data: {ex.Message}");
-            }
+
+            return "Data received but not yet processed.";
+          }
+          catch (Exception ex)
+          {
+            Console.WriteLine($"Error processing received data: {ex.Message}");
+            return $"Error: {ex.Message}"; // Return the error message
+          }
         }
         
         /// <summary>

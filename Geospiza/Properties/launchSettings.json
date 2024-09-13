@@ -4,6 +4,11 @@
       "commandName": "Executable",
       "executablePath": "C:\\Program Files\\Rhino 8\\System\\Rhino.exe",
       "commandLineArgs": ""
+    },
+    "GeospizaMac": {
+      "commandName": "Executable",
+      "executablePath": "/Applications/Rhino 8.app/Contents/MacOS/Rhinoceros",
+      "commandLineArgs": ""
     }
   }
 }

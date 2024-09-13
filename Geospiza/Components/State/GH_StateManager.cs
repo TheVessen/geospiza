@@ -40,7 +40,7 @@ public class GH_StateManager : GH_Component
     /// This is the method that actually does the work.
     /// </summary>
     /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
-    protected override void SolveInstance(IGH_DataAccess DA)
+    protected override async void SolveInstance(IGH_DataAccess DA)
     {
         var num = 0.0;
         if (!DA.GetData(0, ref num)) return;
@@ -50,7 +50,8 @@ public class GH_StateManager : GH_Component
         individual.SetFitness(num);
         var json = individual.ToJson();
 
-        Task.Run(() => DataSender.SendDataAsync(json));
+        var res = await Task.Run(() => DataSender.SendDataAsync(json, this.InstanceGuid));
+        Console.WriteLine($"In Component {InstanceGuid.ToString()} res is {res}");
     }
 
     /// <summary>

@@ -18,6 +18,9 @@ public class Program
         
         Console.WriteLine("Server started. Press Enter to stop the server...");
 
+        var data = await DataSender.SendDataAsync(json, new Guid());
+        Console.WriteLine($"The data was {data}");
+
         // Wait for the user to press Enter
         Console.ReadLine();
 
