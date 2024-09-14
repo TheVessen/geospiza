@@ -7,9 +7,15 @@ public class ReducedObserver
     public int CurrentGenerationIndex { get;  set; }
 
     public List<Individual> Inhabitants { get;  set; } = new();
-    
     public int Count => Inhabitants.Count;
     public string RequestId { get; private set; }
+    
+    public ReducedObserver(EvolutionObserver observer)
+    {
+        CurrentGenerationIndex = observer.CurrentGenerationIndex;
+        Inhabitants = observer.GetCurrentPopulation().Inhabitants;
+        RequestId = new Guid().ToString();
+    }
     
     public string ToJson()
     {

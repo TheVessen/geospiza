@@ -76,6 +76,7 @@ namespace Geospiza.Components.Solvers
           {
             ExpireSolution(true);
           });
+          
         }
       };
 

@@ -2,6 +2,7 @@ using System.Net;
 using System.Text;
 using Newtonsoft.Json;
 using GeospizaManager.Core;
+using GeospizaManager.Strategies;
 
 public class RequestContext
 {
@@ -10,7 +11,6 @@ public class RequestContext
   
   // Add any other individual parameters you need here
 }
-
 
 public class EvolutionCordinator
 {
@@ -127,16 +127,36 @@ public class EvolutionCordinator
     context.Response.OutputStream.Close();
   }
   
+  private List<Individual> MergeInhabitants(List<ReducedObserver> observers)
+  {
+    List<Individual> allInhabitants = new List<Individual>();
+
+    foreach (var observer in observers)
+    {
+      allInhabitants.AddRange(observer.Inhabitants);
+    }
+
+    return allInhabitants;
+  }
+
+  private List<Individual> RunEvolution(List<Individual> allInhabitants)
+  {
+    var newInhabitants =new List<Individual>();
+    
+    const int EliteSize = 100;
+    // Select the top individuals from the current population (elitism)
+    var elite = Elitism.SelectTopIndividuals(EliteSize, allInhabitants );
+    newInhabitants.AddRange(elite);
+    
+    
+    return newInhabitants;
+  }
+
   private void ProcessDataAndRelease()
   {
     //TODO: Implement here the processing logic for the received data
     // Example processing: Merge all inhabitants from the received data
-    List<Individual> allInhabitants = new List<Individual>();
-
-    foreach (var requestContext in _requestContexts)
-    {
-      allInhabitants.AddRange(requestContext.ReducedObserver.Inhabitants);
-    }
+    var allInhabitants = MergeInhabitants(_requestContexts.Select(rc => rc.ReducedObserver).ToList());
 
     var counter = 0;
     // Now, process each request individually

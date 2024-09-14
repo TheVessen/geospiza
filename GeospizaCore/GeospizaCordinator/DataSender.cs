@@ -16,7 +16,7 @@ public class DataSender
     public static async Task<string> SendDataAsync(object data, Guid instanceId)
     {
         // Define the URL to which the data will be sent.
-        var url = $"{SharedVars.RootURL}/data";
+        var url = $"{SharedVars.RootURL}/";
 
         // Serialize the data object to a JSON string.
         // Create a StringContent object with the JSON string, specifying the content type as application/json.
