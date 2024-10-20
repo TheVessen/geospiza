@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Threading;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Special;
 using Rhino.Geometry;
@@ -34,28 +35,18 @@ public class GH_AsyncSolver : GH_AsyncComponent
     protected override void RegisterInputParams(GH_InputParamManager pManager)
     {
         pManager.AddTextParameter("Genes", "GID", "The gene ids from the GeneSelector", GH_ParamAccess.list);
-        pManager.AddGenericParameter("Settings", "S", "The settings for the evolutionary algorithm",
-            GH_ParamAccess.item);
+        pManager.AddGenericParameter("Settings", "S", "The settings for the evolutionary algorithm", GH_ParamAccess.item);
 
-        //Preview level
+        // Preview level
         Param_Integer updateParam = new Param_Integer();
         updateParam.AddNamedValue("All", 0);
         updateParam.AddNamedValue("EveryGeneration", 1);
         updateParam.AddNamedValue("IfBetter", 2);
         updateParam.AddNamedValue("None", 3);
         updateParam.PersistentData.Append(new GH_Integer(0));
-        pManager.AddParameter(updateParam, "PreviewLevel", "PL", "Set how often the preview should update." +
-                                                                 "" +
-                                                                 ": 0 if every solution should be shown" +
-                                                                 ": 1 if only on every generation the preview should update" +
-                                                                 ": 2 if only better solutions should be shown" +
-                                                                 ": 4 for no preview" +
-                                                                 "" +
-                                                                 "The more the preview updated the longer it takes ",
-            GH_ParamAccess.item);
+        pManager.AddParameter(updateParam, "PreviewLevel", "PL", "Set how often the preview should update.", GH_ParamAccess.item);
 
-        pManager.AddNumberParameter("Timestamp", "T", "Timestamp from the server to determine if the solver should run",
-            GH_ParamAccess.item, 0);
+        pManager.AddNumberParameter("Timestamp", "T", "Timestamp from the server to determine if the solver should run", GH_ParamAccess.item, 0);
         pManager.AddBooleanParameter("Run", "R", "Run the solver for running locally", GH_ParamAccess.item, false);
     }
 
@@ -69,15 +60,6 @@ public class GH_AsyncSolver : GH_AsyncComponent
         pManager.AddNumberParameter("CurrentGeneration", "CG", "The current generation", GH_ParamAccess.item);
         pManager.AddBooleanParameter("IsRunning", "IR", "Is the solver running", GH_ParamAccess.item);
     }
-
-    private readonly StateManager _stateManager;
-    private readonly EvolutionObserver _evolutionObserver;
-    private long _lastTimestamp = 0;
-    private EvolutionaryAlgorithmSettings _privateSettings;
-    private bool _isRunning = false;
-    private Guid _solutionId = Guid.NewGuid();
-    private Guid _lastSolutionId;
-    private TimeSpan _time;
 
     /// <summary>
     /// This is the method that actually does the work.
@@ -197,6 +179,9 @@ public class GH_AsyncSolver : GH_AsyncComponent
             var end = DateTime.Now;
             var time = end - start;
         }
+        // Synchronization event
+        private ManualResetEvent dataCollectedEvent = new ManualResetEvent(false);
+        
         
         public override WorkerInstance Duplicate() => new EvoAsyncWorker(_parent);
 
@@ -254,6 +239,8 @@ public class GH_AsyncSolver : GH_AsyncComponent
                 _parent.OnPingDocument().ScheduleSolution(100, ScheduleCallback);
                 _lastTimestamp = Timestamp;
             }
+            
+            Done();
         }
 
         public override void SetData(IGH_DataAccess DA)
