@@ -1,19 +1,37 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Concurrent;
 using GeospizaManager.Utils;
 using Grasshopper.Kernel;
 using Newtonsoft.Json;
 
 namespace GeospizaManager.Core;
 
+/// <summary>
+/// Observes and tracks the evolution of a population across generations.
+/// Implements the Singleton pattern per GH_Component and provides thread-safe access to evolution metrics.
+/// </summary>
+/// <remarks>
+/// This class maintains statistics about population fitness, diversity, and best individuals
+/// across generations. It supports JSON serialization for data persistence and transfer.
+/// Use <see cref="ObserverServerSnapshot"/> for a simplified implementation
+/// </remarks>
 public class EvolutionObserver : IDisposable
 {
+    /// <summary>
+    /// Thread-safe dictionary storing observer instances per Grasshopper component
+    /// </summary>
     private static readonly ConcurrentDictionary<GH_Component, EvolutionObserver> _instances = new();
+    /// <summary>
+    /// Lock object for thread-safe access to internal lists
+    /// </summary>
     private readonly object _listLock = new();
-    
+    /// <summary>
+    /// Gets the current generation number being observed
+    /// </summary>
     public int CurrentGenerationIndex { get; private set; }
+
+    /// <summary>
+    /// Gets the current population under observation
+    /// </summary>
     public Population CurrentPopulation { get; private set; }
     public IReadOnlyList<double> AverageFitness => _averageFitness;
     public IReadOnlyList<double> BestFitness => _bestFitness;
@@ -23,7 +41,6 @@ public class EvolutionObserver : IDisposable
     public IReadOnlyList<int> Diversity => _diversity;
     public IReadOnlyList<Individual> BestIndividuals => _bestIndividuals;
     public IReadOnlyList<double> FitnessStandardDeviation => _fitnessStandardDeviation;
-
     private readonly List<double> _averageFitness = new();
     private readonly List<double> _bestFitness = new();
     private readonly List<double> _worstFitness = new();
@@ -36,12 +53,22 @@ public class EvolutionObserver : IDisposable
 
     private EvolutionObserver() { }
 
+    /// <summary>
+    /// Creates or retrieves an EvolutionObserver instance for a specific Grasshopper component
+    /// </summary>
+    /// <param name="solver">The Grasshopper component requiring observation</param>
+    /// <returns>An EvolutionObserver instance</returns>
+    /// <exception cref="ArgumentNullException">Thrown when solver is null</exception>
     public static EvolutionObserver GetInstance(GH_Component solver)
     {
         ArgumentNullException.ThrowIfNull(solver);
         return _instances.GetOrAdd(solver, _ => new EvolutionObserver());
     }
 
+    /// <summary>
+    /// Takes a snapshot of the current population's statistics
+    /// </summary>
+    /// <param name="currentPopulation">The population to analyze</param>
     public void Snapshot(Population currentPopulation)
     {
         ArgumentNullException.ThrowIfNull(currentPopulation);
@@ -70,6 +97,9 @@ public class EvolutionObserver : IDisposable
         return Math.Sqrt(sumOfSquaresOfDifferences / fitnessList.Count);
     }
 
+    /// <summary>
+    /// Sets the current population and records its best individual
+    /// </summary>
     public void SetPopulation(Population population)
     {
         ArgumentNullException.ThrowIfNull(population);
@@ -85,8 +115,14 @@ public class EvolutionObserver : IDisposable
         }
     }
 
+    /// <summary>
+    /// Increments the generation counter
+    /// </summary>
     public void UpdateGenerationCounter() => CurrentGenerationIndex++;
 
+    /// <summary>
+    /// Resets all observations and statistics to initial state
+    /// </summary>
     public void Reset()
     {
         lock (_listLock)
@@ -107,7 +143,9 @@ public class EvolutionObserver : IDisposable
         }
     }
     
-
+    /// <summary>
+    /// Releases all observer instances and resources
+    /// </summary>
     public void Dispose()
     {
       if (_isDisposed) return;
@@ -124,9 +162,13 @@ public class EvolutionObserver : IDisposable
             
         _isDisposed = true;
       }
-        GC.SuppressFinalize(this);
+      GC.SuppressFinalize(this);
     }
 
+    /// <summary>
+    /// Serializes the observer state to JSON
+    /// </summary>
+    /// <returns>A JSON string representing the observer state</returns>
     public string ToJson()
     {
         var settings = new JsonSerializerSettings
@@ -138,6 +180,12 @@ public class EvolutionObserver : IDisposable
         return JsonConvert.SerializeObject(this, settings);
     }
 
+
+    /// <summary>
+    /// Creates an EvolutionObserver instance from JSON
+    /// </summary>
+    /// <param name="json">JSON string to deserialize</param>
+    /// <returns>New EvolutionObserver instance or null if deserialization fails</returns>
     public static EvolutionObserver? FromJson(string json)
     {
         ArgumentNullException.ThrowIfNull(json);

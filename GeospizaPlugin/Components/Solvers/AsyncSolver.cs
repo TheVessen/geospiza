@@ -10,12 +10,12 @@ using Grasshopper.Kernel.Types;
 
 namespace GeospizaPlugin.Components.Solvers;
 
-public class GH_AsyncSolver : GH_AsyncComponent
+public class AsyncSolver : AsyncComponent
 {
   /// <summary>
   /// Initializes a new instance of the BasicSolver class.
   /// </summary>
-  public GH_AsyncSolver()
+  public AsyncSolver()
     : base("AsyncSolver", "SOS",
       "Solver for single objective optimization problems",
       "Geospiza", "Solvers")

@@ -6,11 +6,10 @@ using Newtonsoft.Json;
 
 namespace GeospizaManager.GeospizaCordinator;
 
-
 public class RequestContext
 {
   public TaskCompletionSource<string> TaskCompletionSource { get; set; }
-  public BaseObserver BaseObserver { get; set; }
+  public ObserverServerSnapshot BaseObserver { get; set; }
 }
 
 public class EvolutionCordinator
@@ -71,12 +70,12 @@ public class EvolutionCordinator
       requestBody = await reader.ReadToEndAsync();
     }
 
-    BaseObserver baseObserver;
+    ObserverServerSnapshot baseObserver;
 
     try
     {
       // Deserialize the JSON into a BaseObserver object
-      baseObserver = JsonConvert.DeserializeObject<BaseObserver>(requestBody);
+      baseObserver = JsonConvert.DeserializeObject<ObserverServerSnapshot>(requestBody);
 
       Console.WriteLine($"Received data with {baseObserver.Count} inhabitants.");
     }
@@ -127,7 +126,7 @@ public class EvolutionCordinator
     context.Response.OutputStream.Close();
   }
 
-  private List<Individual> MergeInhabitants(List<BaseObserver> observers)
+  private List<Individual> MergeInhabitants(List<ObserverServerSnapshot> observers)
   {
     List<Individual> allInhabitants = new List<Individual>();
 

@@ -7,12 +7,12 @@ using Grasshopper.Kernel;
 
 namespace GeospizaPlugin.Components.State;
 
-public class GH_StateManager : GH_AsyncComponent
+public class StateManager : AsyncComponent
 {
   /// <summary>
-  /// Initializes a new instance of the GH_StateManager class.
+  /// Initializes a new instance of the StateManager class.
   /// </summary>
-  public GH_StateManager()
+  public StateManager()
     : base("StateManager", "SM",
       "Description",
       "Geospiza", "State")

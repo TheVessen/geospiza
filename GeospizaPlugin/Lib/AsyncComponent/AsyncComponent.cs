@@ -16,10 +16,10 @@ namespace GeospizaPlugin.Components.Solvers
   /// <summary>
   /// Inherit your component from this class to make all the async goodness available.
   /// </summary>
-  public abstract class GH_AsyncComponent : GH_Component
+  public abstract class AsyncComponent : GH_Component
   {
     public override Guid ComponentGuid =>
-      throw new Exception("ComponentGuid should be overriden in any descendant of GH_AsyncComponent!");
+      throw new Exception("ComponentGuid should be overriden in any descendant of AsyncComponent!");
 
     Action<string, double> ReportProgress;
 
@@ -48,7 +48,7 @@ namespace GeospizaPlugin.Components.Solvers
     /// </summary>
     public TaskCreationOptions? TaskCreationOptions { get; set; } = null;
 
-    protected GH_AsyncComponent(string name, string nickname, string description, string category, string subCategory) :
+    protected AsyncComponent(string name, string nickname, string description, string category, string subCategory) :
       base(name, nickname, description, category, subCategory)
     {
       DisplayProgressTimer = new Timer(333) { AutoReset = false };

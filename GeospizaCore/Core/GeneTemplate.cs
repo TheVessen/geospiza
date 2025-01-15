@@ -4,11 +4,8 @@ namespace GeospizaManager.Core;
 
 public class GeneTemplate
 {
-  //GenePool relevant properties
-  private dynamic _genPoolList;
-
-  //Slider relevant properties
-  private GH_NumberSlider _slider;
+  private dynamic? _genPoolList;
+  private GH_NumberSlider? _slider;
 
   public GeneTemplate(dynamic genPoolList, int geneIndex)
   {
@@ -32,9 +29,8 @@ public class GeneTemplate
     GenePoolIndex = -1;
   }
 
-  //General relevant properties
   public int TickValue { get; set; }
-  public Type Type { get; }
+  private Type Type { get; }
   public Guid GhInstanceGuid { get; }
   public Guid GeneGuid { get; private set; }
   public string Name { get; private set; }

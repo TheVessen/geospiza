@@ -1,5 +1,7 @@
 ﻿namespace GeospizaManager.Core;
 
+//TODO:WHY DID I IMPLEMENT THIS AGAIN?
+
 public static class GeneSnapshot
 {
   /// <summary>

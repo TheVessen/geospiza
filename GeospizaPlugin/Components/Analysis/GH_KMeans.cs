@@ -97,7 +97,7 @@ public class GH_KMeans : GH_Component
     }
   }
 
-  protected static double[][] IndividualToVector(List<Individual> individuals)
+  private static double[][] IndividualToVector(List<Individual> individuals)
   {
     var vectors = new List<List<double>>();
     foreach (var individual in individuals)

@@ -3,15 +3,21 @@ using Newtonsoft.Json;
 
 namespace GeospizaManager.Core;
 
-public class BaseObserver
+/// <summary>
+/// Represents a base class for observing and serializing the state of an evolutionary population.
+/// This class provides functionality to track generations and their inhabitants, with JSON serialization support.
+/// <remarks>
+///  Use <see cref="EvolutionObserver"/> for a fully implemented observer to be used in a local context.
+/// </remarks>
+/// </summary>
+public class ObserverServerSnapshot
 {
   public int CurrentGenerationIndex { get; set; }
-
   public List<Individual> Inhabitants { get; set; } = new();
   public int Count => Inhabitants.Count;
   public string RequestId { get; private set; }
 
-  public BaseObserver(EvolutionObserver observer)
+  public ObserverServerSnapshot(EvolutionObserver observer)
   {
     CurrentGenerationIndex = observer.CurrentGenerationIndex;
     Inhabitants = observer.CurrentPopulation.Inhabitants;
@@ -29,7 +35,7 @@ public class BaseObserver
     return JsonConvert.SerializeObject(this, settings);
   }
 
-  public static BaseObserver? FromJson(string json)
+  public static ObserverServerSnapshot? FromJson(string json)
   {
     var settings = new JsonSerializerSettings
     {
@@ -37,6 +43,6 @@ public class BaseObserver
       ContractResolver = new PrivateSetterContractResolver()
     };
 
-    return JsonConvert.DeserializeObject<BaseObserver>(json, settings);
+    return JsonConvert.DeserializeObject<ObserverServerSnapshot>(json, settings);
   }
 }

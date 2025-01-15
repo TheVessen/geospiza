@@ -10,7 +10,7 @@ namespace GeospizaPlugin.Components.Solvers;
 
 /// <summary>
 ///   A class that holds the actual compute logic and encapsulates the state it needs. Every
-///   <see cref="GH_AsyncComponent" /> needs to have one.
+///   <see cref="AsyncComponent" /> needs to have one.
 /// </summary>
 public abstract class WorkerInstance
 {
@@ -25,12 +25,12 @@ public abstract class WorkerInstance
   public GH_Component Parent { get; set; }
 
   /// <summary>
-  ///   This token is set by the parent <see cref="GH_AsyncComponent" />.
+  ///   This token is set by the parent <see cref="AsyncComponent" />.
   /// </summary>
   public CancellationToken CancellationToken { get; set; }
 
   /// <summary>
-  ///   This is set by the parent <see cref="GH_AsyncComponent" />. You can set it yourself, but it's not really worth it.
+  ///   This is set by the parent <see cref="AsyncComponent" />. You can set it yourself, but it's not really worth it.
   /// </summary>
   public string Id { get; set; }
 
@@ -59,7 +59,7 @@ public abstract class WorkerInstance
   ///   Write your data setting logic here.
   ///   <b>
   ///     Do not call this function directly from this class. It will be invoked by the parent
-  ///     <see cref="GH_AsyncComponent" /> after you've called `Done` in the
+  ///     <see cref="AsyncComponent" /> after you've called `Done` in the
   ///     <see cref="DoWork(Action{string}, Action{string, GH_RuntimeMessageLevel}, Action)" /> function.
   ///   </b>
   /// </summary>
@@ -68,7 +68,7 @@ public abstract class WorkerInstance
 
   /// <summary>
   ///   Write your data collection logic here.
-  ///   <b>Do not call this method directly. It will be invoked by the parent <see cref="GH_AsyncComponent" />.</b>
+  ///   <b>Do not call this method directly. It will be invoked by the parent <see cref="AsyncComponent" />.</b>
   /// </summary>
   /// <param name="DA"></param>
   /// <param name="Params"></param>
