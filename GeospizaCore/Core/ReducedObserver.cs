@@ -14,7 +14,7 @@ public class ReducedObserver
   public ReducedObserver(EvolutionObserver observer)
   {
     CurrentGenerationIndex = observer.CurrentGenerationIndex;
-    Inhabitants = observer.GetCurrentPopulation().Inhabitants;
+    Inhabitants = observer.CurrentPopulation.Inhabitants;
     RequestId = new Guid().ToString();
   }
 

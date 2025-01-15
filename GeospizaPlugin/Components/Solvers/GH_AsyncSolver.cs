@@ -185,7 +185,7 @@ public class GH_AsyncSolver : GH_AsyncComponent
     {
       if (CancellationToken.IsCancellationRequested) return;
 
-      _evolutionObserver.Destroy();
+      _evolutionObserver.Dispose();
       // Check if the solver was triggered by the button or timestamp
       if (Run)
       {

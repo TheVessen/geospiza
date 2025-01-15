@@ -1,155 +1,153 @@
-﻿using GeospizaManager.Utils;
+﻿using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
+using GeospizaManager.Utils;
 using Grasshopper.Kernel;
 using Newtonsoft.Json;
 
 namespace GeospizaManager.Core;
 
-public class EvolutionObserver
+public class EvolutionObserver : IDisposable
 {
-  private static readonly Dictionary<GH_Component, EvolutionObserver> _instances = new();
-  public int CurrentGenerationIndex { get; private set; }
-  public Population CurrentPopulation { get; private set; }
-  public List<double> AverageFitness { get; private set; } = new();
-  public List<double> BestFitness { get; private set; } = new();
-  public List<double> WorstFitness { get; private set; } = new();
-  public List<double> TotalFitness { get; private set; } = new();
-  public List<int> NumberOfUniqueIndividuals { get; private set; } = new();
-  public List<int> Diversity { get; private set; }
-  public List<Individual> BestIndividuals { get; private set; } = new();
-  public List<double> FitnessStandardDeviation { get; private set; } = new();
-  private static readonly object Padlock = new object();
-  private readonly object listLock = new object();
+    private static readonly ConcurrentDictionary<GH_Component, EvolutionObserver> _instances = new();
+    private readonly object _listLock = new();
+    
+    public int CurrentGenerationIndex { get; private set; }
+    public Population CurrentPopulation { get; private set; }
+    public IReadOnlyList<double> AverageFitness => _averageFitness;
+    public IReadOnlyList<double> BestFitness => _bestFitness;
+    public IReadOnlyList<double> WorstFitness => _worstFitness;
+    public IReadOnlyList<double> TotalFitness => _totalFitness;
+    public IReadOnlyList<int> NumberOfUniqueIndividuals => _numberOfUniqueIndividuals;
+    public IReadOnlyList<int> Diversity => _diversity;
+    public IReadOnlyList<Individual> BestIndividuals => _bestIndividuals;
+    public IReadOnlyList<double> FitnessStandardDeviation => _fitnessStandardDeviation;
 
-  /// <summary>
-  /// Returns the instance of Observer for the given solver.
-  /// </summary>
-  /// <param name="solver">The GH_BasicSolver for which the Observer instance is required.</param>
-  /// <returns>The Observer instance associated with the given solver.</returns>
-  public static EvolutionObserver GetInstance(GH_Component solver)
-  {
-    lock (Padlock)
+    private readonly List<double> _averageFitness = new();
+    private readonly List<double> _bestFitness = new();
+    private readonly List<double> _worstFitness = new();
+    private readonly List<double> _totalFitness = new();
+    private readonly List<int> _numberOfUniqueIndividuals = new();
+    private readonly List<int> _diversity = new();
+    private readonly List<Individual> _bestIndividuals = new();
+    private readonly List<double> _fitnessStandardDeviation = new();
+    private bool _isDisposed;
+
+    private EvolutionObserver() { }
+
+    public static EvolutionObserver GetInstance(GH_Component solver)
     {
-      if (!_instances.ContainsKey(solver))
+        ArgumentNullException.ThrowIfNull(solver);
+        return _instances.GetOrAdd(solver, _ => new EvolutionObserver());
+    }
+
+    public void Snapshot(Population currentPopulation)
+    {
+        ArgumentNullException.ThrowIfNull(currentPopulation);
+        
+        lock (_listLock)
+        {
+            if (_isDisposed) throw new ObjectDisposedException(nameof(EvolutionObserver));
+
+            var inhabitants = currentPopulation.Inhabitants;
+            _bestFitness.Add(inhabitants.Max(inh => inh.Fitness));
+            _worstFitness.Add(inhabitants.Min(inh => inh.Fitness));
+            _averageFitness.Add(currentPopulation.GetAverageFitness());
+            _totalFitness.Add(currentPopulation.CalculateTotalFitness());
+            _numberOfUniqueIndividuals.Add(currentPopulation.GetDiversity());
+
+            double standardDeviation = CalculateStandardDeviation(inhabitants);
+            _fitnessStandardDeviation.Add(standardDeviation);
+        }
+    }
+
+    private static double CalculateStandardDeviation(IEnumerable<Individual> inhabitants)
+    {
+        var fitnessList = inhabitants.Select(i => i.Fitness).ToList();
+        double average = fitnessList.Average();
+        double sumOfSquaresOfDifferences = fitnessList.Sum(val => Math.Pow(val - average, 2));
+        return Math.Sqrt(sumOfSquaresOfDifferences / fitnessList.Count);
+    }
+
+    public void SetPopulation(Population population)
+    {
+        ArgumentNullException.ThrowIfNull(population);
+        
+        lock (_listLock)
+        {
+            if (_isDisposed) throw new ObjectDisposedException(nameof(EvolutionObserver));
+            
+            CurrentPopulation = population;
+            var bestIndividual = population.SelectTopIndividuals(1).FirstOrDefault() 
+                ?? throw new InvalidOperationException("No individuals found in population");
+            _bestIndividuals.Add(bestIndividual);
+        }
+    }
+
+    public void UpdateGenerationCounter() => CurrentGenerationIndex++;
+
+    public void Reset()
+    {
+        lock (_listLock)
+        {
+            if (_isDisposed) throw new ObjectDisposedException(nameof(EvolutionObserver));
+            
+            _averageFitness.Clear();
+            _bestFitness.Clear();
+            _worstFitness.Clear();
+            _totalFitness.Clear();
+            _numberOfUniqueIndividuals.Clear();
+            _diversity.Clear();
+            _bestIndividuals.Clear();
+            _fitnessStandardDeviation.Clear();
+            
+            CurrentPopulation = null;
+            CurrentGenerationIndex = 0;
+        }
+    }
+    
+
+    public void Dispose()
+    {
+      if (_isDisposed) return;
+        
+      lock (_listLock)
       {
-        _instances[solver] = new EvolutionObserver();
+        if (_isDisposed) return;
+            
+        var keys = _instances.Keys.ToList();
+        foreach (var key in keys)
+        {
+          _instances.TryRemove(key, out _);
+        }
+            
+        _isDisposed = true;
       }
-
-
-      return _instances[solver];
+        GC.SuppressFinalize(this);
     }
-  }
 
-  /// <summary>
-  /// Creates a snapshot of the current population, recording various fitness metrics.
-  /// </summary>
-  /// <param name="currentPopulation">The current population to snapshot.</param>
-  public void Snapshot(Population currentPopulation)
-  {
-    lock (listLock)
+    public string ToJson()
     {
-      BestFitness ??= new List<double>();
-      WorstFitness ??= new List<double>();
-      AverageFitness ??= new List<double>();
-      TotalFitness ??= new List<double>();
-      NumberOfUniqueIndividuals ??= new List<int>();
-      FitnessStandardDeviation ??= new List<double>();
+        var settings = new JsonSerializerSettings
+        {
+            Formatting = Formatting.Indented,
+            Converters = new List<JsonConverter> { new Individual.IndividualConverter() }
+        };
 
-      BestFitness.Add(currentPopulation.Inhabitants.Max(inh => inh.Fitness));
-      WorstFitness.Add(currentPopulation.Inhabitants.Min(inh => inh.Fitness));
-      AverageFitness.Add(currentPopulation.GetAverageFitness());
-      TotalFitness.Add(currentPopulation.CalculateTotalFitness());
-      NumberOfUniqueIndividuals.Add(currentPopulation.GetDiversity());
-
-      // Calculate standard deviation of fitness
-      var average = currentPopulation.GetAverageFitness();
-      var sumOfSquaresOfDifferences = currentPopulation.Inhabitants
-        .Select(val => (val.Fitness - average) * (val.Fitness - average)).Sum();
-      var standardDeviation = Math.Sqrt(sumOfSquaresOfDifferences / currentPopulation.Inhabitants.Count);
-
-      FitnessStandardDeviation.Add(standardDeviation);
+        return JsonConvert.SerializeObject(this, settings);
     }
-  }
 
-  public void SetPopulation(Population population)
-  {
-    lock (listLock)
+    public static EvolutionObserver? FromJson(string json)
     {
-      CurrentPopulation = population;
-      var bestIndividual = CurrentPopulation.SelectTopIndividuals(1)[0];
-      BestIndividuals.Add(bestIndividual);
+        ArgumentNullException.ThrowIfNull(json);
+        
+        var settings = new JsonSerializerSettings
+        {
+            Converters = new List<JsonConverter> { new Individual.IndividualConverter() },
+            ContractResolver = new PrivateSetterContractResolver()
+        };
+
+        return JsonConvert.DeserializeObject<EvolutionObserver>(json, settings);
     }
-  }
-
-  /// <summary>
-  ///   Sets the new generation int
-  /// </summary>
-  public void UpdateGenerationCounter()
-  {
-    CurrentGenerationIndex++;
-  }
-
-  /// <summary>
-  ///   Reset the observer
-  /// </summary>
-  public void Reset()
-  {
-    lock (listLock)
-    {
-      AverageFitness = new List<double>();
-      CurrentPopulation = null;
-      CurrentGenerationIndex = 0;
-      BestIndividuals = new List<Individual>();
-      BestFitness = new List<double>();
-      WorstFitness = new List<double>();
-      TotalFitness = new List<double>();
-      NumberOfUniqueIndividuals = new List<int>();
-      Diversity = new List<int>();
-    }
-  }
-
-  /// <summary>
-  /// Destroys all instances of the Observer by setting them to null.
-  /// </summary>
-  public void Destroy()
-  {
-    lock (Padlock)
-    {
-      var keys = new List<GH_Component>(_instances.Keys);
-      foreach (var key in keys)
-      {
-        _instances[key] = null;
-      }
-    }
-  }
-
-  /// <summary>
-  ///   Gets the current population
-  /// </summary>
-  /// <returns></returns>
-  public Population GetCurrentPopulation()
-  {
-    return CurrentPopulation;
-  }
-
-  public string ToJson()
-  {
-    var settings = new JsonSerializerSettings
-    {
-      Formatting = Formatting.Indented,
-      Converters = new List<JsonConverter> { new Individual.IndividualConverter() }
-    };
-
-    return JsonConvert.SerializeObject(this, settings);
-  }
-
-  public static EvolutionObserver? FromJson(string json)
-  {
-    var settings = new JsonSerializerSettings
-    {
-      Converters = new List<JsonConverter> { new Individual.IndividualConverter() },
-      ContractResolver = new PrivateSetterContractResolver()
-    };
-
-    return JsonConvert.DeserializeObject<EvolutionObserver>(json, settings);
-  }
 }

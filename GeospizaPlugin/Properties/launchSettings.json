@@ -3,12 +3,18 @@
     "Geospiza": {
       "commandName": "Executable",
       "executablePath": "C:\\Program Files\\Rhino 8\\System\\Rhino.exe",
-      "commandLineArgs": ""
+      "commandLineArgs": "/netcore /runscript=\"_Grasshopper\"",
+      "environmentVariables": {
+        "RHINO_PACKAGE_DIRS": "$(ProjectDir)$(OutputPath)\\"
+      }
     },
     "GeospizaMac": {
       "commandName": "Executable",
       "executablePath": "/Applications/Rhino 8.app/Contents/MacOS/Rhinoceros",
-      "commandLineArgs": ""
+      "commandLineArgs": "/netcore /runscript=\"_Grasshopper\"",
+      "environmentVariables": {
+        "RHINO_PACKAGE_DIRS": "$(ProjectDir)$(OutputPath)/"
+      }
     }
   }
 }

@@ -5,26 +5,17 @@
         <TargetFramework>net7.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <RootNamespace>ConsoleApp1</RootNamespace>
+        <RootNamespace>GeospizaServer</RootNamespace>
+        <Description>Project for starting a evolutionary cordinator server for handeling multiple
+            evolutionary desing solvers</Description>
     </PropertyGroup>
 
     <ItemGroup>
-        <Reference Include="GeospizaManager">
-            <HintPath>..\GeospizaManager\bin\Debug\net7.0\GeospizaManager.dll</HintPath>
-        </Reference>
-        <Reference Include="Newtonsoft.Json">
-            <HintPath>C:\Program Files\Rhino 8\System\netcore\Newtonsoft.Json.dll</HintPath>
-        </Reference>
+        <ProjectReference Include="..\GeospizaCore\GeospizaCore.csproj" />
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\GeospizaCore\GeospizaCore.csproj"/>
+        <PackageReference Include="Microsoft.Extensions.Logging" Version="7.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="7.0.0" />
     </ItemGroup>
-
-    <ItemGroup>
-        <PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.0"/>
-        <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="8.0.0"/>
-    </ItemGroup>
-
-
 </Project>

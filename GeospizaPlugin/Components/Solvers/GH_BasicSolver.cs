@@ -100,7 +100,7 @@ public class GH_BasicSolver : GH_Component
     var run = false;
     if (!DA.GetData(4, ref run)) return;
 
-    _evolutionObserver.Destroy();
+    _evolutionObserver.Dispose();
     // Check if the solver was triggered by the button or timestamp
     if (run)
     {

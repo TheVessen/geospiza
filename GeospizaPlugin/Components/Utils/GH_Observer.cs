@@ -58,7 +58,7 @@ public class GH_Observer : GH_Component
         return;
       }
 
-      DA.SetDataList(0, obs.GetCurrentPopulation().Inhabitants);
+      DA.SetDataList(0, obs.CurrentPopulation.Inhabitants);
       DA.SetDataList(1, obs.AverageFitness);
       DA.SetDataList(2, obs.BestFitness);
       DA.SetDataList(3, obs.WorstFitness);

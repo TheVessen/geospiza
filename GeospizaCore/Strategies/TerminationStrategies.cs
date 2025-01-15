@@ -56,7 +56,7 @@ public class PopulationDiversity : TerminationStrategy
 
   public override bool Evaluate(EvolutionObserver evolutionObserver)
   {
-    var population = evolutionObserver.GetCurrentPopulation();
+    var population = evolutionObserver.CurrentPopulation;
     var diversity = population.GetDiversity();
 
     return diversity <= TerminationThreshold;
