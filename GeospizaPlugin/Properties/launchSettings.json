@@ -11,10 +11,7 @@
     "GeospizaMac": {
       "commandName": "Executable",
       "executablePath": "/Applications/Rhino 8.app/Contents/MacOS/Rhinoceros",
-      "commandLineArgs": "/netcore /runscript=\"_Grasshopper\"",
-      "environmentVariables": {
-        "RHINO_PACKAGE_DIRS": "$(ProjectDir)$(OutputPath)/"
-      }
+      "hotReloadEnabled" : true
     }
   }
 }

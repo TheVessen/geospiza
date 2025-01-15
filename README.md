@@ -1,32 +1,26 @@
 # Geospiza 🧬
 
-A .NET library and Grasshopper plugin for evolutionary algorithms in architectural and engineering design.
+A .NET library and Grasshopper plugin for evolutionary algorithms in architectural and engineering design.\*\*\*\*
 
 ## Overview
 
-Geospiza is an open-source evolutionary computation framework that integrates with Rhino/Grasshopper to help solve complex design optimization problems. It provides:
+Geospiza is an open-source evolutionary computation framework that integrates with Rhino/Grasshopper to help solve|explore complex design optimization problems. It provides:
 
-- Efficient evolutionary algorithm implementations
-- Integration with Rhino Compute for geometry processing
+- Base evolutionary solvers
 - Parallel computation support
 - Easy-to-use Grasshopper components
 - Flexible fitness function definitions
 - Support for multiple optimization strategies
+- Integration with RhinoCompute and web preview with three.js `windows only`
 
 ## Getting Started
 
-### Prerequisites
-
-- Rhino 8.0 or later
-- .NET 7.0 or later
-- Visual Studio 2022 or later (for development)
-
 ### Installation
 
-1. Download the latest release from the [releases page](releases)
-2. Place the `GeospizaPlugin.gha` file in your Grasshopper Libraries folder
-3. Place the `GeospizaCore.dll` in the same directory
-4. Restart Rhino and Grasshopper
+1. Give the project a forge
+2. Build the project
+3. Libraries folder
+4.
 
 ## Usage
 

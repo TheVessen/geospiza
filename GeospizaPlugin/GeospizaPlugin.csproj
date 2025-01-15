@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFrameworks>net7.0</TargetFrameworks>
+        <TargetFramework>net7.0</TargetFramework>
         <Version>0.1.0</Version>
         <Title>Geospiza</Title>
         <Description>Description of Geospiza</Description>

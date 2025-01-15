@@ -14,7 +14,7 @@ namespace GeospizaManager.Core;
 /// across generations. It supports JSON serialization for data persistence and transfer.
 /// Use <see cref="ObserverServerSnapshot"/> for a simplified implementation
 /// </remarks>
-public class EvolutionObserver : IDisposable
+public class EvolutionObserver
 {
     /// <summary>
     /// Thread-safe dictionary storing observer instances per Grasshopper component
@@ -61,8 +61,12 @@ public class EvolutionObserver : IDisposable
     /// <exception cref="ArgumentNullException">Thrown when solver is null</exception>
     public static EvolutionObserver GetInstance(GH_Component solver)
     {
-        ArgumentNullException.ThrowIfNull(solver);
-        return _instances.GetOrAdd(solver, _ => new EvolutionObserver());
+      ArgumentNullException.ThrowIfNull(solver);
+      if (_instances.TryGetValue(solver, out var observer) && observer._isDisposed)
+      {
+        _instances.TryRemove(solver, out _);
+      }
+      return _instances.GetOrAdd(solver, _ => new EvolutionObserver());
     }
 
     /// <summary>
@@ -125,45 +129,49 @@ public class EvolutionObserver : IDisposable
     /// </summary>
     public void Reset()
     {
-        lock (_listLock)
+      lock (_listLock)
+      {
+        if (_isDisposed)
         {
-            if (_isDisposed) throw new ObjectDisposedException(nameof(EvolutionObserver));
-            
-            _averageFitness.Clear();
-            _bestFitness.Clear();
-            _worstFitness.Clear();
-            _totalFitness.Clear();
-            _numberOfUniqueIndividuals.Clear();
-            _diversity.Clear();
-            _bestIndividuals.Clear();
-            _fitnessStandardDeviation.Clear();
-            
-            CurrentPopulation = null;
-            CurrentGenerationIndex = 0;
+          throw new InvalidOperationException("Cannot reset a disposed EvolutionObserver instance.");
         }
+
+        _averageFitness.Clear();
+        _bestFitness.Clear();
+        _worstFitness.Clear();
+        _totalFitness.Clear();
+        _numberOfUniqueIndividuals.Clear();
+        _diversity.Clear();
+        _bestIndividuals.Clear();
+        _fitnessStandardDeviation.Clear();
+
+        CurrentPopulation = null;
+        CurrentGenerationIndex = 0;
+      }
     }
+
     
     /// <summary>
     /// Releases all observer instances and resources
     /// </summary>
-    public void Dispose()
-    {
-      if (_isDisposed) return;
-        
-      lock (_listLock)
-      {
-        if (_isDisposed) return;
-            
-        var keys = _instances.Keys.ToList();
-        foreach (var key in keys)
-        {
-          _instances.TryRemove(key, out _);
-        }
-            
-        _isDisposed = true;
-      }
-      GC.SuppressFinalize(this);
-    }
+    // public void Dispose()
+    // {
+    //   if (_isDisposed) return;
+    //     
+    //   lock (_listLock)
+    //   {
+    //     if (_isDisposed) return;
+    //         
+    //     var keys = _instances.Keys.ToList();
+    //     foreach (var key in keys)
+    //     {
+    //       _instances.TryRemove(key, out _);
+    //     }
+    //         
+    //     _isDisposed = true;
+    //   }
+    //   GC.SuppressFinalize(this);
+    // }
 
     /// <summary>
     /// Serializes the observer state to JSON

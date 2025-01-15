@@ -13,7 +13,7 @@ namespace GeospizaManager.Core;
 public class ObserverServerSnapshot
 {
   public int CurrentGenerationIndex { get; set; }
-  public List<Individual> Inhabitants { get; set; } = new();
+  public List<Individual> Inhabitants { get; set; }
   public int Count => Inhabitants.Count;
   public string RequestId { get; private set; }
 

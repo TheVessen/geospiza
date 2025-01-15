@@ -42,7 +42,7 @@ namespace GeospizaPlugin.Components.Webcomponents
     /// <summary>
     /// Registers all the output parameters for this component.
     /// </summary>
-    protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
+    protected override void RegisterOutputParams(GH_OutputParamManager pManager)
     {
     }
 

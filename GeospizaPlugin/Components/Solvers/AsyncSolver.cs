@@ -165,7 +165,7 @@ public class AsyncSolver : AsyncComponent
     {
       if (CancellationToken.IsCancellationRequested) return;
 
-      _evolutionObserver.Dispose();
+      _evolutionObserver.Reset();
       // Check if the solver was triggered by the button or timestamp
       if (Run)
       {
