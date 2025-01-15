@@ -88,7 +88,7 @@ public class EvolutionarySolverCoordinator
 
       var requestId = observerString.RequestId;
 
-      if (_receivedObserver.Count >= 2) // Adjust this condition as needed
+      if (_receivedObserver.Count >= 2) 
       {
         List<ObserverServerSnapshot> observers;
         lock (_receivedObserver)
@@ -100,7 +100,6 @@ public class EvolutionarySolverCoordinator
         var result = ProcessData(observers);
         DataProcessed?.Invoke(result);
 
-        // Find and complete all pending requests
         foreach (var observer in observers)
           if (_pendingRequests.TryRemove(observer.RequestId, out var tcs))
             tcs.TrySetResult(result);
@@ -114,7 +113,7 @@ public class EvolutionarySolverCoordinator
         var tcs = _pendingRequests.GetOrAdd(requestId, _ => new TaskCompletionSource<string>());
         Console.WriteLine("Request added to pending list.");
         // Wait for the result, but with a timeout
-        var timeoutTask = Task.Delay(TimeSpan.FromSeconds(2)); // Adjust timeout as needed
+        var timeoutTask = Task.Delay(TimeSpan.FromSeconds(2));
         var completedTask = await Task.WhenAny(tcs.Task, timeoutTask);
 
         if (completedTask == timeoutTask)

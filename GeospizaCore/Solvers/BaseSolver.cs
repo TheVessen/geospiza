@@ -3,11 +3,14 @@ using GeospizaManager.Strategies;
 
 namespace GeospizaManager.Solvers;
 
-public class EvolutionaryAlgorithm : EvolutionBlueprint
+/// <summary>
+/// Base class for evolutionary solvers
+/// </summary>
+public class BaseSolver : EvolutionBlueprint
 {
   private const int TerminationEvaluationThreshold = 5;
 
-  public EvolutionaryAlgorithm(EvolutionaryAlgorithmSettings settings, StateManager stateManager,
+  public BaseSolver(SolverSettings settings, StateManager stateManager,
     EvolutionObserver evolutionObserver) :
     base(settings)
   {

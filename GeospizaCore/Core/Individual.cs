@@ -28,6 +28,9 @@ public class Individual
   public Individual(string json)
   {
     var parsed = FromJson(json);
+    
+    if(parsed == null) throw new Exception("Failed to parse individual from JSON.");
+    
     GenePool = parsed.GenePool;
     Fitness = parsed.Fitness;
     Probability = parsed.Probability;
@@ -154,7 +157,7 @@ public class Individual
     return JsonConvert.SerializeObject(this, settings);
   }
 
-  public static Individual FromJson(string json)
+  public static Individual? FromJson(string json)
   {
     var settings = new JsonSerializerSettings
     {
@@ -167,12 +170,12 @@ public class Individual
 
   public class IndividualConverter : JsonConverter<Individual>
   {
-    public override void WriteJson(JsonWriter writer, Individual value, JsonSerializer serializer)
+    public override void WriteJson(JsonWriter writer, Individual? value, JsonSerializer serializer)
     {
       writer.WriteRawValue(value.ToJson());
     }
 
-    public override Individual ReadJson(JsonReader reader, Type objectType, Individual existingValue,
+    public override Individual? ReadJson(JsonReader reader, Type objectType, Individual existingValue,
       bool hasExistingValue, JsonSerializer serializer)
     {
       var jsonObject = JObject.Load(reader);

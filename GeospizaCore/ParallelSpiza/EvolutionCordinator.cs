@@ -9,7 +9,7 @@ namespace GeospizaManager.GeospizaCordinator;
 public class RequestContext
 {
   public TaskCompletionSource<string> TaskCompletionSource { get; set; }
-  public ObserverServerSnapshot BaseObserver { get; set; }
+  public ObserverServerSnapshot? BaseObserver { get; set; }
 }
 
 public class EvolutionCordinator
@@ -17,12 +17,11 @@ public class EvolutionCordinator
   private readonly HttpListener _listener;
   private readonly List<RequestContext> _requestContexts = new List<RequestContext>();
   private readonly object _dataLock = new object();
-  private readonly int MaxRequests;
+  private readonly int _maxRequests;
 
   public EvolutionCordinator(string[] prefixes, int maxRequests = 2)
   {
-    MaxRequests = maxRequests;
-    // Initialize the HttpListener with given prefixes (e.g., "http://localhost:8080/")
+    _maxRequests = maxRequests;
     _listener = new HttpListener();
     foreach (string prefix in prefixes)
     {
@@ -30,31 +29,44 @@ public class EvolutionCordinator
     }
   }
 
-  // Start listening for HTTP requests
-  public async Task StartListeningAsync()
+  /// <summary>
+  /// Starts the HTTP listener and processes incoming POST requests asynchronously.
+  /// </summary>
+  /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+  public async Task StartListeningAsync(CancellationToken cancellationToken)
   {
     _listener.Start();
     Console.WriteLine("Listening for incoming POST requests...");
-
-    // Run listener in a loop
-    while (true)
+    try
     {
-      HttpListenerContext context = await _listener.GetContextAsync();
-
-      if (context.Request.HttpMethod == "POST")
+      while (!cancellationToken.IsCancellationRequested)
       {
-        _ = HandlePostRequestAsync(context);
+        var context = await _listener.GetContextAsync();
+        if (context.Request.HttpMethod == "POST")
+        {
+          _ = HandlePostRequestAsync(context);
+        }
+        else
+        {
+          context.Response.StatusCode = (int)HttpStatusCode.MethodNotAllowed;
+          context.Response.Close();
+        }
       }
-      else
-      {
-        // Respond with 405 Method Not Allowed
-        context.Response.StatusCode = (int)HttpStatusCode.MethodNotAllowed;
-        context.Response.Close();
-      }
+    }
+    catch (HttpListenerException ex) when (ex.ErrorCode == 995) // ERROR_OPERATION_ABORTED
+    {
+      Console.WriteLine("Listener stopped.");
+    }
+    catch (Exception ex)
+    {
+      Console.WriteLine($"Error: {ex.Message}");
+    }
+    finally
+    {
+      _listener.Stop();
     }
   }
 
-  // Stop the HTTP listener
   public void StopListening()
   {
     _listener.Stop();
@@ -70,7 +82,7 @@ public class EvolutionCordinator
       requestBody = await reader.ReadToEndAsync();
     }
 
-    ObserverServerSnapshot baseObserver;
+    ObserverServerSnapshot? baseObserver;
 
     try
     {
@@ -94,7 +106,7 @@ public class EvolutionCordinator
       return;
     }
 
-    TaskCompletionSource<string> taskCompletionSource = new TaskCompletionSource<string>();
+    var taskCompletionSource = new TaskCompletionSource<string>();
 
     lock (_dataLock)
     {
@@ -110,16 +122,14 @@ public class EvolutionCordinator
       _requestContexts.Add(requestContext);
 
       // If we have enough requests, process the data
-      if (_requestContexts.Count == MaxRequests)
+      if (_requestContexts.Count == _maxRequests)
       {
         ProcessDataAndRelease();
       }
     }
 
-    // Wait for the processing result and respond
-    string result = await taskCompletionSource.Task;
-
-    byte[] buffer = Encoding.UTF8.GetBytes(result);
+    var result = await taskCompletionSource.Task;
+    var buffer = Encoding.UTF8.GetBytes(result);
     context.Response.ContentLength64 = buffer.Length;
     context.Response.ContentType = "application/json";
     await context.Response.OutputStream.WriteAsync(buffer, 0, buffer.Length);
@@ -128,7 +138,7 @@ public class EvolutionCordinator
 
   private List<Individual> MergeInhabitants(List<ObserverServerSnapshot> observers)
   {
-    List<Individual> allInhabitants = new List<Individual>();
+     var allInhabitants = new List<Individual>();
 
     foreach (var observer in observers)
     {

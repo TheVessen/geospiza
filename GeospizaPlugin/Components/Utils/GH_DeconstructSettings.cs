@@ -47,7 +47,7 @@ public class GH_DeconstructSettings : GH_Component
   protected override void SolveInstance(IGH_DataAccess DA)
   {
     // Variables
-    var settings = new EvolutionaryAlgorithmSettings();
+    var settings = new SolverSettings();
 
     // Set variables
     DA.GetData(0, ref settings);

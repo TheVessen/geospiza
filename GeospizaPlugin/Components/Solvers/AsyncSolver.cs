@@ -89,7 +89,7 @@ public class AsyncSolver : AsyncComponent
 
     public double Num { get; set; }
     private List<string> GeneIds { get; set; }
-    private EvolutionaryAlgorithmSettings _privateSettings;
+    private SolverSettings _privateSettings;
     private int PreviewLevel { get; set; }
     private long Timestamp { get; set; }
     private bool Run { get; set; }
@@ -108,7 +108,7 @@ public class AsyncSolver : AsyncComponent
       var geneIds = new List<string>();
       if (!DA.GetDataList(0, geneIds)) return;
 
-      var settings = new EvolutionaryAlgorithmSettings();
+      var settings = new SolverSettings();
       if (!DA.GetData(1, ref settings)) return;
       _privateSettings = settings;
 
@@ -140,7 +140,7 @@ public class AsyncSolver : AsyncComponent
       _solutionId = Guid.NewGuid();
       _evolutionObserver.Reset();
 
-      var evolutionaryAlgorithm = new EvolutionaryAlgorithm(_privateSettings, _stateManager, _evolutionObserver);
+      var evolutionaryAlgorithm = new BaseSolver(_privateSettings, _stateManager, _evolutionObserver);
 
       evolutionaryAlgorithm.RunAlgorithm();
 

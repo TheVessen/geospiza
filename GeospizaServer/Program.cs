@@ -17,11 +17,11 @@ public class Program
 
     // Create an instance of the PostRequestHandler class
     var postRequestHandler = new EvolutionCordinator(prefixes, 2);
+    var cancellationTokenSource = new CancellationTokenSource();
 
     // Start the listener and process incoming requests
-    await postRequestHandler.StartListeningAsync();
-
-
+    await postRequestHandler.StartListeningAsync(cancellationTokenSource.Token);
+    
     Console.WriteLine("Press any key to exit...");
     Console.ReadKey();
   }

@@ -4,23 +4,84 @@ using Grasshopper.Kernel.Special;
 namespace GeospizaManager.Core
 {
   /// <summary>
-  /// Manages the state of the application, including the gene pools and sliders. It is grasshopper file specific.
+  /// Manages the state of the local application, including the gene pools and sliders. It is grasshopper file specific.
   /// </summary>
   public class StateManager
   {
-    // Stores instances of StateManager for each GH_BasicSolver
+    /// <summary>
+    /// A dictionary that holds instances of StateManager for each GH_Component.
+    /// </summary>
     private static readonly Dictionary<GH_Component, StateManager> Instances = new();
-    public Dictionary<Guid, dynamic>? AllGenePools;
-    public Dictionary<Guid, GH_NumberSlider>? AllSliders;
-    private GH_Document? _document;
-    public GH_Component? ThisComponent { get; private set; }
-    public int NumberOfGeneIds { get; set; }
-    public int PreviewLevel { get; set; } = 0;
-    public Fitness? FitnessSingleton { get; private set; }
-    public GH_Component? FitnessComponent { get; private set; }
-    public Dictionary<Guid, GeneTemplate>? Genotype { get; private set; }
-    private static readonly object Padlock = new object();
 
+    /// <summary>
+    /// A dictionary that holds all gene pools, where the key is a Guid and the value is a dynamic object representing the gene pool.
+    /// </summary>
+    public Dictionary<Guid, dynamic>? AllGenePools;
+
+    /// <summary>
+    /// A dictionary that holds all number sliders, where the key is a Guid and the value is a GH_NumberSlider object.
+    /// </summary>
+    public Dictionary<Guid, GH_NumberSlider>? AllSliders;
+
+    /// <summary>
+    /// The GH_Document associated with the StateManager.
+    /// </summary>
+    private GH_Document? _document;
+
+    /// <summary>
+    /// The GH_Component associated with the StateManager.
+    /// </summary>
+    private GH_Component? ThisComponent { get; set; }
+
+    /// <summary>
+    /// The number of gene IDs managed by the StateManager.
+    /// </summary>
+    private int NumberOfGeneIds { get; set; }
+    private int _previewLevel;
+
+    /// <summary>
+    /// The preview level for the StateManager. Valid values are:
+    /// 0 - All Individuals are shown (default)
+    /// 1 - EveryGeneration (only the best individual of each generation is shown)
+    /// 2 - IfBetter (only individuals with a better fitness than the previous best are shown)
+    /// 3 - None (no individuals are shown)
+    /// If an invalid value is provided, it defaults to 0 (All).
+    /// </summary>
+    public int PreviewLevel
+    {
+      get => _previewLevel;
+      set
+      {
+        if (value < 0 || value > 3)
+        {
+          _previewLevel = 0; // Default to "All"
+        }
+        else
+        {
+          _previewLevel = value;
+        }
+      }
+    }
+
+    /// <summary>
+    /// The singleton instance of the Fitness class.
+    /// </summary>
+    private Fitness? FitnessSingleton { get; set; }
+
+    /// <summary>
+    /// The fitness component associated with the StateManager.
+    /// </summary>
+    public GH_Component? FitnessComponent { get; private set; }
+
+    /// <summary>
+    /// A dictionary that holds the genotype, where the key is a Guid and the value is a GeneTemplate object.
+    /// </summary>
+    public Dictionary<Guid, GeneTemplate>? Genotype { get; private set; }
+
+    /// <summary>
+    /// An object used for locking to ensure thread safety.
+    /// </summary>
+    private static readonly object Padlock = new ();
 
     private StateManager()
     {

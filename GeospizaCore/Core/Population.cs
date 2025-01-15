@@ -4,6 +4,11 @@ using Newtonsoft.Json;
 
 namespace GeospizaManager.Core;
 
+/// <summary>
+/// Represents a population of individuals in an evolutionary algorithm.
+/// This class provides methods to manage and evaluate the population, including adding individuals,
+/// testing the population, calculating fitness and diversity, and selecting top individuals.
+/// </summary>
 public class Population
 {
   public Population()

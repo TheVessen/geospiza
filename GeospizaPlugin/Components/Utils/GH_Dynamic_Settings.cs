@@ -106,7 +106,7 @@ public class GH_Dynamic_Settings : GH_Component
       from crossoverStrategy in crossoverStrategies
       from mutationStrategy in mutationStrategies
       from terminationStrategy in terminationStrategies
-      select new EvolutionaryAlgorithmSettings
+      select new SolverSettings
       {
         PopulationSize = Convert.ToInt32(populationSize.Value),
         MaxGenerations = Convert.ToInt32(maxGeneration.Value),

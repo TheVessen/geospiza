@@ -46,7 +46,7 @@ public class GH_SettingFromJson : GH_Component
 
     if (json == "") return;
 
-    var setting = EvolutionaryAlgorithmSettings.FromJson(json);
+    var setting = SolverSettings.FromJson(json);
 
     // Add a null check before using the setting
     if (setting == null)

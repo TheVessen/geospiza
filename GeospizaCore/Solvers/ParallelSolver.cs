@@ -1,13 +1,14 @@
 ﻿using GeospizaManager.Core;
 using GeospizaManager.Strategies;
-
 namespace GeospizaManager.Solvers;
 
-public class ParallelEvolutionarySolver : EvolutionBlueprint
+//FOR THE MOMENT A MESS DO NOT USE
+
+public class ParallelSolver : EvolutionBlueprint
 {
   private const int TerminationEvaluationThreshold = 5;
 
-  public ParallelEvolutionarySolver(EvolutionaryAlgorithmSettings settings, StateManager stateManager,
+  public ParallelSolver(SolverSettings settings, StateManager stateManager,
     EvolutionObserver evolutionObserver) :
     base(settings)
   {

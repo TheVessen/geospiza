@@ -70,7 +70,7 @@ public class GH_BasicSolver : GH_Component
   private readonly StateManager _stateManager;
   private readonly EvolutionObserver _evolutionObserver;
   private long _lastTimestamp = 0;
-  private EvolutionaryAlgorithmSettings _privateSettings;
+  private SolverSettings _privateSettings;
   private bool _isRunning = false;
   private Guid _solutionId = Guid.NewGuid();
   private Guid _lastSolutionId;
@@ -86,7 +86,7 @@ public class GH_BasicSolver : GH_Component
     var geneIds = new List<string>();
     if (!DA.GetDataList(0, geneIds)) return;
 
-    var settings = new EvolutionaryAlgorithmSettings();
+    var settings = new SolverSettings();
     if (!DA.GetData(1, ref settings)) return;
     _privateSettings = settings;
 
@@ -162,7 +162,7 @@ public class GH_BasicSolver : GH_Component
     _solutionId = Guid.NewGuid();
     _evolutionObserver.Reset();
 
-    var evolutionaryAlgorithm = new EvolutionaryAlgorithm(_privateSettings, _stateManager, _evolutionObserver);
+    var evolutionaryAlgorithm = new BaseSolver(_privateSettings, _stateManager, _evolutionObserver);
 
     evolutionaryAlgorithm.RunAlgorithm();
 

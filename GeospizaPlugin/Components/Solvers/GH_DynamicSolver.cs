@@ -58,7 +58,7 @@ public class GH_DynamicSolver : GH_Component
     DA.GetData(1, ref filePath);
     DA.GetData(2, ref run);
 
-    var settings = settingsWrappers.Select(s => s.Value).Cast<EvolutionaryAlgorithmSettings>().ToList();
+    var settings = settingsWrappers.Select(s => s.Value).Cast<SolverSettings>().ToList();
 
     if (settings.Count == 0)
     {

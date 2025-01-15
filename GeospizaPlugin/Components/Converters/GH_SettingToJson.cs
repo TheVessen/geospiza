@@ -45,7 +45,7 @@ public class GH_SettingToJson : GH_Component
     // If the input is not retrieved, return
     if (!DA.GetData(0, ref settingWrapper)) return;
 
-    if (settingWrapper.Value is EvolutionaryAlgorithmSettings setting)
+    if (settingWrapper.Value is SolverSettings setting)
     {
       var json = setting.ToJson();
 

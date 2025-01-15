@@ -13,7 +13,7 @@ public abstract class EvolutionBlueprint : IEvolutionarySolver
   ///   Initializes the evolutionary algorithm with the given settings.
   /// </summary>
   /// <param name="settings"></param>
-  protected EvolutionBlueprint(EvolutionaryAlgorithmSettings settings)
+  protected EvolutionBlueprint(SolverSettings settings)
   {
     PopulationSize = settings.PopulationSize;
     MaxGenerations = settings.MaxGenerations;

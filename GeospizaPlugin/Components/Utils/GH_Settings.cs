@@ -121,7 +121,7 @@ public class Settings : GH_Component
     if (crossoverRate is < 0 or > 1)
       AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Crossover rate must be between 0 and 1");
 
-    var settings = new EvolutionaryAlgorithmSettings
+    var settings = new SolverSettings
     {
       PopulationSize = Convert.ToInt32(populationSize),
       MaxGenerations = Convert.ToInt32(maxGenerations),

@@ -13,25 +13,13 @@ namespace GeospizaPlugin.Components.Analysis;
 
 public class GH_KMeans : GH_Component
 {
-  public class DataPoint
-  {
-    [VectorType] public float[] Features { get; set; }
-  }
-
-  public class ClusterPrediction
-  {
-    [ColumnName("PredictedLabel")] public uint PredictedClusterId { get; set; }
-
-    [ColumnName("Score")] public float[] Distances { get; set; }
-  }
-
   /// <summary>
   /// Initializes a new instance of the GH_KMeans class.
   /// </summary>
   public GH_KMeans()
     : base("K-Means", "K-Means",
       "Description",
-      "Geospiza", "Analysis")
+      "Geospiza", "Analytics")
   {
   }
 
