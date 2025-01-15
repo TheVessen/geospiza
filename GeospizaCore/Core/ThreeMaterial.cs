@@ -2,6 +2,10 @@
 
 namespace GeospizaManager.Core;
 
+
+/// <summary>
+/// Class for displaying results in Three.js
+/// </summary>
 public class ThreeMaterial
 {
   public ThreeMaterial(Color color, double metalness, double roughness, double opacity)

@@ -3,7 +3,7 @@ using Newtonsoft.Json;
 
 namespace GeospizaManager.Core;
 
-public class ReducedObserver
+public class BaseObserver
 {
   public int CurrentGenerationIndex { get; set; }
 
@@ -11,7 +11,7 @@ public class ReducedObserver
   public int Count => Inhabitants.Count;
   public string RequestId { get; private set; }
 
-  public ReducedObserver(EvolutionObserver observer)
+  public BaseObserver(EvolutionObserver observer)
   {
     CurrentGenerationIndex = observer.CurrentGenerationIndex;
     Inhabitants = observer.CurrentPopulation.Inhabitants;
@@ -29,7 +29,7 @@ public class ReducedObserver
     return JsonConvert.SerializeObject(this, settings);
   }
 
-  public static ReducedObserver? FromJson(string json)
+  public static BaseObserver? FromJson(string json)
   {
     var settings = new JsonSerializerSettings
     {
@@ -37,6 +37,6 @@ public class ReducedObserver
       ContractResolver = new PrivateSetterContractResolver()
     };
 
-    return JsonConvert.DeserializeObject<ReducedObserver>(json, settings);
+    return JsonConvert.DeserializeObject<BaseObserver>(json, settings);
   }
 }

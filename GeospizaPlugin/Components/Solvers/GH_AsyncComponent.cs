@@ -8,6 +8,9 @@ using System.Threading.Tasks;
 using Grasshopper.Kernel;
 using Timer = System.Timers.Timer;
 
+//This component is part of the async component by speckle:
+//https://github.com/specklesystems/GrasshopperAsyncComponent
+
 namespace GeospizaPlugin.Components.Solvers
 {
   /// <summary>
@@ -18,8 +21,6 @@ namespace GeospizaPlugin.Components.Solvers
     public override Guid ComponentGuid =>
       throw new Exception("ComponentGuid should be overriden in any descendant of GH_AsyncComponent!");
 
-    //List<(string, GH_RuntimeMessageLevel)> Errors;
-
     Action<string, double> ReportProgress;
 
     public ConcurrentDictionary<string, double> ProgressReports;
@@ -29,7 +30,6 @@ namespace GeospizaPlugin.Components.Solvers
     Timer DisplayProgressTimer;
 
     int State = 0;
-
     int SetData = 0;
 
     public List<WorkerInstance> Workers;

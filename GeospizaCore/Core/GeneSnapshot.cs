@@ -1,6 +1,6 @@
 ﻿namespace GeospizaManager.Core;
 
-public static class Utils
+public static class GeneSnapshot
 {
   /// <summary>
   ///   This method is used to create a snapshot of the current state of genes.

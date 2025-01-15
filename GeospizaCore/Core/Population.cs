@@ -18,8 +18,6 @@ public class Population
   public List<Individual> Inhabitants { get; private set; } = new();
   public int Count => Inhabitants.Count;
 
-  public int Generation { get; set; }
-
   /// <summary>
   /// </summary>
   /// <param name="individual"></param>
@@ -35,11 +33,6 @@ public class Population
   {
     if (individual == null) throw new ArgumentNullException(nameof(individual));
     Inhabitants.AddRange(individual);
-  }
-
-  public void ReplaceIndividuals(List<Individual> individuals)
-  {
-    Inhabitants = individuals;
   }
 
   /// <summary>

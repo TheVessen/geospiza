@@ -90,16 +90,6 @@ public class GH_DynamicSolver : GH_Component
     DA.SetData(0, fitness);
   }
 
-  // var data2 = result[1].InnerTree.First().Value[0].Data;
-
-  // var parsed = JsonConvert.DeserializeObject<Dictionary<string, string>>(data2);
-  // var obj = Rhino.FileIO.File3dmObject.FromJSON(parsed);
-  //
-  // var geo = obj as Rhino.Geometry.Brep;
-  //
-  // Console.WriteLine(geo.GetArea());
-
-
   /// <summary>
   /// Provides an Icon for the component.
   /// </summary>

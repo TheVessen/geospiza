@@ -1,5 +1,8 @@
 ﻿namespace GeospizaManager.Core;
 
+/// <summary>
+/// Describes a pair of individuals
+/// </summary>
 public class Pair
 {
   public Pair(Individual individual1, Individual individual2)

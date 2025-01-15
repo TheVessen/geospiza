@@ -2,6 +2,10 @@
 using System.Threading;
 using Grasshopper.Kernel;
 
+
+//This component is part of the async component by speckle:
+//https://github.com/specklesystems/GrasshopperAsyncComponent
+
 namespace GeospizaPlugin.Components.Solvers;
 
 /// <summary>

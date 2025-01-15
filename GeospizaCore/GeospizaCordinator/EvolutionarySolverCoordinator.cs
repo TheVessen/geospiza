@@ -11,7 +11,7 @@ public class EvolutionarySolverCoordinator
   private static readonly object Padlock = new();
   private readonly string _ghFilePath;
   private readonly HttpServer _httpServer;
-  private readonly ConcurrentBag<ReducedObserver> _receivedObserver = new();
+  private readonly ConcurrentBag<BaseObserver> _receivedObserver = new();
   private TaskCompletionSource<bool> _allObserversReceived = new();
   private bool _comuteInitialized;
   private int _numberOfSolvers;
@@ -82,7 +82,7 @@ public class EvolutionarySolverCoordinator
     try
     {
       Console.WriteLine("Write Data");
-      var observerString = ReducedObserver.FromJson(json);
+      var observerString = BaseObserver.FromJson(json);
       _receivedObserver.Add(observerString);
       Console.WriteLine($"Received observer: {_receivedObserver.Count}");
 
@@ -90,7 +90,7 @@ public class EvolutionarySolverCoordinator
 
       if (_receivedObserver.Count >= 2) // Adjust this condition as needed
       {
-        List<ReducedObserver> observers;
+        List<BaseObserver> observers;
         lock (_receivedObserver)
         {
           observers = _receivedObserver.ToList();
@@ -140,7 +140,7 @@ public class EvolutionarySolverCoordinator
   /// </summary>
   /// <param name="observer">The list of received populations.</param>
   /// <returns>The result of the processing.</returns>
-  private string ProcessData(List<ReducedObserver> observer)
+  private string ProcessData(List<BaseObserver> observer)
   {
     return "Processing data...";
   }

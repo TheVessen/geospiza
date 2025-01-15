@@ -6,12 +6,11 @@ using Newtonsoft.Json;
 
 namespace GeospizaManager.GeospizaCordinator;
 
+
 public class RequestContext
 {
   public TaskCompletionSource<string> TaskCompletionSource { get; set; }
-  public ReducedObserver ReducedObserver { get; set; }
-
-  // Add any other individual parameters you need here
+  public BaseObserver BaseObserver { get; set; }
 }
 
 public class EvolutionCordinator
@@ -24,7 +23,6 @@ public class EvolutionCordinator
   public EvolutionCordinator(string[] prefixes, int maxRequests = 2)
   {
     MaxRequests = maxRequests;
-
     // Initialize the HttpListener with given prefixes (e.g., "http://localhost:8080/")
     _listener = new HttpListener();
     foreach (string prefix in prefixes)
@@ -73,14 +71,14 @@ public class EvolutionCordinator
       requestBody = await reader.ReadToEndAsync();
     }
 
-    ReducedObserver reducedObserver;
+    BaseObserver baseObserver;
 
     try
     {
-      // Deserialize the JSON into a ReducedObserver object
-      reducedObserver = JsonConvert.DeserializeObject<ReducedObserver>(requestBody);
+      // Deserialize the JSON into a BaseObserver object
+      baseObserver = JsonConvert.DeserializeObject<BaseObserver>(requestBody);
 
-      Console.WriteLine($"Received data with {reducedObserver.Count} inhabitants.");
+      Console.WriteLine($"Received data with {baseObserver.Count} inhabitants.");
     }
     catch (JsonException ex)
     {
@@ -105,7 +103,7 @@ public class EvolutionCordinator
       var requestContext = new RequestContext
       {
         TaskCompletionSource = taskCompletionSource,
-        ReducedObserver = reducedObserver,
+        BaseObserver = baseObserver,
         // HttpContext = context, // Not needed unless you need to access it later
         // Add any other individual parameters here
       };
@@ -129,7 +127,7 @@ public class EvolutionCordinator
     context.Response.OutputStream.Close();
   }
 
-  private List<Individual> MergeInhabitants(List<ReducedObserver> observers)
+  private List<Individual> MergeInhabitants(List<BaseObserver> observers)
   {
     List<Individual> allInhabitants = new List<Individual>();
 
@@ -156,8 +154,8 @@ public class EvolutionCordinator
   {
     //TODO: Implement here the processing logic for the received data
     // Example processing: Merge all inhabitants from the received data
-    var allInhabitants = MergeInhabitants(_requestContexts.Select(rc => rc.ReducedObserver).ToList());
-    var newInhabitants = RunEvolution(allInhabitants, _requestContexts[0].ReducedObserver.Inhabitants.Count());
+    var allInhabitants = MergeInhabitants(_requestContexts.Select(rc => rc.BaseObserver).ToList());
+    var newInhabitants = RunEvolution(allInhabitants, _requestContexts[0].BaseObserver.Inhabitants.Count());
 
 
     var counter = 0;
@@ -165,7 +163,7 @@ public class EvolutionCordinator
     foreach (var requestContext in _requestContexts)
     {
       // Access individual data
-      var observer = requestContext.ReducedObserver;
+      var observer = requestContext.BaseObserver;
 
       // Create a result object
       var result = new
