@@ -55,7 +55,7 @@ public class TournamentSelection : SelectionStrategy
   ///   It's essential to choose an appropriate tournament size based on the problem being solved. Experimentation and
   ///   parameter tuning may be required to find the optimal size for a specific application.
   /// </remarks>
-  public  int TournamentSize { get; }
+  public int TournamentSize { get; }
 
   /// <summary>
   ///   Initializes a new instance of the <see cref="TournamentSelection" /> class.

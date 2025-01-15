@@ -104,6 +104,4 @@ public abstract class EvolutionBlueprint : IEvolutionarySolver
     Population = newPopulation;
     if (stateManager.PreviewLevel == 1) stateManager.GetDocument().ExpirePreview(true);
   }
-
-  
 }

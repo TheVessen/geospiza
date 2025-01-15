@@ -3,11 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.8.34511.84
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Geospiza", "Geospiza\Geospiza.csproj", "{74BB2D61-2764-47CC-B512-84C7989D9B71}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GeospizaPlugin", "GeospizaPlugin\GeospizaPlugin.csproj", "{74BB2D61-2764-47CC-B512-84C7989D9B71}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GeospizaCore", "GeospizaCore\GeospizaCore.csproj", "{07B3F0E2-FCFC-412D-8B8D-B8EED6DADDD2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SpizaRunner", "SpizaRunner\SpizaRunner.csproj", "{2A76C906-538A-4659-8220-A45BD997725C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GeospizaServer", "GeospizaServer\GeospizaServer.csproj", "{2A76C906-538A-4659-8220-A45BD997725C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

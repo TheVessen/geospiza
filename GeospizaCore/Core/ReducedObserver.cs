@@ -1,41 +1,42 @@
-﻿using Newtonsoft.Json;
+﻿using GeospizaManager.Utils;
+using Newtonsoft.Json;
 
 namespace GeospizaManager.Core;
 
 public class ReducedObserver
 {
-    public int CurrentGenerationIndex { get;  set; }
+  public int CurrentGenerationIndex { get; set; }
 
-    public List<Individual> Inhabitants { get;  set; } = new();
-    public int Count => Inhabitants.Count;
-    public string RequestId { get; private set; }
-    
-    public ReducedObserver(EvolutionObserver observer)
+  public List<Individual> Inhabitants { get; set; } = new();
+  public int Count => Inhabitants.Count;
+  public string RequestId { get; private set; }
+
+  public ReducedObserver(EvolutionObserver observer)
+  {
+    CurrentGenerationIndex = observer.CurrentGenerationIndex;
+    Inhabitants = observer.GetCurrentPopulation().Inhabitants;
+    RequestId = new Guid().ToString();
+  }
+
+  public string ToJson()
+  {
+    var settings = new JsonSerializerSettings
     {
-        CurrentGenerationIndex = observer.CurrentGenerationIndex;
-        Inhabitants = observer.GetCurrentPopulation().Inhabitants;
-        RequestId = new Guid().ToString();
-    }
-    
-    public string ToJson()
+      Formatting = Formatting.Indented,
+      Converters = new List<JsonConverter> { new Individual.IndividualConverter() }
+    };
+
+    return JsonConvert.SerializeObject(this, settings);
+  }
+
+  public static ReducedObserver? FromJson(string json)
+  {
+    var settings = new JsonSerializerSettings
     {
-        var settings = new JsonSerializerSettings
-        {
-            Formatting = Formatting.Indented,
-            Converters = new List<JsonConverter> { new Individual.IndividualConverter() }
-        };
+      Converters = new List<JsonConverter> { new Individual.IndividualConverter() },
+      ContractResolver = new PrivateSetterContractResolver()
+    };
 
-        return JsonConvert.SerializeObject(this, settings);
-    }
-
-    public static ReducedObserver? FromJson(string json)
-    {
-        var settings = new JsonSerializerSettings
-        {
-            Converters = new List<JsonConverter> { new Individual.IndividualConverter() },
-            ContractResolver = new PrivateSetterContractResolver()
-        };
-
-        return JsonConvert.DeserializeObject<ReducedObserver>(json, settings);
-    }
+    return JsonConvert.DeserializeObject<ReducedObserver>(json, settings);
+  }
 }

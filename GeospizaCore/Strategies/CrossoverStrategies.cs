@@ -17,7 +17,8 @@ public abstract class CrossoverStrategy : ICrossoverStrategy
   public double CrossoverRate { get; set; }
 
   public abstract List<Individual> Crossover(Individual parent1, Individual parent2);
-  public  string ToJson()
+
+  public string ToJson()
   {
     var settings = new JsonSerializerSettings
     {
@@ -34,7 +35,6 @@ public abstract class CrossoverStrategy : ICrossoverStrategy
     };
     return JsonConvert.DeserializeObject<ICrossoverStrategy>(json, settings);
   }
-
 }
 
 /// <summary>
@@ -89,9 +89,6 @@ public class SinglePointCrossover : CrossoverStrategy
 
     return new List<Individual> { child1, child2 };
   }
-  
-
-  
 }
 
 /// <summary>
