@@ -15,12 +15,23 @@ public class Population
   {
   }
 
+  /// <summary>
+  /// Copy constructor
+  /// </summary>
+  /// <param name="population"></param>
   public Population(Population population)
   {
     Inhabitants = new List<Individual>(population.Inhabitants);
   }
 
-  public List<Individual> Inhabitants { get; private set; } = new();
+  /// <summary>
+  /// List of individuals in the population
+  /// </summary>
+  public List<Individual> Inhabitants { get; } = new();
+  
+  /// <summary>
+  /// Number of individuals in the population
+  /// </summary>
   public int Count => Inhabitants.Count;
 
   /// <summary>
@@ -32,6 +43,7 @@ public class Population
   }
 
   /// <summary>
+  /// Add a list of individuals to the population
   /// </summary>
   /// <param name="individual"></param>
   public void AddIndividuals(List<Individual> individual)
@@ -41,41 +53,68 @@ public class Population
   }
 
   /// <summary>
-  /// 
-  /// </summary>
-  /// <param name="stateManager"></param>
-  /// <param name="evolutionObserver"></param>
-  public void TestPopulation(StateManager stateManager, EvolutionObserver evolutionObserver)
-  {
+/// Tests the population by evaluating the fitness of each individual and updating their fitness values.
+/// </summary>
+/// <param name="stateManager">The state manager containing the genotype and other state information.</param>
+/// <param name="evolutionObserver">The evolution observer used to track the best fitness values.</param>
+/// <exception cref="System.Exception">Thrown if the document or fitness component is null.</exception>
+public void TestPopulation(StateManager stateManager, EvolutionObserver evolutionObserver)
+{
+    // Get the maximum fitness value observed so far
     var max = evolutionObserver.BestFitness.Max();
 
+    // Iterate through each individual in the population
     foreach (var individual in Inhabitants)
     {
-      foreach (var gene in individual.GenePool)
-      {
-        var matchingGene = stateManager.Genotype[gene.GeneGuid];
-        matchingGene?.SetTickValue(gene.TickValue, stateManager);
-      }
+        // Set the tick values for each gene in the individual's gene pool
+        foreach (var gene in individual.GenePool)
+        {
+            var genotype = stateManager.Genotype;
+          
+            if (genotype == null)
+            {
+                throw new Exception("Genotype is null for" + gene.GeneName);
+            }
+            
+            var matchingGene = genotype[gene.GeneGuid];
+            matchingGene?.SetTickValue(gene.TickValue, stateManager);
+        }
 
-      if (stateManager.PreviewLevel == 0)
-        stateManager.GetDocument().NewSolution(false);
-      else
-        stateManager.GetDocument().NewSolution(false, GH_SolutionMode.Silent);
+        // Get the document from the state manager
+        var doc = stateManager.GetDocument();
+        if (doc == null)
+        {
+            throw new Exception("Document is null");
+        }
 
-      stateManager.FitnessComponent.ExpireSolution(false);
-      //Test if Fitness is initialized
-      individual.SetFitness(Fitness.Instance.GetFitness());
+        // Solve the document based on the preview level
+        if (stateManager.PreviewLevel == 0)
+            doc.NewSolution(false);
+        else
+            doc.NewSolution(false, GH_SolutionMode.Silent);
 
-      if (stateManager.PreviewLevel != 2) continue;
+        // Get the fitness component from the state manager
+        var fitnessComponent = stateManager.FitnessComponent;
+        if (fitnessComponent == null)
+        {
+            throw new Exception("Fitness component is null");
+        }
 
-      if (!(max < individual.Fitness)) continue;
+        // Expire the solution of the fitness component to update the fitness value
+        fitnessComponent.ExpireSolution(false);
+        individual.SetFitness(Fitness.Instance.GetFitness());
 
-      stateManager.GetDocument().ExpirePreview(true);
-      max = individual.Fitness;
+        // If the preview level is 2, update the document preview if the individual's fitness is the new maximum
+        if (stateManager.PreviewLevel != 2) continue;
+        if (!(max < individual.Fitness)) continue;
+
+        doc.ExpirePreview(true);
+        max = individual.Fitness;
     }
-  }
+}
 
   /// <summary>
+  /// Gets the sum of the fitness values of all individuals in the population.
   /// </summary>
   /// <returns></returns>
   public double CalculateTotalFitness()
@@ -84,6 +123,7 @@ public class Population
   }
 
   /// <summary>
+  /// Gets the average fitness of the population.
   /// </summary>
   /// <returns></returns>
   public double GetAverageFitness()
@@ -91,9 +131,10 @@ public class Population
     return CalculateTotalFitness() / Count;
   }
 
-  /// <summary>
-  /// </summary>
-  /// <returns></returns>
+/// <summary>
+/// Calculates the diversity of the population by counting the number of unique individuals.
+/// </summary>
+/// <returns></returns>
   public int GetDiversity()
   {
     var diversity = 0;
@@ -107,8 +148,9 @@ public class Population
   }
 
   /// <summary>
+  /// Selects the top individuals in the population based on their fitness values.
   /// </summary>
-  /// <param name="eliteSize"></param>
+  /// <param name="eliteSize">Number of elite individuals to return</param>
   /// <returns></returns>
   public List<Individual> SelectTopIndividuals(int eliteSize)
   {
@@ -120,6 +162,8 @@ public class Population
   }
 
   /// <summary>
+  /// Calculates the probability of each individual in the population being selected for reproduction.
+  /// The probability is based on the individual's fitness relative to the total fitness of the population.
   /// </summary>
   public void CalculateProbability()
   {
@@ -127,6 +171,9 @@ public class Population
     foreach (var individual in Inhabitants) individual.SetProbability(individual.Fitness / totalFitness);
   }
 
+  /// <summary>
+  /// </summary>
+  /// <returns></returns>
   public override int GetHashCode()
   {
     unchecked
@@ -141,6 +188,11 @@ public class Population
     }
   }
 
+  /// <summary>
+  /// Tries to generate a population from a json string
+  /// </summary>
+  /// <param name="json"></param>
+  /// <returns></returns>
   public static Population? FromJson(string json)
   {
     var settings = new JsonSerializerSettings
@@ -151,6 +203,10 @@ public class Population
     return JsonConvert.DeserializeObject<Population>(json, settings);
   }
 
+  /// <summary>
+  /// Converts the population to a json string
+  /// </summary>
+  /// <returns></returns>
   public string ToJson()
   {
     return JsonConvert.SerializeObject(this);

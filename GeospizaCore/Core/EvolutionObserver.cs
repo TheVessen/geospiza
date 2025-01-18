@@ -33,14 +33,47 @@ public class EvolutionObserver
     /// Gets the current population under observation
     /// </summary>
     public Population CurrentPopulation { get; private set; }
+    
+    /// <summary>
+    /// Gets the average fitness of the population across generations
+    /// </summary>
     public IReadOnlyList<double> AverageFitness => _averageFitness;
+    
+    /// <summary>
+    /// Gets the best fitness of the population across generations
+    /// </summary>
     public IReadOnlyList<double> BestFitness => _bestFitness;
+    
+    /// <summary>
+    /// Gets the worst fitness of the population across generations
+    /// </summary>
     public IReadOnlyList<double> WorstFitness => _worstFitness;
+    
+    /// <summary>
+    /// Gets the total fitness of the population across generations
+    /// </summary>
     public IReadOnlyList<double> TotalFitness => _totalFitness;
+    
+    /// <summary>
+    /// Gets the number of unique individuals in the population across generations
+    /// </summary>
     public IReadOnlyList<int> NumberOfUniqueIndividuals => _numberOfUniqueIndividuals;
+    
+    /// <summary>
+    /// Gets the diversity of the population across generations
+    /// </summary>
     public IReadOnlyList<int> Diversity => _diversity;
+    
+    /// <summary>
+    /// Gets the best individuals of the population across generations
+    /// </summary>
     public IReadOnlyList<Individual> BestIndividuals => _bestIndividuals;
+    
+    /// <summary>
+    /// Gets the standard deviation of fitness values across generations
+    /// </summary>
     public IReadOnlyList<double> FitnessStandardDeviation => _fitnessStandardDeviation;
+    
     private readonly List<double> _averageFitness = new();
     private readonly List<double> _bestFitness = new();
     private readonly List<double> _worstFitness = new();
@@ -149,30 +182,7 @@ public class EvolutionObserver
         CurrentGenerationIndex = 0;
       }
     }
-
     
-    /// <summary>
-    /// Releases all observer instances and resources
-    /// </summary>
-    // public void Dispose()
-    // {
-    //   if (_isDisposed) return;
-    //     
-    //   lock (_listLock)
-    //   {
-    //     if (_isDisposed) return;
-    //         
-    //     var keys = _instances.Keys.ToList();
-    //     foreach (var key in keys)
-    //     {
-    //       _instances.TryRemove(key, out _);
-    //     }
-    //         
-    //     _isDisposed = true;
-    //   }
-    //   GC.SuppressFinalize(this);
-    // }
-
     /// <summary>
     /// Serializes the observer state to JSON
     /// </summary>
@@ -187,8 +197,7 @@ public class EvolutionObserver
 
         return JsonConvert.SerializeObject(this, settings);
     }
-
-
+    
     /// <summary>
     /// Creates an EvolutionObserver instance from JSON
     /// </summary>
