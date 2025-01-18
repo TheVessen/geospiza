@@ -17,7 +17,7 @@ public abstract class MutationStrategy : IMutationStrategy
 
 public class FixedValueMutation : MutationStrategy
 {
-  public int MutationValue { get; } // A fixed value for mutation, e.g., 2
+  public int MutationValue { get; }
 
   public FixedValueMutation(double mutationRate, int mutationValue)
   {

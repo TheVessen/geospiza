@@ -11,12 +11,12 @@ using Rhino.Geometry;
 
 namespace GeospizaPlugin.Components.Webcomponents;
 
-public class GH_WebGeo : GH_Component
+public class GH_WebIndividual : GH_Component
 {
   /// <summary>
   /// Initializes a new instance of the GH_DisplayObject class.
   /// </summary>
-  public GH_WebGeo()
+  public GH_WebIndividual()
     : base("WebIndividual", "WI",
       "Collects data to be displayed in the web output",
       "Geospiza", "Webcomponents")

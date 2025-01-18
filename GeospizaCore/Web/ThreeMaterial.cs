@@ -2,7 +2,6 @@
 
 namespace GeospizaManager.Core;
 
-
 /// <summary>
 /// Class for displaying results in Three.js
 /// </summary>

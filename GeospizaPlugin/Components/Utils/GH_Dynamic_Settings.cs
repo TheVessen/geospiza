@@ -15,8 +15,8 @@ public class GH_Dynamic_Settings : GH_Component
   /// Initializes a new instance of the GH_Dynamic_Settings class.
   /// </summary>
   public GH_Dynamic_Settings()
-    : base("DynamicSettings", "DynamicSettings",
-      "Settings for the evolutionary algorithm to test multiple strategies",
+    : base("Dynamic Settings", "DS",
+      "Creates combinations of different settings and strategies for evolutionary algorithm optimization",
       "Geospiza", "Utils")
   {
   }
@@ -124,21 +124,13 @@ public class GH_Dynamic_Settings : GH_Component
   /// <summary>
   /// Provides an Icon for the component.
   /// </summary>
-  protected override Bitmap Icon
-  {
-    get
-    {
-      //You can add image files to your project resources and access them like this:
-      // return Resources.IconForThisComponent;
-      return null;
-    }
-  }
+  protected override Bitmap Icon =>
+    //You can add image files to your project resources and access them like this:
+    // return Resources.IconForThisComponent;
+    null;
 
   /// <summary>
   /// Gets the unique ID for this component. Do not change this ID after release.
   /// </summary>
-  public override Guid ComponentGuid
-  {
-    get { return new Guid("B67627AC-919B-4176-823B-AA54D74104B0"); }
-  }
+  public override Guid ComponentGuid => new("B67627AC-919B-4176-823B-AA54D74104B0");
 }

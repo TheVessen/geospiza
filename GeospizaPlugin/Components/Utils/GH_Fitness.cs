@@ -12,7 +12,8 @@ public class GH_Fitness : GH_Component
   /// </summary>
   public GH_Fitness()
     : base("Fitness", "F",
-      "Fitness value for the evolutionary algorithm. This component links the fitness value to the main solver",
+      "Assigns a numerical fitness score that guides the evolutionary optimization process. " + 
+      "This component connects the fitness evaluation to Geospiza's main evolutionary solver.",
       "Geospiza", "Utils")
   {
   }
@@ -57,8 +58,5 @@ public class GH_Fitness : GH_Component
   /// <summary>
   /// Gets the unique ID for this component. Do not change this ID after release.
   /// </summary>
-  public override Guid ComponentGuid
-  {
-    get { return new Guid("FC2E37D7-CE42-4232-B1C8-07C81ADF75D7"); }
-  }
+  public override Guid ComponentGuid => new("FC2E37D7-CE42-4232-B1C8-07C81ADF75D7");
 }

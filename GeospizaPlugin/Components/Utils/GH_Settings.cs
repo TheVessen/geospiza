@@ -8,14 +8,14 @@ using Grasshopper.Kernel.Types;
 
 namespace GeospizaPlugin.Components.Utils;
 
-public class Settings : GH_Component
+public class GH_Settings : GH_Component
 {
   /// <summary>
   ///   Initializes a new instance of the Settings class.
   /// </summary>
-  public Settings()
+  public GH_Settings()
     : base("Settings", "S",
-      "Settings for the evolutionary algorithm. ",
+      "Configure parameters and strategies for the evolutionary algorithm including population size, generations, selection, crossover, and mutation settings.",
       "Geospiza", "Utils")
   {
   }

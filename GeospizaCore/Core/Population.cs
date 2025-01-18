@@ -28,7 +28,7 @@ public class Population
   /// List of individuals in the population
   /// </summary>
   public List<Individual> Inhabitants { get; } = new();
-  
+
   /// <summary>
   /// Number of individuals in the population
   /// </summary>
@@ -53,65 +53,56 @@ public class Population
   }
 
   /// <summary>
-/// Tests the population by evaluating the fitness of each individual and updating their fitness values.
-/// </summary>
-/// <param name="stateManager">The state manager containing the genotype and other state information.</param>
-/// <param name="evolutionObserver">The evolution observer used to track the best fitness values.</param>
-/// <exception cref="System.Exception">Thrown if the document or fitness component is null.</exception>
-public void TestPopulation(StateManager stateManager, EvolutionObserver evolutionObserver)
-{
+  /// Tests the population by evaluating the fitness of each individual and updating their fitness values.
+  /// </summary>
+  /// <param name="stateManager">The state manager containing the genotype and other state information.</param>
+  /// <param name="evolutionObserver">The evolution observer used to track the best fitness values.</param>
+  /// <exception cref="System.Exception">Thrown if the document or fitness component is null.</exception>
+  public void TestPopulation(StateManager stateManager, EvolutionObserver evolutionObserver)
+  {
     // Get the maximum fitness value observed so far
     var max = evolutionObserver.BestFitness.Max();
 
     // Iterate through each individual in the population
     foreach (var individual in Inhabitants)
     {
-        // Set the tick values for each gene in the individual's gene pool
-        foreach (var gene in individual.GenePool)
-        {
-            var genotype = stateManager.Genotype;
-          
-            if (genotype == null)
-            {
-                throw new Exception("Genotype is null for" + gene.GeneName);
-            }
-            
-            var matchingGene = genotype[gene.GeneGuid];
-            matchingGene?.SetTickValue(gene.TickValue, stateManager);
-        }
+      // Set the tick values for each gene in the individual's gene pool
+      foreach (var gene in individual.GenePool)
+      {
+        var genotype = stateManager.Genotype;
 
-        // Get the document from the state manager
-        var doc = stateManager.GetDocument();
-        if (doc == null)
-        {
-            throw new Exception("Document is null");
-        }
+        if (genotype == null) throw new Exception("Genotype is null for" + gene.GeneName);
 
-        // Solve the document based on the preview level
-        if (stateManager.PreviewLevel == 0)
-            doc.NewSolution(false);
-        else
-            doc.NewSolution(false, GH_SolutionMode.Silent);
+        var matchingGene = genotype[gene.GeneGuid];
+        matchingGene?.SetTickValue(gene.TickValue, stateManager);
+      }
 
-        // Get the fitness component from the state manager
-        var fitnessComponent = stateManager.FitnessComponent;
-        if (fitnessComponent == null)
-        {
-            throw new Exception("Fitness component is null");
-        }
+      // Get the document from the state manager
+      var doc = stateManager.GetDocument();
+      if (doc == null) throw new Exception("Document is null");
 
-        // Expire the solution of the fitness component to update the fitness value
-        fitnessComponent.ExpireSolution(false);
-        individual.SetFitness(Fitness.Instance.GetFitness());
+      // Solve the document based on the preview level
+      if (stateManager.PreviewLevel == 0)
+        doc.NewSolution(false);
+      else
+        doc.NewSolution(false, GH_SolutionMode.Silent);
 
-        // If the preview level is 2, update the document preview if the individual's fitness is the new maximum
-        if (stateManager.PreviewLevel != 2) continue;
-        if (!(max < individual.Fitness)) continue;
+      // Get the fitness component from the state manager
+      var fitnessComponent = stateManager.FitnessComponent;
+      if (fitnessComponent == null) throw new Exception("Fitness component is null");
 
-        doc.ExpirePreview(true);
-        max = individual.Fitness;
+      // Expire the solution of the fitness component to update the fitness value
+      fitnessComponent.ExpireSolution(false);
+      individual.SetFitness(Fitness.Instance.GetFitness());
+
+      // If the preview level is 2, update the document preview if the individual's fitness is the new maximum
+      if (stateManager.PreviewLevel != 2) continue;
+      if (!(max < individual.Fitness)) continue;
+
+      doc.ExpirePreview(true);
+      max = individual.Fitness;
     }
-}
+  }
 
   /// <summary>
   /// Gets the sum of the fitness values of all individuals in the population.
@@ -131,10 +122,10 @@ public void TestPopulation(StateManager stateManager, EvolutionObserver evolutio
     return CalculateTotalFitness() / Count;
   }
 
-/// <summary>
-/// Calculates the diversity of the population by counting the number of unique individuals.
-/// </summary>
-/// <returns></returns>
+  /// <summary>
+  /// Calculates the diversity of the population by counting the number of unique individuals.
+  /// </summary>
+  /// <returns></returns>
   public int GetDiversity()
   {
     var diversity = 0;
@@ -178,11 +169,8 @@ public void TestPopulation(StateManager stateManager, EvolutionObserver evolutio
   {
     unchecked
     {
-      int hash = 19;
-      foreach (var individual in Inhabitants)
-      {
-        hash = hash * 31 + individual.GetHashCode();
-      }
+      var hash = 19;
+      foreach (var individual in Inhabitants) hash = hash * 31 + individual.GetHashCode();
 
       return hash;
     }

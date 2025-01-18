@@ -41,7 +41,7 @@ public class GH_SettingToJson : GH_Component
   protected override void SolveInstance(IGH_DataAccess DA)
   {
     // Declare a variable for the input
-    GH_ObjectWrapper settingWrapper = new GH_ObjectWrapper();
+    var settingWrapper = new GH_ObjectWrapper();
     // If the input is not retrieved, return
     if (!DA.GetData(0, ref settingWrapper)) return;
 
@@ -56,21 +56,13 @@ public class GH_SettingToJson : GH_Component
   /// <summary>
   /// Provides an Icon for the component.
   /// </summary>
-  protected override Bitmap Icon
-  {
-    get
-    {
-      //You can add image files to your project resources and access them like this:
-      // return Resources.IconForThisComponent;
-      return null;
-    }
-  }
+  protected override Bitmap Icon =>
+    //You can add image files to your project resources and access them like this:
+    // return Resources.IconForThisComponent;
+    null;
 
   /// <summary>
   /// Gets the unique ID for this component. Do not change this ID after release.
   /// </summary>
-  public override Guid ComponentGuid
-  {
-    get { return new Guid("B6D9077C-391E-4DB7-B954-0CE7A2C1A333"); }
-  }
+  public override Guid ComponentGuid => new("B6D9077C-391E-4DB7-B954-0CE7A2C1A333");
 }

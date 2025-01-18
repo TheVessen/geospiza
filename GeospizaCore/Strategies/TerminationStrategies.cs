@@ -83,9 +83,9 @@ public class MaxGenerations : TerminationStrategy
 //     TerminationThreshold = threshold;
 //   }
 //
-//   public override bool Evaluate(Observer observer)
+//   public override bool Evaluate(EvolutionObserver observer)
 //   {
-//     var population = observer.GetCurrentPopulation();
+//     var population = observer.CurrentPopulation;
 //
 //   }
 // }

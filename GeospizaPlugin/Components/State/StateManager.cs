@@ -23,7 +23,7 @@ public class StateManager : AsyncComponent
   /// <summary>
   /// Registers all the input parameters for this component.
   /// </summary>
-  protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
+  protected override void RegisterInputParams(GH_InputParamManager pManager)
   {
     pManager.AddNumberParameter("Number", "N", "Description", GH_ParamAccess.item);
   }
@@ -31,30 +31,22 @@ public class StateManager : AsyncComponent
   /// <summary>
   /// Registers all the output parameters for this component.
   /// </summary>
-  protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
+  protected override void RegisterOutputParams(GH_OutputParamManager pManager)
   {
   }
 
   /// <summary>
   /// Provides an Icon for the component.
   /// </summary>
-  protected override Bitmap Icon
-  {
-    get
-    {
-      //You can add image files to your project resources and access them like this:
-      // return Resources.IconForThisComponent;
-      return null;
-    }
-  }
+  protected override Bitmap Icon =>
+    //You can add image files to your project resources and access them like this:
+    // return Resources.IconForThisComponent;
+    null;
 
   /// <summary>
   /// Gets the unique ID for this component. Do not change this ID after release.
   /// </summary>
-  public override Guid ComponentGuid
-  {
-    get { return new Guid("C467D430-2667-440C-B95F-B93C2C26D667"); }
-  }
+  public override Guid ComponentGuid => new("C467D430-2667-440C-B95F-B93C2C26D667");
 
 
   private class EvoWorkerInstance : WorkerInstance
@@ -74,7 +66,10 @@ public class StateManager : AsyncComponent
     }
 
 
-    public override WorkerInstance Duplicate() => new EvoWorkerInstance();
+    public override WorkerInstance Duplicate()
+    {
+      return new EvoWorkerInstance();
+    }
 
     public override void DoWork(Action<string, double> ReportProgress, Action Done)
     {
@@ -84,10 +79,7 @@ public class StateManager : AsyncComponent
 
       Task.Run(() => { return DataSender.SendDataAsync(jsonObject, refrenceKey); }).ContinueWith((task) =>
       {
-        if (task.Result != null)
-        {
-          Console.WriteLine($"In Worker {refrenceKey.ToString()} res is {task.Result}");
-        }
+        if (task.Result != null) Console.WriteLine($"In Worker {refrenceKey.ToString()} res is {task.Result}");
 
         Done();
       });

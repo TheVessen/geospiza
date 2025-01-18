@@ -38,13 +38,13 @@ public class PairingStrategy
   /// </summary>
   /// <param name="selectedIndividuals"></param>
   /// <returns></returns>
-  public List<Pair> PairIndividuals(List<Individual> selectedIndividuals)
+  public List<IndividualPair> PairIndividuals(List<Individual> selectedIndividuals)
   {
-    var pairs = new List<Pair>();
+    var pairs = new List<IndividualPair>();
     foreach (var individual in selectedIndividuals)
     {
       var mate = FindMate(individual, selectedIndividuals, InBreedingFactor);
-      pairs.Add(new Pair(individual, mate));
+      pairs.Add(new IndividualPair(individual, mate));
     }
 
     return pairs;
@@ -60,8 +60,6 @@ public class PairingStrategy
   private Individual FindMate(Individual individual, IEnumerable<Individual> potentialMates, double inBreedingFactor)
   {
     List<Individual> sortedMates;
-
-    // Sort potential mates by genomic distance
 
     if (DistanceFunction == DistanceFunctionType.Euclidean)
       sortedMates = potentialMates.OrderBy(mate => EuclideanDistance(individual, mate)).ToList();
@@ -83,15 +81,11 @@ public class PairingStrategy
   /// </remarks>
   private static double EuclideanDistance(Individual ind1, Individual ind2)
   {
-    // Initialize distance to 0
     double distance = 0;
 
-    // Iterate over the gene pool of the individuals
     for (var i = 0; i < ind1.GenePool.Count; i++)
-      // Add the square of the difference between the tick values of the genes at the current index
       distance += Math.Pow(ind1.GenePool[i].TickValue - ind2.GenePool[i].TickValue, 2);
 
-    // Return the square root of the total distance
     return Math.Sqrt(distance);
   }
 
@@ -106,15 +100,11 @@ public class PairingStrategy
   /// </remarks>
   private static double ManhattanDistance(Individual ind1, Individual ind2)
   {
-    // Initialize distance to 0
     double distance = 0;
 
-    // Iterate over the gene pool of the individuals
     for (var i = 0; i < ind1.GenePool.Count; i++)
-      // Add the absolute difference between the tick values of the genes at the current index
       distance += Math.Abs(ind1.GenePool[i].TickValue - ind2.GenePool[i].TickValue);
 
-    // Return the total distance
     return distance;
   }
 }

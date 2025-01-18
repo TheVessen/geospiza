@@ -9,11 +9,11 @@ namespace GeospizaPlugin.Components.Utils;
 public class GH_Individual : GH_Component
 {
   /// <summary>
-  /// Initializes a new instance of the GH_Individual class.
+  /// Initializes a new instance of the Individual class.
   /// </summary>
   public GH_Individual()
     : base("Individual", "I",
-      "Gets properties of the individual",
+      "Extracts fitness value and genes from a Geospiza individual",
       "Geospiza", "Utils")
   {
   }
@@ -59,8 +59,5 @@ public class GH_Individual : GH_Component
   /// <summary>
   /// Gets the unique ID for this component. Do not change this ID after release.
   /// </summary>
-  public override Guid ComponentGuid
-  {
-    get { return new Guid("16A3E3D3-A282-460B-92CC-78C6EF91B8CC"); }
-  }
+  public override Guid ComponentGuid => new("16A3E3D3-A282-460B-92CC-78C6EF91B8CC");
 }

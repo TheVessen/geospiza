@@ -6,7 +6,7 @@ namespace GeospizaManager.GeospizaCordinator;
 public class DataSender
 {
   // Create a static HttpClient instance to be reused for sending HTTP requests.
-  private static readonly HttpClient client = new HttpClient();
+  private static readonly HttpClient client = new();
 
   /// <summary>
   /// Sends data to the specified URL using an HTTP POST request.

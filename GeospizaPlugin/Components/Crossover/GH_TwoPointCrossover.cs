@@ -57,8 +57,5 @@ public class GH_TwoPointCrossover : GH_Component
   /// <summary>
   /// Gets the unique ID for this component. Do not change this ID after release.
   /// </summary>
-  public override Guid ComponentGuid
-  {
-    get { return new Guid("3560D235-F910-4BC0-9A10-28CBCF6C3B81"); }
-  }
+  public override Guid ComponentGuid => new("3560D235-F910-4BC0-9A10-28CBCF6C3B81");
 }

@@ -8,14 +8,14 @@ using Grasshopper.Kernel.Types;
 
 namespace GeospizaPlugin.Components.Utils;
 
-public class ReinstateIndividual : GH_Component
+public class GH_ReinstateIndividual : GH_Component
 {
   /// <summary>
   /// Initializes a new instance of the ReinstateIndividual class.
   /// </summary>
-  public ReinstateIndividual()
-    : base("ReinstateIndividual", "RI",
-      "Reinstate an individual",
+  public GH_ReinstateIndividual()
+    : base("Reinstate Individual", "Reinstate",
+      "Reactivates a previously archived individual in the current population",
       "Geospiza", "Utils")
   {
   }
@@ -51,15 +51,12 @@ public class ReinstateIndividual : GH_Component
     stateManager = stateManagerWrapper.Value as StateManager;
 
     // Declare a variable for the input
-    GH_Structure<IGH_Goo> individualWrapper = new GH_Structure<IGH_Goo>();
+    var individualWrapper = new GH_Structure<IGH_Goo>();
     if (!DA.GetDataTree(1, out individualWrapper)) return;
 
 
     var data = individualWrapper.AllData(true).ToList();
-    if (data.Count == 0)
-    {
-      return;
-    }
+    if (data.Count == 0) return;
 
     if (data.Count != 1)
     {
@@ -69,16 +66,13 @@ public class ReinstateIndividual : GH_Component
 
     // If the input is not retrieved, return
     individual = data[0].ScriptVariable() as Individual;
-    bool reinstate = false;
+    var reinstate = false;
     if (!DA.GetData(2, ref reinstate)) return;
 
-    if (reinstate)
-    {
-      OnPingDocument().ScheduleSolution(10, ScheduleCallback);
-    }
+    if (reinstate) OnPingDocument().ScheduleSolution(10, ScheduleCallback);
   }
 
-  void ScheduleCallback(GH_Document doc)
+  private void ScheduleCallback(GH_Document doc)
   {
     OnPingDocument().NewSolution(false);
     individual.Reinstate(stateManager);
@@ -96,8 +90,5 @@ public class ReinstateIndividual : GH_Component
   /// <summary>
   /// Gets the unique ID for this component. Do not change this ID after release.
   /// </summary>
-  public override Guid ComponentGuid
-  {
-    get { return new Guid("6692F05D-9C4F-4B99-B4C5-CF1D91C7B639"); }
-  }
+  public override Guid ComponentGuid => new("6692F05D-9C4F-4B99-B4C5-CF1D91C7B639");
 }

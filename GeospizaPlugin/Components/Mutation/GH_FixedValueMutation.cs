@@ -61,8 +61,5 @@ public class GH_FixedValueMutation : GH_Component
   /// <summary>
   /// Gets the unique ID for this component. Do not change this ID after release.
   /// </summary>
-  public override Guid ComponentGuid
-  {
-    get { return new Guid("30348E4B-355D-4C85-8A6A-2ED2F7EB002D"); }
-  }
+  public override Guid ComponentGuid => new("30348E4B-355D-4C85-8A6A-2ED2F7EB002D");
 }

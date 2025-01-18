@@ -1,5 +1,6 @@
 ﻿using GeospizaManager.Core;
 using GeospizaManager.Strategies;
+
 namespace GeospizaManager.Solvers;
 
 //FOR THE MOMENT A MESS DO NOT USE
@@ -45,7 +46,7 @@ public class ParallelSolver : EvolutionBlueprint
           // Select individuals for the mating pool
           var matingPool = SelectionStrategy.Select(populationCopy, PopulationSize);
 
-          // Pair individuals in the mating pool
+          // IndividualPair individuals in the mating pool
           var matingPairs = PairingStrategy.PairIndividuals(matingPool);
 
           // For each pair, perform crossover and mutation to generate new individuals
@@ -85,8 +86,6 @@ public class ParallelSolver : EvolutionBlueprint
         // Record statistics for the current population
         StateManager.GetDocument().ExpirePreview(false);
         EvolutionObserver.Snapshot(newPopulation);
-        EvolutionObserver.SetPopulation(newPopulation);
-        EvolutionObserver.UpdateGenerationCounter();
 
         var populationHash = newPopulation.GetHashCode();
 
@@ -113,9 +112,9 @@ public class ParallelSolver : EvolutionBlueprint
     }
   }
 
-  private List<Individual> PerformCrossover(Pair pair)
+  private List<Individual> PerformCrossover(IndividualPair individualPair)
   {
-    return PerformOperation(pair, CrossoverStrategy.CrossoverRate, CrossoverStrategy.Crossover);
+    return PerformOperation(individualPair, CrossoverStrategy.CrossoverRate, CrossoverStrategy.Crossover);
   }
 
   private void MutateChildren(List<Individual> children)
@@ -123,12 +122,12 @@ public class ParallelSolver : EvolutionBlueprint
     PerformOperation(children, MutationStrategy.MutationRate, MutationStrategy.Mutate);
   }
 
-  private List<Individual> PerformOperation(Pair pair, double rate,
+  private List<Individual> PerformOperation(IndividualPair individualPair, double rate,
     Func<Individual, Individual, List<Individual>> operation)
   {
     if (!(Random.NextDouble() < rate))
-      return operation(pair.Individual1, pair.Individual2);
-    return new List<Individual> { pair.Individual1, pair.Individual2 };
+      return operation(individualPair.Individual1, individualPair.Individual2);
+    return new List<Individual> { individualPair.Individual1, individualPair.Individual2 };
   }
 
   private void PerformOperation(List<Individual> individuals, double rate, Action<Individual> operation)

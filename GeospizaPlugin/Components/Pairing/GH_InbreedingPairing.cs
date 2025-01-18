@@ -49,21 +49,15 @@ public class GH_InbreedingPairing : GH_Component
     if (!DA.GetData(0, ref inBreedingFactor)) return;
     double distanceFunction = 0;
     if (!DA.GetData(1, ref distanceFunction)) return;
-    int distanceFunctionInt = Convert.ToInt32(distanceFunction);
+    var distanceFunctionInt = Convert.ToInt32(distanceFunction);
     if (distanceFunctionInt is > 1 or < 0)
-    {
       AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Distance function must be 0 or 1");
-    }
 
     DistanceFunctionType df;
     if (distanceFunction == 0)
-    {
       df = DistanceFunctionType.Euclidean;
-    }
     else
-    {
       df = DistanceFunctionType.Manhattan;
-    }
 
     var pairing = new PairingStrategy(inBreedingFactor, df);
 
@@ -78,8 +72,5 @@ public class GH_InbreedingPairing : GH_Component
   /// <summary>
   /// Gets the unique ID for this component. Do not change this ID after release.
   /// </summary>
-  public override Guid ComponentGuid
-  {
-    get { return new Guid("86B5A4E3-080A-4419-A0AD-FD42CB4890F5"); }
-  }
+  public override Guid ComponentGuid => new("86B5A4E3-080A-4419-A0AD-FD42CB4890F5");
 }

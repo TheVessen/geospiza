@@ -46,7 +46,7 @@ public class GH_ObserverToJson : GH_Component
     var observerType = observer.ScriptVariable() as EvolutionObserver;
 
     // Convert the observer to a JSON string
-    string json = observerType.ToJson();
+    var json = observerType.ToJson();
 
     // Set the output
     DA.SetData(0, json);
@@ -55,21 +55,13 @@ public class GH_ObserverToJson : GH_Component
   /// <summary>
   /// Provides an Icon for the component.
   /// </summary>
-  protected override Bitmap Icon
-  {
-    get
-    {
-      //You can add image files to your project resources and access them like this:
-      // return Resources.IconForThisComponent;
-      return null;
-    }
-  }
+  protected override Bitmap Icon =>
+    //You can add image files to your project resources and access them like this:
+    // return Resources.IconForThisComponent;
+    null;
 
   /// <summary>
   /// Gets the unique ID for this component. Do not change this ID after release.
   /// </summary>
-  public override Guid ComponentGuid
-  {
-    get { return new Guid("D5FA6C30-850C-4188-BDB2-A3CC7B971275"); }
-  }
+  public override Guid ComponentGuid => new("D5FA6C30-850C-4188-BDB2-A3CC7B971275");
 }

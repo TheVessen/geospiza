@@ -6,12 +6,12 @@ using Grasshopper.Kernel;
 
 namespace GeospizaPlugin.Components.Selection;
 
-public class GH_BiasedSelection : GH_Component
+public class GH_BiasedSelection_OBSOLETE : GH_Component
 {
   /// <summary>
-  ///   Initializes a new instance of the GH_BiasedSelection class.
+  ///   Initializes a new instance of the GH_BiasedSelection_OBSOLETE class.
   /// </summary>
-  public GH_BiasedSelection()
+  public GH_BiasedSelection_OBSOLETE()
     : base("BiasedSelection", "BS",
       "Performs a biased selection. In Biased Selection, each individual in the population is assigned " +
       "a selection probability proportional to its fitness.Then, " +
@@ -44,6 +44,8 @@ public class GH_BiasedSelection : GH_Component
   {
     pManager.AddGenericParameter("SelectionStrategy", "SS", "The selection strategy", GH_ParamAccess.item);
   }
+
+  public override GH_Exposure Exposure { get; } = GH_Exposure.hidden;
 
   /// <summary>
   ///   This is the method that actually does the work.

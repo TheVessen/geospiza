@@ -52,8 +52,5 @@ public class GH_ProgressConvergence : GH_Component
   /// <summary>
   /// Gets the unique ID for this component. Do not change this ID after release.
   /// </summary>
-  public override Guid ComponentGuid
-  {
-    get { return new Guid("362B7670-54AA-4B7D-80D2-FAF6A4B2A0D9"); }
-  }
+  public override Guid ComponentGuid => new("362B7670-54AA-4B7D-80D2-FAF6A4B2A0D9");
 }

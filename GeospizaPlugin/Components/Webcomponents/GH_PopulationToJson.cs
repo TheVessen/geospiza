@@ -6,12 +6,12 @@ using Grasshopper.Kernel.Types;
 
 namespace GeospizaPlugin.Components.Webcomponents;
 
-public class PopulationToJSON : GH_Component
+public class GH_PopulationToJSON : GH_Component
 {
   /// <summary>
-  /// Initializes a new instance of the PopulationToJSON class.
+  /// Initializes a new instance of the GH_PopulationToJSON class.
   /// </summary>
-  public PopulationToJSON()
+  public GH_PopulationToJSON()
     : base("PopulationToJson", "PTJ",
       "Converts a population to a JSON string",
       "Geospiza", "Webcomponents")
@@ -41,7 +41,7 @@ public class PopulationToJSON : GH_Component
   protected override void SolveInstance(IGH_DataAccess DA)
   {
     // Declare a variable for the input
-    GH_ObjectWrapper populationWrapper = new GH_ObjectWrapper();
+    var populationWrapper = new GH_ObjectWrapper();
     // If the input is not retrieved, return
     if (!DA.GetData(0, ref populationWrapper)) return;
 
@@ -58,21 +58,13 @@ public class PopulationToJSON : GH_Component
   /// <summary>
   /// Provides an Icon for the component.
   /// </summary>
-  protected override Bitmap Icon
-  {
-    get
-    {
-      //You can add image files to your project resources and access them like this:
-      // return Resources.IconForThisComponent;
-      return null;
-    }
-  }
+  protected override Bitmap Icon =>
+    //You can add image files to your project resources and access them like this:
+    // return Resources.IconForThisComponent;
+    null;
 
   /// <summary>
   /// Gets the unique ID for this component. Do not change this ID after release.
   /// </summary>
-  public override Guid ComponentGuid
-  {
-    get { return new Guid("EED60EC5-E7F1-46B1-ACAD-7667A2565C35"); }
-  }
+  public override Guid ComponentGuid => new("EED60EC5-E7F1-46B1-ACAD-7667A2565C35");
 }

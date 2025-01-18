@@ -326,62 +326,6 @@ public class ExclusiveSelection : SelectionStrategy
 }
 
 /// <summary>
-///   Implements the Biased Selection strategy for selecting individuals in a genetic algorithm.
-/// </summary>
-/// <remarks>
-///   Biased Selection is a method used in genetic algorithms for selecting potentially useful solutions for recombination.
-///   In Biased Selection, each individual in the population is assigned a selection probability proportional to its
-///   fitness.
-///   Then, a number of individuals are selected randomly based on these probabilities.
-///   This process is repeated until the desired number of individuals is selected.
-///   This class requires the number of selections to be made as a parameter.
-///   The Select method calculates the total fitness of the population, generates a random selection point,
-///   and then iterates over the population, selecting individuals based on their proportional fitness.
-///   Note: This selection method maintains diversity in the population as it gives all individuals,
-///   regardless of their fitness, a chance to be selected. However, it also ensures that fitter individuals have a higher
-///   chance of being selected.
-/// </remarks>
-public class BiasedSelection : SelectionStrategy
-{
-  /// <summary>
-  ///   Initializes a new instance of the <see cref="BiasedSelection" /> class.
-  /// </summary>
-  public BiasedSelection()
-  {
-  }
-
-  /// <summary>
-  ///   Selects individuals from the population using the biased selection strategy.
-  /// </summary>
-  /// <param name="population"></param>
-  /// <param name="numberOfSelections"></param>
-  /// <returns></returns>
-  public override List<Individual> Select(Population population, int numberOfSelections)
-  {
-    var selectedIndividuals = new List<Individual>();
-    var totalFitness = population.Inhabitants.Sum(individual => individual.Fitness);
-
-    for (var i = 0; i < numberOfSelections; i++)
-    {
-      var selectionPoint = Random.NextDouble() * totalFitness;
-      double runningSum = 0;
-
-      foreach (var individual in population.Inhabitants)
-      {
-        runningSum += individual.Fitness;
-        if (runningSum >= selectionPoint)
-        {
-          selectedIndividuals.Add(individual);
-          break;
-        }
-      }
-    }
-
-    return selectedIndividuals;
-  }
-}
-
-/// <summary>
 ///   Implements the Stochastic Universal Sampling (SUS) strategy for selecting individuals in a genetic algorithm.
 /// </summary>
 /// <remarks>

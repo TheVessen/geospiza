@@ -52,16 +52,15 @@ public abstract class EvolutionBlueprint : IEvolutionarySolver
   public void InitializePopulation(StateManager stateManager, EvolutionObserver evolutionObserver)
   {
     //Create an empty population
-    double fistGenBestFitness = 0;
-    Fitness fitnessInstance = Fitness.Instance;
+    var fistGenBestFitness = 0.0;
+    var fitnessInstance = Fitness.Instance;
 
     var newPopulation = new Population();
     for (var i = 0; i < PopulationSize; i++)
     {
-      //Create a new solution and individual
       var individual = new Individual();
 
-      //Go through the gene pool and create a new individual (Totaly random)
+      //Go through the gene pool and create a new individual (Totally random)
       foreach (var geneTemplate in stateManager.Genotype)
       {
         var ctg = geneTemplate.Value;
@@ -79,7 +78,6 @@ public abstract class EvolutionBlueprint : IEvolutionarySolver
       else
         stateManager.GetDocument().NewSolution(false, GH_SolutionMode.Silent);
 
-      //Get fitness from the state  manager and apply it to the individual
       var currentFitness = fitnessInstance.GetFitness();
 
       if (i == 0)
@@ -94,13 +92,10 @@ public abstract class EvolutionBlueprint : IEvolutionarySolver
 
       individual.SetFitness(currentFitness);
       individual.SetGeneration(0);
-
-      //Add the individual to the population
       newPopulation.AddIndividual(individual);
     }
 
     evolutionObserver.Snapshot(newPopulation);
-    evolutionObserver.SetPopulation(newPopulation);
     Population = newPopulation;
     if (stateManager.PreviewLevel == 1) stateManager.GetDocument().ExpirePreview(true);
   }

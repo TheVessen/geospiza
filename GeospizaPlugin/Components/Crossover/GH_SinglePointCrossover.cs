@@ -58,8 +58,5 @@ public class GH_SinglePointCrossover : GH_Component
   /// <summary>
   /// Gets the unique ID for this component. Do not change this ID after release.
   /// </summary>
-  public override Guid ComponentGuid
-  {
-    get { return new Guid("28BDC3CE-B8D8-4895-B165-4C442A197F05"); }
-  }
+  public override Guid ComponentGuid => new("28BDC3CE-B8D8-4895-B165-4C442A197F05");
 }

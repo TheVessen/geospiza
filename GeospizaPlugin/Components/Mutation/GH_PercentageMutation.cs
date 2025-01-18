@@ -63,8 +63,5 @@ public class GH_PercentageMutation : GH_Component
   /// <summary>
   /// Gets the unique ID for this component. Do not change this ID after release.
   /// </summary>
-  public override Guid ComponentGuid
-  {
-    get { return new Guid("7BFDF3C6-F4FB-4F26-BDC2-C76E20FE95B8"); }
-  }
+  public override Guid ComponentGuid => new("7BFDF3C6-F4FB-4F26-BDC2-C76E20FE95B8");
 }

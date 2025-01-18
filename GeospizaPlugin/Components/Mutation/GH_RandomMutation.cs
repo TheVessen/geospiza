@@ -60,8 +60,5 @@ public class GH_RandomMutation : GH_Component
   /// <summary>
   /// Gets the unique ID for this component. Do not change this ID after release.
   /// </summary>
-  public override Guid ComponentGuid
-  {
-    get { return new Guid("10050646-9E96-4EB4-82F8-10731E21DD23"); }
-  }
+  public override Guid ComponentGuid => new("10050646-9E96-4EB4-82F8-10731E21DD23");
 }

@@ -12,9 +12,9 @@ public class GH_AutoGeneSelector : GH_Component
   /// Initializes a new instance of the GH_AutoGeneSelector class.
   /// </summary>
   public GH_AutoGeneSelector()
-    : base("GH_AutoGeneSelector", "Nickname",
-      "Autoselects genes if the component is a geen pool or the name starts with GP_",
-      "Geospiza", "Subcategory")
+    : base("Auto Gene Selector", "AutoGene",
+      "Automatically finds and collects gene parameters from Gene Pool components and sliders prefixed with 'GP_'",
+      "Geospiza", "Utils")
   {
   }
 
@@ -37,7 +37,7 @@ public class GH_AutoGeneSelector : GH_Component
     pManager.AddTextParameter("Genes", "GID", "The gene ids", GH_ParamAccess.list);
   }
 
-  private List<string> docParams = new List<string>();
+  private List<string> docParams = new();
 
   /// <summary>
   /// This is the method that actually does the work.
@@ -53,7 +53,6 @@ public class GH_AutoGeneSelector : GH_Component
 
 
     if (searchDocument)
-    {
       foreach (var ghobject in OnPingDocument().Objects)
       {
         var currentType = ghobject.GetType().ToString();
@@ -61,19 +60,11 @@ public class GH_AutoGeneSelector : GH_Component
         var isRightType = currentType == "Grasshopper.Kernel.Special.GH_NumberSlider" ||
                           currentType == "GalapagosComponents.GalapagosGeneListObject";
         if (ghobject.NickName.StartsWith("GP_") && isRightType)
-        {
           if (!docParams.Contains(ghobject.InstanceGuid.ToString()))
-          {
             docParams.Add(ghobject.InstanceGuid.ToString());
-          }
-        }
       }
-    }
 
-    if (clear)
-    {
-      docParams.Clear();
-    }
+    if (clear) docParams.Clear();
 
     geneIds.AddRange(docParams);
     DA.SetDataList(0, geneIds);
@@ -82,21 +73,13 @@ public class GH_AutoGeneSelector : GH_Component
   /// <summary>
   /// Provides an Icon for the component.
   /// </summary>
-  protected override Bitmap Icon
-  {
-    get
-    {
-      //You can add image files to your project resources and access them like this:
-      // return Resources.IconForThisComponent;
-      return null;
-    }
-  }
+  protected override Bitmap Icon =>
+    //You can add image files to your project resources and access them like this:
+    // return Resources.IconForThisComponent;
+    null;
 
   /// <summary>
   /// Gets the unique ID for this component. Do not change this ID after release.
   /// </summary>
-  public override Guid ComponentGuid
-  {
-    get { return new Guid("CC1BA854-CDE4-4A88-BFE7-97105DD75F9B"); }
-  }
+  public override Guid ComponentGuid => new("CC1BA854-CDE4-4A88-BFE7-97105DD75F9B");
 }

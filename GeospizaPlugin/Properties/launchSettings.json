@@ -11,7 +11,7 @@
     "GeospizaMac": {
       "commandName": "Executable",
       "executablePath": "/Applications/Rhino 8.app/Contents/MacOS/Rhinoceros",
-      "hotReloadEnabled" : true
+      "hotReloadEnabled": true
     }
   }
 }

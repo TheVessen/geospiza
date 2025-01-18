@@ -53,8 +53,5 @@ public class GH_PopulationDiversity : GH_Component
   /// <summary>
   /// Gets the unique ID for this component. Do not change this ID after release.
   /// </summary>
-  public override Guid ComponentGuid
-  {
-    get { return new Guid("636C470F-C794-4409-8347-B90D64166F74"); }
-  }
+  public override Guid ComponentGuid => new("636C470F-C794-4409-8347-B90D64166F74");
 }

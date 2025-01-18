@@ -42,7 +42,7 @@ public class IndividualToJson : GH_Component
   protected override void SolveInstance(IGH_DataAccess DA)
   {
     // Declare a variable for the input
-    GH_ObjectWrapper individualWrapper = new GH_ObjectWrapper();
+    var individualWrapper = new GH_ObjectWrapper();
     // If the input is not retrieved, return
     if (!DA.GetData(0, ref individualWrapper)) return;
 
@@ -54,8 +54,6 @@ public class IndividualToJson : GH_Component
     }
   }
 
-  public override GH_Exposure Exposure => GH_Exposure.tertiary;
-
   /// <summary>
   /// Provides an Icon for the component.
   /// </summary>
@@ -64,8 +62,5 @@ public class IndividualToJson : GH_Component
   /// <summary>
   /// Gets the unique ID for this component. Do not change this ID after release.
   /// </summary>
-  public override Guid ComponentGuid
-  {
-    get { return new Guid("FDB78846-7982-42E4-B8ED-EF37AC136612"); }
-  }
+  public override Guid ComponentGuid => new("FDB78846-7982-42E4-B8ED-EF37AC136612");
 }

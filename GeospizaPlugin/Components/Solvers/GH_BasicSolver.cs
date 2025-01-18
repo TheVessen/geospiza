@@ -12,6 +12,14 @@ namespace GeospizaPlugin.Components.Solvers;
 
 public class GH_BasicSolver : GH_Component
 {
+  private StateManager StateManager { get; set; }
+  private EvolutionObserver EvolutionObserver { get; set; }
+  private long _lastTimestamp;
+  private SolverSettings _privateSettings;
+  private bool _isRunning;
+  private Guid _solutionId = Guid.NewGuid();
+  private Guid _lastSolutionId;
+
   /// <summary>
   /// Initializes a new instance of the BasicSolver class.
   /// </summary>
@@ -20,9 +28,6 @@ public class GH_BasicSolver : GH_Component
       "Solver for single objective optimization problems",
       "Geospiza", "Solvers")
   {
-    _stateManager = StateManager.GetInstance(this);
-    _evolutionObserver = EvolutionObserver.GetInstance(this);
-    ;
   }
 
   /// <summary>
@@ -30,30 +35,59 @@ public class GH_BasicSolver : GH_Component
   /// </summary>
   protected override void RegisterInputParams(GH_InputParamManager pManager)
   {
-    pManager.AddTextParameter("Genes", "GID", "The gene ids from the GeneSelector", GH_ParamAccess.list);
-    pManager.AddGenericParameter("Settings", "S", "The settings for the evolutionary algorithm",
-      GH_ParamAccess.item);
+    // Gene IDs
+    pManager.AddTextParameter(
+      "Genes",
+      "GID",
+      "The gene IDs from the GeneSelector",
+      GH_ParamAccess.list
+    );
 
-    //Preview level
-    Param_Integer updateParam = new Param_Integer();
+    // Solver settings
+    pManager.AddGenericParameter(
+      "Settings",
+      "S",
+      "The settings for the evolutionary algorithm",
+      GH_ParamAccess.item
+    );
+
+    // Preview Level
+    var updateParam = new Param_Integer();
     updateParam.AddNamedValue("All", 0);
     updateParam.AddNamedValue("EveryGeneration", 1);
     updateParam.AddNamedValue("IfBetter", 2);
     updateParam.AddNamedValue("None", 3);
     updateParam.PersistentData.Append(new GH_Integer(0));
-    pManager.AddParameter(updateParam, "PreviewLevel", "PL", "Set how often the preview should update." +
-                                                             "" +
-                                                             ": 0 if every solution should be shown" +
-                                                             ": 1 if only on every generation the preview should update" +
-                                                             ": 2 if only better solutions should be shown" +
-                                                             ": 4 for no preview" +
-                                                             "" +
-                                                             "The more the preview updated the longer it takes ",
-      GH_ParamAccess.item);
+    pManager.AddParameter(
+      updateParam,
+      "PreviewLevel",
+      "PL",
+      "How often the preview should update:\n" +
+      "• 0: Every solution\n" +
+      "• 1: Every generation\n" +
+      "• 2: Only if a better solution is found\n" +
+      "• 3: None (no preview)\n\n" +
+      "More frequent preview updates take longer.",
+      GH_ParamAccess.item
+    );
 
-    pManager.AddNumberParameter("Timestamp", "T", "Timestamp from the server to determine if the solver should run",
-      GH_ParamAccess.item, 0);
-    pManager.AddBooleanParameter("Run", "R", "Run the solver for running locally", GH_ParamAccess.item, false);
+    // Timestamp (for network-based triggers, etc.)
+    pManager.AddNumberParameter(
+      "Timestamp",
+      "T",
+      "Timestamp from the server to determine if the solver should run",
+      GH_ParamAccess.item,
+      0
+    );
+
+    // Run (for local/manual triggers)
+    pManager.AddBooleanParameter(
+      "Run",
+      "R",
+      "Set to true to run the solver locally",
+      GH_ParamAccess.item,
+      false
+    );
   }
 
   /// <summary>
@@ -61,27 +95,23 @@ public class GH_BasicSolver : GH_Component
   /// </summary>
   protected override void RegisterOutputParams(GH_OutputParamManager pManager)
   {
-    pManager.AddGenericParameter("Observer", "LP", "The last population", GH_ParamAccess.item);
-    pManager.AddGenericParameter("StateManager", "SM", "The state managers", GH_ParamAccess.item);
-    pManager.AddNumberParameter("CurrentGeneration", "CG", "The current generation", GH_ParamAccess.item);
-    pManager.AddBooleanParameter("IsRunning", "IR", "Is the solver running", GH_ParamAccess.item);
+    pManager.AddGenericParameter("Observer", "LP", "The EvolutionObserver (last population info, etc.)",
+      GH_ParamAccess.item);
+    pManager.AddGenericParameter("StateManager", "SM", "The StateManager handling gene states", GH_ParamAccess.item);
+    pManager.AddNumberParameter("CurrentGeneration", "CG", "The current generation index", GH_ParamAccess.item);
+    pManager.AddBooleanParameter("IsRunning", "IR", "Indicates whether the solver is running", GH_ParamAccess.item);
   }
 
-  private readonly StateManager _stateManager;
-  private readonly EvolutionObserver _evolutionObserver;
-  private long _lastTimestamp = 0;
-  private SolverSettings _privateSettings;
-  private bool _isRunning = false;
-  private Guid _solutionId = Guid.NewGuid();
-  private Guid _lastSolutionId;
-  private TimeSpan _time;
-
   /// <summary>
-  /// This is the method that actually does the work.
+  /// This method actually does the work.
   /// </summary>
-  /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
+  /// <param name="DA">Data access interface for inputs/outputs.</param>
   protected override void SolveInstance(IGH_DataAccess DA)
   {
+    // Lazy-initialize singletons
+    StateManager ??= StateManager.GetInstance(this, OnPingDocument());
+    EvolutionObserver ??= EvolutionObserver.GetInstance(this);
+
     // Get inputs
     var geneIds = new List<string>();
     if (!DA.GetDataList(0, geneIds)) return;
@@ -93,80 +123,56 @@ public class GH_BasicSolver : GH_Component
     var previewLevel = 0;
     if (!DA.GetData(2, ref previewLevel)) return;
 
-    double timestamp = 0;
-    if (!DA.GetData(3, ref timestamp)) return;
-    long intTimestamp = Convert.ToInt64(timestamp);
+    double timestampDouble = 0;
+    if (!DA.GetData(3, ref timestampDouble)) return;
+    var currentTimestamp = Convert.ToInt64(timestampDouble);
 
-    var run = false;
-    if (!DA.GetData(4, ref run)) return;
+    var runButton = false;
+    if (!DA.GetData(4, ref runButton)) return;
 
-    _evolutionObserver.Reset();
-    // Check if the solver was triggered by the button or timestamp
-    if (run)
-    {
-      // Solver was triggered by the button
-    }
-    else if (intTimestamp != 0 && intTimestamp != _lastTimestamp)
-    {
-    }
+    // Decide whether a new run is triggered
+    var buttonTriggered = runButton;
+    var timestampTriggered = currentTimestamp != 0 && currentTimestamp != _lastTimestamp;
 
-    // Check if the solver should run
     if (_lastSolutionId != Guid.Empty && _solutionId != _lastSolutionId)
-    {
+      // We have a new solution ID that doesn't match the last used solution ID
+      // If you intend to allow multiple subsequent runs, adjust or remove this check
       return;
-    }
 
-    // Set up state manager
-    if (_stateManager.GetDocument() == null)
+    // Update state manager
+    StateManager.SetGenes(geneIds);
+    StateManager.PreviewLevel = previewLevel;
+
+    var shouldStartSolver = buttonTriggered || timestampTriggered;
+
+    // Run the solver if triggered
+    if (shouldStartSolver)
     {
-      _stateManager.SetDocument(OnPingDocument());
-      _stateManager.SetThisComponent(this);
-      _stateManager.SetFitnessComponent();
-    }
-
-    _stateManager.SetGenes(geneIds);
-    _stateManager.PreviewLevel = previewLevel;
-
-    // Check if the solver should run
-    bool start = (intTimestamp != 0 && intTimestamp != _lastTimestamp) || run;
-
-    if (_stateManager.FitnessComponent == null)
-    {
-      _stateManager.SetThisComponent(this);
-      _stateManager.SetFitnessComponent();
-
-      if (_stateManager.FitnessComponent == null)
-      {
-        AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "No fitness component found");
-        return;
-      }
-    }
-
-    // Run the solver
-    if (start)
-    {
-      DA.SetData(0, null);
+      EvolutionObserver.Reset();
+      DA.SetData(0, null); // Clear the observer output before we run
       _isRunning = true;
+
+      // Schedule the solver work in 100 ms
       OnPingDocument().ScheduleSolution(100, ScheduleCallback);
-      _lastTimestamp = intTimestamp;
+      _lastTimestamp = currentTimestamp;
     }
   }
 
   /// <summary>
-  /// Scedules the callback for the solver
+  /// Schedules the actual solver execution.
   /// </summary>
-  /// <param name="doc"></param>
+  /// <param name="doc">Grasshopper document reference.</param>
   private void ScheduleCallback(GH_Document doc)
   {
     var start = DateTime.Now;
     _solutionId = Guid.NewGuid();
-    _evolutionObserver.Reset();
 
-    var evolutionaryAlgorithm = new BaseSolver(_privateSettings, _stateManager, _evolutionObserver);
-
+    // Construct and run the solver
+    var evolutionaryAlgorithm = new BaseSolver(_privateSettings, StateManager, EvolutionObserver);
     evolutionaryAlgorithm.RunAlgorithm();
 
-    OnPingDocument().ScheduleSolution(100, doc =>
+    // Once complete, schedule a new solution to update outputs
+    OnPingDocument().ScheduleSolution(100, d =>
     {
       _isRunning = false;
       ExpireSolution(false);
@@ -174,39 +180,45 @@ public class GH_BasicSolver : GH_Component
 
     _lastSolutionId = _solutionId;
     var end = DateTime.Now;
-    var time = end - start;
+    var elapsed = end - start;
+    // If needed, you could store or display 'elapsed'
   }
 
   /// <summary>
-  /// Clean the component
+  /// Cleanup the component after SolveInstance has run.
   /// </summary>
   protected override void AfterSolveInstance()
   {
     base.AfterSolveInstance();
-    if (_isRunning == false)
+
+    // Write outputs after the solver finishes
+    if (!_isRunning)
     {
+      // Observer
       Params.Output[0].ClearData();
-      Params.Output[0].AddVolatileData(new GH_Path(0), 0, _evolutionObserver);
+      Params.Output[0].AddVolatileData(new GH_Path(0), 0, EvolutionObserver);
+
+      // State manager
       Params.Output[1].ClearData();
-      Params.Output[1].AddVolatileData(new GH_Path(0), 0, _stateManager);
+      Params.Output[1].AddVolatileData(new GH_Path(0), 0, StateManager);
     }
 
+    // Current generation
     Params.Output[2].ClearData();
-    Params.Output[2].AddVolatileData(new GH_Path(0), 0, _evolutionObserver.CurrentGenerationIndex);
+    Params.Output[2].AddVolatileData(new GH_Path(0), 0, EvolutionObserver.CurrentGenerationIndex);
+
+    // IsRunning
     Params.Output[3].ClearData();
     Params.Output[3].AddVolatileData(new GH_Path(0), 0, _isRunning);
   }
 
   /// <summary>
-  /// Provides an Icon for the component.
+  /// Provides an icon for the component.
   /// </summary>
   protected override Bitmap Icon => Properties.Resources.Solver;
 
   /// <summary>
   /// Gets the unique ID for this component. Do not change this ID after release.
   /// </summary>
-  public override Guid ComponentGuid
-  {
-    get { return new Guid("DC3BBA6C-488E-496C-AE62-5488B065C38F"); }
-  }
+  public override Guid ComponentGuid => new("DC3BBA6C-488E-496C-AE62-5488B065C38F");
 }

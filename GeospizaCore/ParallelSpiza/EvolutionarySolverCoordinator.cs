@@ -88,7 +88,7 @@ public class EvolutionarySolverCoordinator
 
       var requestId = observerString.RequestId;
 
-      if (_receivedObserver.Count >= 2) 
+      if (_receivedObserver.Count >= 2)
       {
         List<ObserverServerSnapshot> observers;
         lock (_receivedObserver)

@@ -27,8 +27,7 @@ public static class ComputeServer
     if (string.IsNullOrWhiteSpace(AuthToken) && WebAddress.Equals("https://compute.rhino3d.com"))
       throw new UnauthorizedAccessException("AuthToken must be set for compute.rhino3d.com");
 
-    for (int i = 0; i < postData.Length; i++)
-    {
+    for (var i = 0; i < postData.Length; i++)
       if (postData[i] != null &&
           postData[i].GetType().IsGenericType &&
           postData[i].GetType().GetGenericTypeDefinition() == typeof(Remote<>))
@@ -36,9 +35,8 @@ public static class ComputeServer
         var mi = postData[i].GetType().GetMethod("JsonObject");
         postData[i] = mi.Invoke(postData[i], null);
       }
-    }
 
-    string json = converter == null
+    var json = converter == null
       ? JsonConvert.SerializeObject(postData, Formatting.None)
       : JsonConvert.SerializeObject(postData, Formatting.None, converter);
     var response = DoPost(function, json);
@@ -56,12 +54,12 @@ public static class ComputeServer
     if (string.IsNullOrWhiteSpace(AuthToken) && WebAddress.Equals("https://compute.rhino3d.com"))
       throw new UnauthorizedAccessException("AuthToken must be set for compute.rhino3d.com");
 
-    string json = Newtonsoft.Json.JsonConvert.SerializeObject(postData);
+    var json = JsonConvert.SerializeObject(postData);
     var response = DoPost(function, json);
     using (var streamReader = new StreamReader(response.GetResponseStream()))
     {
       var jsonString = streamReader.ReadToEnd();
-      object data = Newtonsoft.Json.JsonConvert.DeserializeObject(jsonString);
+      var data = JsonConvert.DeserializeObject(jsonString);
       var ja = data as Newtonsoft.Json.Linq.JArray;
       out1 = ja[1].ToObject<T1>();
       return ja[0].ToObject<T0>();
@@ -73,12 +71,12 @@ public static class ComputeServer
     if (string.IsNullOrWhiteSpace(AuthToken) && WebAddress.Equals("https://compute.rhino3d.com"))
       throw new UnauthorizedAccessException("AuthToken must be set for compute.rhino3d.com");
 
-    string json = Newtonsoft.Json.JsonConvert.SerializeObject(postData);
+    var json = JsonConvert.SerializeObject(postData);
     var response = DoPost(function, json);
     using (var streamReader = new StreamReader(response.GetResponseStream()))
     {
       var jsonString = streamReader.ReadToEnd();
-      object data = Newtonsoft.Json.JsonConvert.DeserializeObject(jsonString);
+      var data = JsonConvert.DeserializeObject(jsonString);
       var ja = data as Newtonsoft.Json.Linq.JArray;
       out1 = ja[1].ToObject<T1>();
       out2 = ja[2].ToObject<T2>();
@@ -92,7 +90,7 @@ public static class ComputeServer
     if (!function.StartsWith("/")) // add leading /
       function = "/" + function; // if not present
 
-    string uri = $"{WebAddress}{function}".ToLower();
+    var uri = $"{WebAddress}{function}".ToLower();
     var request = (System.Net.HttpWebRequest)System.Net.WebRequest.Create(uri);
     request.ContentType = "application/json";
     request.UserAgent = $"compute.rhino3d.cs/{Version}";
@@ -117,15 +115,15 @@ public static class ComputeServer
 
   public static string ApiAddress(Type t, string function)
   {
-    string s = t.ToString().Replace('.', '/');
+    var s = t.ToString().Replace('.', '/');
     return s + "/" + function;
   }
 }
 
 public class Remote<T>
 {
-  string _url;
-  T _data;
+  private string _url;
+  private T _data;
 
   public Remote(string url)
   {
@@ -141,7 +139,7 @@ public class Remote<T>
   {
     if (_url != null)
     {
-      Dictionary<string, string> dict = new Dictionary<string, string>();
+      Dictionary<string, string> dict = new();
       dict["url"] = _url;
       return dict;
     }
@@ -149,7 +147,6 @@ public class Remote<T>
     return _data;
   }
 }
-
 
 public static class PythonCompute
 {
@@ -160,7 +157,7 @@ public static class PythonCompute
   // -or-
   // Delete the entire PythonCompute class here. Python functionality is only available
   // using a V7 based Rhino3dmIO assembly
-  class ArchivableDictionaryResolver : JsonConverter
+  private class ArchivableDictionaryResolver : JsonConverter
   {
     public override bool CanConvert(Type objectType)
     {
@@ -173,20 +170,20 @@ public static class PythonCompute
     public override object ReadJson(JsonReader reader, Type objectType, object existingValue,
       JsonSerializer serializer)
     {
-      string encoded = (string)reader.Value;
+      var encoded = (string)reader.Value;
       var dh = JsonConvert.DeserializeObject<DictHelper>(encoded);
       return dh.SerializedDictionary;
     }
 
     public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
     {
-      string json = JsonConvert.SerializeObject(new DictHelper((ArchivableDictionary)value));
+      var json = JsonConvert.SerializeObject(new DictHelper((ArchivableDictionary)value));
       writer.WriteValue(json);
     }
 
 
     [Serializable]
-    class DictHelper : ISerializable
+    private class DictHelper : ISerializable
     {
       public ArchivableDictionary SerializedDictionary { get; set; }
 
@@ -202,7 +199,7 @@ public static class PythonCompute
 
       protected DictHelper(SerializationInfo info, StreamingContext context)
       {
-        Type t = typeof(ArchivableDictionary);
+        var t = typeof(ArchivableDictionary);
         var constructor = t.GetConstructor(
           System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance,
           null, new Type[] { typeof(SerializationInfo), typeof(StreamingContext) }, null);
@@ -212,7 +209,7 @@ public static class PythonCompute
   }
 
 
-  static string ApiAddress([CallerMemberName] string caller = null)
+  private static string ApiAddress([CallerMemberName] string caller = null)
   {
     return "rhino/python/" + caller;
   }
@@ -226,7 +223,7 @@ public static class PythonCompute
 
 public static class ExtrusionCompute
 {
-  static string ApiAddress([CallerMemberName] string caller = null)
+  private static string ApiAddress([CallerMemberName] string caller = null)
   {
     return ComputeServer.ApiAddress(typeof(Extrusion), caller);
   }
@@ -252,7 +249,7 @@ public static class ExtrusionCompute
 
 public static class BezierCurveCompute
 {
-  static string ApiAddress([CallerMemberName] string caller = null)
+  private static string ApiAddress([CallerMemberName] string caller = null)
   {
     return ComputeServer.ApiAddress(typeof(BezierCurve), caller);
   }
@@ -319,7 +316,7 @@ public static class BezierCurveCompute
 
 public static class BrepCompute
 {
-  static string ApiAddress([CallerMemberName] string caller = null)
+  private static string ApiAddress([CallerMemberName] string caller = null)
   {
     return ComputeServer.ApiAddress(typeof(Brep), caller);
   }
@@ -639,7 +636,7 @@ public static class BrepCompute
   /// </summary>
   /// <param name="inputLoops">Curve loops that delineate the planar boundaries.</param>
   /// <returns>An array of Planar Breps or null on error.</returns>
-  public static Brep[] CreatePlanarBreps(Rhino.Collections.CurveList inputLoops)
+  public static Brep[] CreatePlanarBreps(CurveList inputLoops)
   {
     return ComputeServer.Post<Brep[]>(ApiAddress(), inputLoops);
   }
@@ -650,7 +647,7 @@ public static class BrepCompute
   /// <param name="inputLoops">Curve loops that delineate the planar boundaries.</param>
   /// <param name="tolerance"></param>
   /// <returns>An array of Planar Breps.</returns>
-  public static Brep[] CreatePlanarBreps(Rhino.Collections.CurveList inputLoops, double tolerance)
+  public static Brep[] CreatePlanarBreps(CurveList inputLoops, double tolerance)
   {
     return ComputeServer.Post<Brep[]>(ApiAddress(), inputLoops, tolerance);
   }
@@ -3387,7 +3384,7 @@ public static class BrepCompute
 
 public static class BrepFaceCompute
 {
-  static string ApiAddress([CallerMemberName] string caller = null)
+  private static string ApiAddress([CallerMemberName] string caller = null)
   {
     return ComputeServer.ApiAddress(typeof(BrepFace), caller);
   }
@@ -3576,7 +3573,7 @@ public static class BrepFaceCompute
 
 public static class CurveCompute
 {
-  static string ApiAddress([CallerMemberName] string caller = null)
+  private static string ApiAddress([CallerMemberName] string caller = null)
   {
     return ComputeServer.ApiAddress(typeof(Curve), caller);
   }
@@ -6605,7 +6602,7 @@ public static class CurveCompute
   /// <code source='examples\py\ex_extendcurve.py' lang='py'/>
   /// </example>
   public static Curve Extend(this Curve curve, CurveEnd side, CurveExtensionStyle style,
-    System.Collections.Generic.IEnumerable<GeometryBase> geometry)
+    IEnumerable<GeometryBase> geometry)
   {
     return ComputeServer.Post<Curve>(ApiAddress(), curve, side, style, geometry);
   }
@@ -6623,7 +6620,7 @@ public static class CurveCompute
   /// <code source='examples\py\ex_extendcurve.py' lang='py'/>
   /// </example>
   public static Curve Extend(Remote<Curve> curve, CurveEnd side, CurveExtensionStyle style,
-    System.Collections.Generic.IEnumerable<GeometryBase> geometry)
+    IEnumerable<GeometryBase> geometry)
   {
     return ComputeServer.Post<Curve>(ApiAddress(), curve, side, style, geometry);
   }
@@ -6703,7 +6700,7 @@ public static class CurveCompute
   /// <param name="geometry">A collection of objects. Allowable object types are Curve, Surface, Brep.</param>
   /// <returns>New extended curve result on success, null on failure.</returns>
   public static Curve ExtendByLine(this Curve curve, CurveEnd side,
-    System.Collections.Generic.IEnumerable<GeometryBase> geometry)
+    IEnumerable<GeometryBase> geometry)
   {
     return ComputeServer.Post<Curve>(ApiAddress(), curve, side, geometry);
   }
@@ -6715,7 +6712,7 @@ public static class CurveCompute
   /// <param name="geometry">A collection of objects. Allowable object types are Curve, Surface, Brep.</param>
   /// <returns>New extended curve result on success, null on failure.</returns>
   public static Curve ExtendByLine(Remote<Curve> curve, CurveEnd side,
-    System.Collections.Generic.IEnumerable<GeometryBase> geometry)
+    IEnumerable<GeometryBase> geometry)
   {
     return ComputeServer.Post<Curve>(ApiAddress(), curve, side, geometry);
   }
@@ -6727,7 +6724,7 @@ public static class CurveCompute
   /// <param name="geometry">A collection of objects. Allowable object types are Curve, Surface, Brep.</param>
   /// <returns>New extended curve result on success, null on failure.</returns>
   public static Curve ExtendByArc(this Curve curve, CurveEnd side,
-    System.Collections.Generic.IEnumerable<GeometryBase> geometry)
+    IEnumerable<GeometryBase> geometry)
   {
     return ComputeServer.Post<Curve>(ApiAddress(), curve, side, geometry);
   }
@@ -6739,7 +6736,7 @@ public static class CurveCompute
   /// <param name="geometry">A collection of objects. Allowable object types are Curve, Surface, Brep.</param>
   /// <returns>New extended curve result on success, null on failure.</returns>
   public static Curve ExtendByArc(Remote<Curve> curve, CurveEnd side,
-    System.Collections.Generic.IEnumerable<GeometryBase> geometry)
+    IEnumerable<GeometryBase> geometry)
   {
     return ComputeServer.Post<Curve>(ApiAddress(), curve, side, geometry);
   }
@@ -7528,7 +7525,7 @@ public static class CurveCompute
 
 public static class GeometryBaseCompute
 {
-  static string ApiAddress([CallerMemberName] string caller = null)
+  private static string ApiAddress([CallerMemberName] string caller = null)
   {
     return ComputeServer.ApiAddress(typeof(GeometryBase), caller);
   }
@@ -7654,10 +7651,9 @@ public class AreaMassProperties
   public Vector3d CentroidCoordinatesRadiiOfGyration { get; set; }
 }
 
-
 public static class AreaMassPropertiesCompute
 {
-  static string ApiAddress([CallerMemberName] string caller = null)
+  private static string ApiAddress([CallerMemberName] string caller = null)
   {
     return "rhino/geometry/areamassproperties/" + caller;
   }
@@ -7838,7 +7834,7 @@ public class VolumeMassProperties
 
 public static class VolumeMassPropertiesCompute
 {
-  static string ApiAddress([CallerMemberName] string caller = null)
+  private static string ApiAddress([CallerMemberName] string caller = null)
   {
     return "rhino/geometry/volumemassproperties/" + caller;
   }
@@ -7964,7 +7960,7 @@ public static class VolumeMassPropertiesCompute
 
 public static class MeshCompute
 {
-  static string ApiAddress([CallerMemberName] string caller = null)
+  private static string ApiAddress([CallerMemberName] string caller = null)
   {
     return ComputeServer.ApiAddress(typeof(Mesh), caller);
   }
@@ -9944,7 +9940,7 @@ public static class MeshCompute
   /// <param name="cancelToken">Computation cancellation token.</param>
   /// <returns>Array of thickness measurements.</returns>
   public static MeshThicknessMeasurement[] ComputeThickness(IEnumerable<Mesh> meshes, double maximumThickness,
-    System.Threading.CancellationToken cancelToken)
+    CancellationToken cancelToken)
   {
     return ComputeServer.Post<MeshThicknessMeasurement[]>(ApiAddress(), meshes, maximumThickness, cancelToken);
   }
@@ -9957,7 +9953,7 @@ public static class MeshCompute
   /// <param name="cancelToken">Computation cancellation token.</param>
   /// <returns>Array of thickness measurements.</returns>
   public static MeshThicknessMeasurement[] ComputeThickness(Remote<IEnumerable<Mesh>> meshes, double maximumThickness,
-    System.Threading.CancellationToken cancelToken)
+    CancellationToken cancelToken)
   {
     return ComputeServer.Post<MeshThicknessMeasurement[]>(ApiAddress(), meshes, maximumThickness, cancelToken);
   }
@@ -9971,7 +9967,7 @@ public static class MeshCompute
   /// <param name="cancelToken">Computation cancellation token.</param>
   /// <returns>Array of thickness measurements.</returns>
   public static MeshThicknessMeasurement[] ComputeThickness(IEnumerable<Mesh> meshes, double maximumThickness,
-    double sharpAngle, System.Threading.CancellationToken cancelToken)
+    double sharpAngle, CancellationToken cancelToken)
   {
     return ComputeServer.Post<MeshThicknessMeasurement[]>(ApiAddress(), meshes, maximumThickness, sharpAngle,
       cancelToken);
@@ -9986,7 +9982,7 @@ public static class MeshCompute
   /// <param name="cancelToken">Computation cancellation token.</param>
   /// <returns>Array of thickness measurements.</returns>
   public static MeshThicknessMeasurement[] ComputeThickness(Remote<IEnumerable<Mesh>> meshes, double maximumThickness,
-    double sharpAngle, System.Threading.CancellationToken cancelToken)
+    double sharpAngle, CancellationToken cancelToken)
   {
     return ComputeServer.Post<MeshThicknessMeasurement[]>(ApiAddress(), meshes, maximumThickness, sharpAngle,
       cancelToken);
@@ -10055,7 +10051,7 @@ public static class MeshCompute
 
 public static class NurbsCurveCompute
 {
-  static string ApiAddress([CallerMemberName] string caller = null)
+  private static string ApiAddress([CallerMemberName] string caller = null)
   {
     return ComputeServer.ApiAddress(typeof(NurbsCurve), caller);
   }
@@ -10328,7 +10324,7 @@ public static class NurbsCurveCompute
 
 public static class NurbsSurfaceCompute
 {
-  static string ApiAddress([CallerMemberName] string caller = null)
+  private static string ApiAddress([CallerMemberName] string caller = null)
   {
     return ComputeServer.ApiAddress(typeof(NurbsSurface), caller);
   }
@@ -10656,7 +10652,7 @@ public static class NurbsSurfaceCompute
 
 public static class SubDCompute
 {
-  static string ApiAddress([CallerMemberName] string caller = null)
+  private static string ApiAddress([CallerMemberName] string caller = null)
   {
     return ComputeServer.ApiAddress(typeof(SubD), caller);
   }
@@ -10715,7 +10711,7 @@ public static class SubDCompute
 
 public static class SurfaceCompute
 {
-  static string ApiAddress([CallerMemberName] string caller = null)
+  private static string ApiAddress([CallerMemberName] string caller = null)
   {
     return ComputeServer.ApiAddress(typeof(Surface), caller);
   }
@@ -11277,7 +11273,7 @@ public static class SurfaceCompute
   /// <param name="tolerance">Tolerance used for the fit of the push-up curve. Generally, the resulting interpolating curve will be within tolerance of the surface.</param>
   /// <returns>A new NURBS curve if successful, or null on error.</returns>
   public static NurbsCurve InterpolatedCurveOnSurfaceUV(this Surface surface,
-    System.Collections.Generic.IEnumerable<Point2d> points, double tolerance)
+    IEnumerable<Point2d> points, double tolerance)
   {
     return ComputeServer.Post<NurbsCurve>(ApiAddress(), surface, points, tolerance);
   }
@@ -11289,7 +11285,7 @@ public static class SurfaceCompute
   /// <param name="tolerance">Tolerance used for the fit of the push-up curve. Generally, the resulting interpolating curve will be within tolerance of the surface.</param>
   /// <returns>A new NURBS curve if successful, or null on error.</returns>
   public static NurbsCurve InterpolatedCurveOnSurfaceUV(Remote<Surface> surface,
-    System.Collections.Generic.IEnumerable<Point2d> points, double tolerance)
+    IEnumerable<Point2d> points, double tolerance)
   {
     return ComputeServer.Post<NurbsCurve>(ApiAddress(), surface, points, tolerance);
   }
@@ -11313,7 +11309,7 @@ public static class SurfaceCompute
   /// </param>
   /// <returns>A new NURBS curve if successful, or null on error.</returns>
   public static NurbsCurve InterpolatedCurveOnSurfaceUV(this Surface surface,
-    System.Collections.Generic.IEnumerable<Point2d> points, double tolerance, bool closed, int closedSurfaceHandling)
+    IEnumerable<Point2d> points, double tolerance, bool closed, int closedSurfaceHandling)
   {
     return ComputeServer.Post<NurbsCurve>(ApiAddress(), surface, points, tolerance, closed, closedSurfaceHandling);
   }
@@ -11337,7 +11333,7 @@ public static class SurfaceCompute
   /// </param>
   /// <returns>A new NURBS curve if successful, or null on error.</returns>
   public static NurbsCurve InterpolatedCurveOnSurfaceUV(Remote<Surface> surface,
-    System.Collections.Generic.IEnumerable<Point2d> points, double tolerance, bool closed, int closedSurfaceHandling)
+    IEnumerable<Point2d> points, double tolerance, bool closed, int closedSurfaceHandling)
   {
     return ComputeServer.Post<NurbsCurve>(ApiAddress(), surface, points, tolerance, closed, closedSurfaceHandling);
   }
@@ -11349,7 +11345,7 @@ public static class SurfaceCompute
   /// <param name="tolerance">A tolerance value.</param>
   /// <returns>A new NURBS curve, or null on error.</returns>
   public static NurbsCurve InterpolatedCurveOnSurface(this Surface surface,
-    System.Collections.Generic.IEnumerable<Point3d> points, double tolerance)
+    IEnumerable<Point3d> points, double tolerance)
   {
     return ComputeServer.Post<NurbsCurve>(ApiAddress(), surface, points, tolerance);
   }
@@ -11361,7 +11357,7 @@ public static class SurfaceCompute
   /// <param name="tolerance">A tolerance value.</param>
   /// <returns>A new NURBS curve, or null on error.</returns>
   public static NurbsCurve InterpolatedCurveOnSurface(Remote<Surface> surface,
-    System.Collections.Generic.IEnumerable<Point3d> points, double tolerance)
+    IEnumerable<Point3d> points, double tolerance)
   {
     return ComputeServer.Post<NurbsCurve>(ApiAddress(), surface, points, tolerance);
   }
@@ -11507,7 +11503,7 @@ public static class SurfaceCompute
 
 public static class GrasshopperCompute
 {
-  static string ApiAddress()
+  private static string ApiAddress()
   {
     return "grasshopper";
   }
@@ -11515,7 +11511,7 @@ public static class GrasshopperCompute
   public static List<GrasshopperDataTree> EvaluateDefinition(string definition,
     IEnumerable<GrasshopperDataTree> trees)
   {
-    Schema schema = new Schema();
+    var schema = new Schema();
     string algo = null;
     string pointer = null;
     if (definition.StartsWith("http", StringComparison.OrdinalIgnoreCase))
@@ -11537,7 +11533,7 @@ public static class GrasshopperCompute
   }
 
   // Keep private; only used for JSON serialization
-  class Schema
+  private class Schema
   {
     public Schema()
     {
@@ -11549,13 +11545,13 @@ public static class GrasshopperCompute
     public string Pointer { get; set; }
 
     [JsonProperty(PropertyName = "values")]
-    public List<GrasshopperDataTree> Values { get; set; } = new List<GrasshopperDataTree>();
+    public List<GrasshopperDataTree> Values { get; set; } = new();
   }
 }
 
 public static class IntersectionCompute
 {
-  static string ApiAddress([CallerMemberName] string caller = null)
+  private static string ApiAddress([CallerMemberName] string caller = null)
   {
     return ComputeServer.ApiAddress(typeof(Intersection), caller);
   }
@@ -12436,16 +12432,16 @@ public class GrasshopperObject
 
   public GrasshopperObject(object obj)
   {
-    this.Data = JsonConvert.SerializeObject(obj, GeometryResolver.Settings);
-    this.Type = obj.GetType().FullName;
+    Data = JsonConvert.SerializeObject(obj, GeometryResolver.Settings);
+    Type = obj.GetType().FullName;
   }
 
   /// <summary>
   /// Used internally for RestHopperObject serialization
   /// </summary>
-  class GeometryResolver : Newtonsoft.Json.Serialization.DefaultContractResolver
+  private class GeometryResolver : Newtonsoft.Json.Serialization.DefaultContractResolver
   {
-    static JsonSerializerSettings _settings;
+    private static JsonSerializerSettings _settings;
 
     public static JsonSerializerSettings Settings
     {
@@ -12459,7 +12455,7 @@ public class GrasshopperObject
           options.RhinoVersion = 6;
           options.WriteUserData = true;
           _settings.Context =
-            new System.Runtime.Serialization.StreamingContext(System.Runtime.Serialization.StreamingContextStates.All,
+            new StreamingContext(StreamingContextStates.All,
               options);
           //_settings.Converters.Add(new ArchivableDictionaryResolver());
         }
@@ -12472,53 +12468,42 @@ public class GrasshopperObject
       MemberSerialization memberSerialization)
     {
       var property = base.CreateProperty(member, memberSerialization);
-      if (property.DeclaringType == typeof(Rhino.Geometry.Circle))
-      {
+      if (property.DeclaringType == typeof(Circle))
         property.ShouldSerialize = _ =>
         {
           return property.PropertyName != "IsValid" && property.PropertyName != "BoundingBox" &&
                  property.PropertyName != "Diameter" && property.PropertyName != "Circumference";
         };
-      }
 
-      if (property.DeclaringType == typeof(Rhino.Geometry.Plane))
-      {
+      if (property.DeclaringType == typeof(Plane))
         property.ShouldSerialize = _ =>
         {
           return property.PropertyName != "IsValid" && property.PropertyName != "OriginX" &&
                  property.PropertyName != "OriginY" && property.PropertyName != "OriginZ";
         };
-      }
 
-      if (property.DeclaringType == typeof(Rhino.Geometry.Point3f) ||
-          property.DeclaringType == typeof(Rhino.Geometry.Point2f) ||
-          property.DeclaringType == typeof(Rhino.Geometry.Vector2f) ||
-          property.DeclaringType == typeof(Rhino.Geometry.Vector3f))
-      {
+      if (property.DeclaringType == typeof(Point3f) ||
+          property.DeclaringType == typeof(Point2f) ||
+          property.DeclaringType == typeof(Vector2f) ||
+          property.DeclaringType == typeof(Vector3f))
         property.ShouldSerialize = _ =>
         {
           return property.PropertyName == "X" || property.PropertyName == "Y" || property.PropertyName == "Z";
         };
-      }
 
-      if (property.DeclaringType == typeof(Rhino.Geometry.Line))
-      {
+      if (property.DeclaringType == typeof(Line))
         property.ShouldSerialize = _ => { return property.PropertyName == "From" || property.PropertyName == "To"; };
-      }
 
-      if (property.DeclaringType == typeof(Rhino.Geometry.MeshFace))
-      {
+      if (property.DeclaringType == typeof(MeshFace))
         property.ShouldSerialize = _ =>
         {
           return property.PropertyName != "IsTriangle" && property.PropertyName != "IsQuad";
         };
-      }
 
       return property;
     }
   }
 }
-
 
 public class GrasshopperPath
 {
@@ -12531,27 +12516,24 @@ public class GrasshopperPath
 
   public GrasshopperPath(int path)
   {
-    this.Path = new int[] { path };
+    Path = new int[] { path };
   }
 
 
   public GrasshopperPath(int[] path)
   {
-    this.Path = path;
+    Path = path;
   }
 
   public GrasshopperPath(string path)
   {
-    this.Path = FromString(path);
+    Path = FromString(path);
   }
 
   public override string ToString()
   {
-    string sPath = "{ ";
-    foreach (int i in this.Path)
-    {
-      sPath += $"{i}; ";
-    }
+    var sPath = "{ ";
+    foreach (var i in Path) sPath += $"{i}; ";
 
     sPath += "}";
     return sPath;
@@ -12559,34 +12541,26 @@ public class GrasshopperPath
 
   public static int[] FromString(string path)
   {
-    string primer = path.Replace(" ", "").Replace("{", "").Replace("}", "");
+    var primer = path.Replace(" ", "").Replace("{", "").Replace("}", "");
     string[] stringValues = primer.Split(';');
-    List<int> ints = new List<int>();
-    foreach (string s in stringValues)
-    {
+    var ints = new List<int>();
+    foreach (var s in stringValues)
       if (s != string.Empty)
-      {
-        ints.Add(Int32.Parse(s));
-      }
-    }
+        ints.Add(int.Parse(s));
 
     return ints.ToArray();
   }
 
   public GrasshopperPath(GrasshopperPath pathObj, int i)
   {
-    int[] path = pathObj.Path;
-    this.Path = new int[path.Length + 1];
+    var path = pathObj.Path;
+    Path = new int[path.Length + 1];
 
-    for (int j = 0; j < path.Length; j++)
-    {
-      this.Path[j] = path[j];
-    }
+    for (var j = 0; j < path.Length; j++) Path[j] = path[j];
 
-    this.Path[path.Length] = i;
+    Path[path.Length] = i;
   }
 }
-
 
 public class GrasshopperDataTree
 {
@@ -12602,41 +12576,34 @@ public class GrasshopperDataTree
 
   public Dictionary<string, List<GrasshopperObject>> InnerTree
   {
-    get { return _tree; }
-    set { _tree = value; }
+    get => _tree;
+    set => _tree = value;
   }
 
   public List<GrasshopperObject> this[string key]
   {
-    get { return ((IDictionary<string, List<GrasshopperObject>>)_tree)[key]; }
+    get => ((IDictionary<string, List<GrasshopperObject>>)_tree)[key];
 
-    set { ((IDictionary<string, List<GrasshopperObject>>)_tree)[key] = value; }
+    set => ((IDictionary<string, List<GrasshopperObject>>)_tree)[key] = value;
   }
 
   public bool Contains(GrasshopperObject item)
   {
     foreach (var list in _tree.Values)
-    {
       if (list.Contains(item))
-      {
         return true;
-      }
-    }
 
     return false;
   }
 
   public void Append(List<GrasshopperObject> items, GrasshopperPath GhPath)
   {
-    this.Append(items, GhPath.ToString());
+    Append(items, GhPath.ToString());
   }
 
   public void Append(List<GrasshopperObject> items, string GhPath)
   {
-    if (!_tree.ContainsKey(GhPath))
-    {
-      _tree.Add(GhPath, new List<GrasshopperObject>());
-    }
+    if (!_tree.ContainsKey(GhPath)) _tree.Add(GhPath, new List<GrasshopperObject>());
 
     _tree[GhPath].AddRange(items);
     //_GhPathIndexer.Add(item.Index, GhPath);
@@ -12644,15 +12611,12 @@ public class GrasshopperDataTree
 
   public void Append(GrasshopperObject item, GrasshopperPath path)
   {
-    this.Append(item, path.ToString());
+    Append(item, path.ToString());
   }
 
   public void Append(GrasshopperObject item, string GhPath)
   {
-    if (!_tree.ContainsKey(GhPath))
-    {
-      _tree.Add(GhPath, new List<GrasshopperObject>());
-    }
+    if (!_tree.ContainsKey(GhPath)) _tree.Add(GhPath, new List<GrasshopperObject>());
 
     _tree[GhPath].Add(item);
   }

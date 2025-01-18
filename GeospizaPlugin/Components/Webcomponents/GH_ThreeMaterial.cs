@@ -11,12 +11,12 @@ using Grasshopper.Kernel.Types;
 
 namespace GeospizaPlugin.Components.Webcomponents;
 
-public class GH_ThreeMAterial : GH_Component
+public class GH_ThreeMaterial : GH_Component
 {
   /// <summary>
-  /// Initializes a new instance of the GH_ThreeMAterial class.
+  /// Initializes a new instance of the GH_ThreeMaterial class.
   /// </summary>
-  public GH_ThreeMAterial()
+  public GH_ThreeMaterial()
     : base("ThreeMaterial", "TM",
       "Builds an object for the three.js material",
       "Geospiza", "Webcomponents")
@@ -57,28 +57,28 @@ public class GH_ThreeMAterial : GH_Component
     GH_Structure<GH_Number> opacityWrapper = null;
     DA.GetDataTree(3, out opacityWrapper);
 
-    DataTree<ThreeMaterial> materials = new DataTree<ThreeMaterial>();
+    var materials = new DataTree<ThreeMaterial>();
 
-    foreach (GH_Path path in colorWrapper.Paths)
+    foreach (var path in colorWrapper.Paths)
     {
-      List<GH_Colour> colorsInPath = colorWrapper.get_Branch(path).OfType<GH_Colour>().ToList();
+      var colorsInPath = colorWrapper.get_Branch(path).OfType<GH_Colour>().ToList();
 
-      IList metalnessBranch = metalnessWrapper.get_Branch(path);
-      List<double> allMetalness = metalnessBranch != null
+      var metalnessBranch = metalnessWrapper.get_Branch(path);
+      var allMetalness = metalnessBranch != null
         ? metalnessBranch.OfType<GH_Number>().Select(ghNumber => ghNumber.Value).ToList()
         : new List<double> { 0.0 };
 
-      IList roughnessBranch = roughnessWrapper.get_Branch(path);
-      List<double> allRoughness = roughnessBranch != null
+      var roughnessBranch = roughnessWrapper.get_Branch(path);
+      var allRoughness = roughnessBranch != null
         ? roughnessBranch.OfType<GH_Number>().Select(ghNumber => ghNumber.Value).ToList()
         : new List<double> { 0.5 };
 
-      IList opacityBranch = opacityWrapper.get_Branch(path);
-      List<double> allOpacity = opacityBranch != null
+      var opacityBranch = opacityWrapper.get_Branch(path);
+      var allOpacity = opacityBranch != null
         ? opacityBranch.OfType<GH_Number>().Select(ghNumber => ghNumber.Value).ToList()
         : new List<double> { 1.0 };
 
-      foreach (GH_Colour color in colorsInPath)
+      foreach (var color in colorsInPath)
       {
         var material = new ThreeMaterial()
         {
@@ -105,8 +105,5 @@ public class GH_ThreeMAterial : GH_Component
   /// <summary>
   /// Gets the unique ID for this component. Do not change this ID after release.
   /// </summary>
-  public override Guid ComponentGuid
-  {
-    get { return new Guid("C9409BAC-5DD4-4054-BE4C-FCCBD53B7BD3"); }
-  }
+  public override Guid ComponentGuid => new("C9409BAC-5DD4-4054-BE4C-FCCBD53B7BD3");
 }

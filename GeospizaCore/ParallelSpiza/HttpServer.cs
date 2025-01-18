@@ -3,138 +3,135 @@ using System.Text;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
-namespace GeospizaManager.GeospizaCordinator
+namespace GeospizaManager.GeospizaCordinator;
+
+public class HttpServer : IDisposable
 {
-  public class HttpServer : IDisposable
+  private static readonly Lazy<HttpServer> _instance = new(() => new HttpServer());
+  private readonly HttpListener _listener;
+  private CancellationTokenSource _cancellationTokenSource;
+  private readonly ILogger<HttpServer> _logger;
+
+  private HttpServer()
   {
-    private static readonly Lazy<HttpServer> _instance = new Lazy<HttpServer>(() => new HttpServer());
-    private readonly HttpListener _listener;
-    private CancellationTokenSource _cancellationTokenSource;
-    private readonly ILogger<HttpServer> _logger;
+    _listener = new HttpListener();
+    _logger = LoggerFactory.Create(builder => builder.AddConsole()).CreateLogger<HttpServer>();
+  }
 
-    private HttpServer()
+  public static HttpServer Instance => _instance.Value;
+
+  public async Task StartAsync(string urlPrefix, Func<string, Task<string>> onDataReceived)
+  {
+    if (_listener.IsListening)
     {
-      _listener = new HttpListener();
-      _logger = LoggerFactory.Create(builder => builder.AddConsole()).CreateLogger<HttpServer>();
+      _logger.LogWarning("Server is already running.");
+      return;
     }
 
-    public static HttpServer Instance => _instance.Value;
+    _cancellationTokenSource = new CancellationTokenSource();
+    _listener.Prefixes.Add(urlPrefix);
+    _listener.Start();
+    _logger.LogInformation($"Listening for connections on {urlPrefix}");
 
-    public async Task StartAsync(string urlPrefix, Func<string, Task<string>> onDataReceived)
-    {
-      if (_listener.IsListening)
-      {
-        _logger.LogWarning("Server is already running.");
-        return;
-      }
+    await ListenForConnectionsAsync(onDataReceived, _cancellationTokenSource.Token);
+  }
 
-      _cancellationTokenSource = new CancellationTokenSource();
-      _listener.Prefixes.Add(urlPrefix);
-      _listener.Start();
-      _logger.LogInformation($"Listening for connections on {urlPrefix}");
-
-      await ListenForConnectionsAsync(onDataReceived, _cancellationTokenSource.Token);
-    }
-
-    private async Task ListenForConnectionsAsync(Func<string, Task<string>> onDataReceived,
-      CancellationToken cancellationToken)
-    {
-      while (!cancellationToken.IsCancellationRequested)
-      {
-        try
-        {
-          var context = await _listener.GetContextAsync();
-          if (context.Request.HttpMethod == "GET" && context.Request.Url.AbsolutePath == "/server-info")
-          {
-            await ProcessServerInfoRequestAsync(context, cancellationToken);
-          }
-          else if (context.Request.HttpMethod == "POST" && context.Request.Url.AbsolutePath == "/data")
-          {
-            Console.WriteLine("Data received");
-            await ProcessDataRequestAsync(context, onDataReceived, cancellationToken);
-          }
-          else
-          {
-            context.Response.StatusCode = (int)HttpStatusCode.NotFound;
-            context.Response.Close();
-          }
-        }
-        catch (Exception ex)
-        {
-          _logger.LogError(ex, "Error accepting client connection");
-        }
-      }
-    }
-
-    private async Task ProcessServerInfoRequestAsync(HttpListenerContext context, CancellationToken cancellationToken)
-    {
+  private async Task ListenForConnectionsAsync(Func<string, Task<string>> onDataReceived,
+    CancellationToken cancellationToken)
+  {
+    while (!cancellationToken.IsCancellationRequested)
       try
       {
-        var serverInfo = new
+        var context = await _listener.GetContextAsync();
+        if (context.Request.HttpMethod == "GET" && context.Request.Url.AbsolutePath == "/server-info")
         {
-          Status = "Running",
-          UrlPrefixes = _listener.Prefixes
-        };
-
-        var json = JsonConvert.SerializeObject(serverInfo);
-        await SendResponseAsync(context.Response, json, cancellationToken);
+          await ProcessServerInfoRequestAsync(context, cancellationToken);
+        }
+        else if (context.Request.HttpMethod == "POST" && context.Request.Url.AbsolutePath == "/data")
+        {
+          Console.WriteLine("Data received");
+          await ProcessDataRequestAsync(context, onDataReceived, cancellationToken);
+        }
+        else
+        {
+          context.Response.StatusCode = (int)HttpStatusCode.NotFound;
+          context.Response.Close();
+        }
       }
       catch (Exception ex)
       {
-        _logger.LogError(ex, "Error processing server info request");
-        context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
+        _logger.LogError(ex, "Error accepting client connection");
       }
-      finally
-      {
-        context.Response.Close();
-      }
-    }
+  }
 
-    private async Task ProcessDataRequestAsync(HttpListenerContext context, Func<string, Task<string>> onDataReceived,
-      CancellationToken cancellationToken)
+  private async Task ProcessServerInfoRequestAsync(HttpListenerContext context, CancellationToken cancellationToken)
+  {
+    try
     {
-      try
+      var serverInfo = new
       {
-        using var reader = new StreamReader(context.Request.InputStream, context.Request.ContentEncoding);
-        string json = await reader.ReadToEndAsync();
-        string result = await onDataReceived(json);
-        await SendResponseAsync(context.Response, result, cancellationToken);
-      }
-      catch (Exception ex)
-      {
-        _logger.LogError(ex, "Error processing data request");
-        context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
-      }
-      finally
-      {
-        context.Response.Close();
-      }
-    }
+        Status = "Running",
+        UrlPrefixes = _listener.Prefixes
+      };
 
-    private async Task SendResponseAsync(HttpListenerResponse response, string message,
-      CancellationToken cancellationToken)
-    {
-      byte[] buffer = Encoding.UTF8.GetBytes(message);
-      response.ContentLength64 = buffer.Length;
-      await response.OutputStream.WriteAsync(buffer, 0, buffer.Length, cancellationToken);
-      Console.WriteLine("Data received");
+      var json = JsonConvert.SerializeObject(serverInfo);
+      await SendResponseAsync(context.Response, json, cancellationToken);
     }
+    catch (Exception ex)
+    {
+      _logger.LogError(ex, "Error processing server info request");
+      context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
+    }
+    finally
+    {
+      context.Response.Close();
+    }
+  }
 
-    public async Task StopAsync()
+  private async Task ProcessDataRequestAsync(HttpListenerContext context, Func<string, Task<string>> onDataReceived,
+    CancellationToken cancellationToken)
+  {
+    try
     {
-      if (_listener.IsListening)
-      {
-        _cancellationTokenSource.Cancel();
-        _listener.Stop();
-        _logger.LogInformation("HTTP server stopped.");
-      }
+      using var reader = new StreamReader(context.Request.InputStream, context.Request.ContentEncoding);
+      var json = await reader.ReadToEndAsync();
+      var result = await onDataReceived(json);
+      await SendResponseAsync(context.Response, result, cancellationToken);
     }
+    catch (Exception ex)
+    {
+      _logger.LogError(ex, "Error processing data request");
+      context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
+    }
+    finally
+    {
+      context.Response.Close();
+    }
+  }
 
-    public void Dispose()
+  private async Task SendResponseAsync(HttpListenerResponse response, string message,
+    CancellationToken cancellationToken)
+  {
+    var buffer = Encoding.UTF8.GetBytes(message);
+    response.ContentLength64 = buffer.Length;
+    await response.OutputStream.WriteAsync(buffer, 0, buffer.Length, cancellationToken);
+    Console.WriteLine("Data received");
+  }
+
+  public async Task StopAsync()
+  {
+    if (_listener.IsListening)
     {
-      StopAsync().GetAwaiter().GetResult();
-      _cancellationTokenSource?.Dispose();
-      _listener.Close();
+      _cancellationTokenSource.Cancel();
+      _listener.Stop();
+      _logger.LogInformation("HTTP server stopped.");
     }
+  }
+
+  public void Dispose()
+  {
+    StopAsync().GetAwaiter().GetResult();
+    _cancellationTokenSource?.Dispose();
+    _listener.Close();
   }
 }

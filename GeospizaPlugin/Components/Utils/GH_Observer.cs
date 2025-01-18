@@ -12,8 +12,8 @@ public class GH_Observer : GH_Component
   /// Initializes a new instance of the Observer class.
   /// </summary>
   public GH_Observer()
-    : base("Observer", "Observer",
-      "The observer holds information about the evolutionary algorithms solutions",
+    : base("Observer", "Obs",
+      "Monitors and displays statistics from evolutionary algorithms including fitness metrics and population data",
       "Geospiza", "Utils")
   {
   }
@@ -53,10 +53,7 @@ public class GH_Observer : GH_Component
     if (wrapper.Value is EvolutionObserver)
     {
       var obs = (EvolutionObserver)wrapper.Value;
-      if (obs.CurrentPopulation == null || obs.CurrentPopulation.Count == 0)
-      {
-        return;
-      }
+      if (obs.CurrentPopulation == null || obs.CurrentPopulation.Count == 0) return;
 
       DA.SetDataList(0, obs.CurrentPopulation.Inhabitants);
       DA.SetDataList(1, obs.AverageFitness);
@@ -80,8 +77,5 @@ public class GH_Observer : GH_Component
   /// <summary>
   /// Gets the unique ID for this component. Do not change this ID after release.
   /// </summary>
-  public override Guid ComponentGuid
-  {
-    get { return new Guid("2D368D5B-DC50-432D-85DD-311435EF865C"); }
-  }
+  public override Guid ComponentGuid => new("2D368D5B-DC50-432D-85DD-311435EF865C");
 }

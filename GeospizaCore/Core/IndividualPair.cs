@@ -3,9 +3,9 @@
 /// <summary>
 /// Describes a pair of individuals
 /// </summary>
-public class Pair
+public class IndividualPair
 {
-  public Pair(Individual individual1, Individual individual2)
+  public IndividualPair(Individual individual1, Individual individual2)
   {
     Individual1 = individual1;
     Individual2 = individual2;

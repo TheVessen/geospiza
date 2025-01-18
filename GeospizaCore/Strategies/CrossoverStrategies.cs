@@ -73,7 +73,7 @@ public class SinglePointCrossover : CrossoverStrategy
       throw new ArgumentException("Parents must have genomes of the same length");
 
     var genomeLength = genePoolP1.Count;
-    var crossoverPoint = Random.Next(1, genomeLength); // Exclude first index to ensure actual crossover
+    var crossoverPoint = Random.Next(1, genomeLength);
 
     var child1Genome = new List<Gene>();
     var child2Genome = new List<Gene>();
@@ -114,18 +114,16 @@ public class TwoPointCrossover : CrossoverStrategy
   /// <exception cref="System.ArgumentException">Thrown when the parents have genomes of different lengths.</exception>
   public override List<Individual> Crossover(Individual parent1, Individual parent2)
   {
-    // Ensure parents have the same number of genes
     if (parent1.GenePool.Count != parent2.GenePool.Count)
       throw new ArgumentException("Parents must have genomes of the same length");
 
     var genomeLength = parent1.GenePool.Count;
 
-    // Choose two crossover points
     var crossoverPoint1 = Random.Next(0, genomeLength);
     var crossoverPoint2 = Random.Next(0, genomeLength);
 
     var counter = 0;
-    
+
     // Ensure crossoverPoint1 is not equal to crossoverPoint2
     while (crossoverPoint1 == crossoverPoint2)
     {
@@ -136,13 +134,11 @@ public class TwoPointCrossover : CrossoverStrategy
 
     counter = 0;
 
-    // Ensure crossoverPoint1 is less than crossoverPoint2
     if (crossoverPoint1 > crossoverPoint2) (crossoverPoint1, crossoverPoint2) = (crossoverPoint2, crossoverPoint1);
 
     var child1Genome = new List<Gene>();
     var child2Genome = new List<Gene>();
 
-    // Perform crossover
     for (var i = 0; i < genomeLength; i++)
       if (i < crossoverPoint1 || i > crossoverPoint2)
       {

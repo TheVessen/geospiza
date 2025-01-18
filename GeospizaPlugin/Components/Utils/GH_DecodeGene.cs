@@ -13,8 +13,8 @@ public class GH_DecodeGene : GH_Component
   ///   Initializes a new instance of the GH_DecodeGene class.
   /// </summary>
   public GH_DecodeGene()
-    : base("DecodeGene", "GH_DecodeGene",
-      "Decodes the gene",
+    : base("Decode Gene", "DecodeGene",
+      "Decodes a gene into its name, value and unique identifier",
       "Geospiza", "Utils")
   {
   }

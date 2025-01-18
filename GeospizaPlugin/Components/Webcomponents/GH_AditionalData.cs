@@ -10,8 +10,8 @@ public class GH_AditionalData : GH_Component
   /// Initializes a new instance of the GH_AditionalData class.
   /// </summary>
   public GH_AditionalData()
-    : base("AditionalData", "AD",
-      "Add aditional data to the weboutput",
+    : base("AdditionalData", "AD",
+      "Add additional data to the web output",
       "Geospiza", "Webcomponents")
   {
   }
@@ -39,11 +39,11 @@ public class GH_AditionalData : GH_Component
   /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
   protected override void SolveInstance(IGH_DataAccess DA)
   {
-    string key = "";
+    var key = "";
     if (!DA.GetData(0, ref key)) return;
-    string value = "";
+    var value = "";
     if (!DA.GetData(1, ref value)) return;
-    Tuple<string, string> aditionalData = new Tuple<string, string>(key, value);
+    var aditionalData = new Tuple<string, string>(key, value);
 
     DA.SetData(0, aditionalData);
   }
@@ -58,8 +58,5 @@ public class GH_AditionalData : GH_Component
   /// <summary>
   /// Gets the unique ID for this component. Do not change this ID after release.
   /// </summary>
-  public override Guid ComponentGuid
-  {
-    get { return new Guid("85B91440-7C06-4923-A8BC-4A0D0C4DDF9C"); }
-  }
+  public override Guid ComponentGuid => new("85B91440-7C06-4923-A8BC-4A0D0C4DDF9C");
 }

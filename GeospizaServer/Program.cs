@@ -4,11 +4,9 @@ using GeospizaManager.GeospizaCordinator;
 /// <summary>
 /// !ATENTION! This is still very much in the works. Idea is to have a server managing multiple instances of Geospiza.
 /// </summary>
-
 public class Program
 {
-  private static Dictionary<Task, TaskCompletionSource<string>> _taskCompletionSources =
-    new Dictionary<Task, TaskCompletionSource<string>>();
+  private static Dictionary<Task, TaskCompletionSource<string>> _taskCompletionSources = new();
 
   public static async Task Main(string[] args)
   {
@@ -21,7 +19,7 @@ public class Program
 
     // Start the listener and process incoming requests
     await postRequestHandler.StartListeningAsync(cancellationTokenSource.Token);
-    
+
     Console.WriteLine("Press any key to exit...");
     Console.ReadKey();
   }

@@ -15,18 +15,15 @@ public class RequestContext
 public class EvolutionCordinator
 {
   private readonly HttpListener _listener;
-  private readonly List<RequestContext> _requestContexts = new List<RequestContext>();
-  private readonly object _dataLock = new object();
+  private readonly List<RequestContext> _requestContexts = new();
+  private readonly object _dataLock = new();
   private readonly int _maxRequests;
 
   public EvolutionCordinator(string[] prefixes, int maxRequests = 2)
   {
     _maxRequests = maxRequests;
     _listener = new HttpListener();
-    foreach (string prefix in prefixes)
-    {
-      _listener.Prefixes.Add(prefix);
-    }
+    foreach (var prefix in prefixes) _listener.Prefixes.Add(prefix);
   }
 
   /// <summary>
@@ -98,7 +95,7 @@ public class EvolutionCordinator
 
       // Respond with a 400 Bad Request status code
       context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
-      byte[] errorBuffer = Encoding.UTF8.GetBytes("Invalid JSON format.");
+      var errorBuffer = Encoding.UTF8.GetBytes("Invalid JSON format.");
       context.Response.ContentLength64 = errorBuffer.Length;
       await context.Response.OutputStream.WriteAsync(errorBuffer, 0, errorBuffer.Length);
       context.Response.OutputStream.Close();
@@ -114,7 +111,7 @@ public class EvolutionCordinator
       var requestContext = new RequestContext
       {
         TaskCompletionSource = taskCompletionSource,
-        BaseObserver = baseObserver,
+        BaseObserver = baseObserver
         // HttpContext = context, // Not needed unless you need to access it later
         // Add any other individual parameters here
       };
@@ -122,10 +119,7 @@ public class EvolutionCordinator
       _requestContexts.Add(requestContext);
 
       // If we have enough requests, process the data
-      if (_requestContexts.Count == _maxRequests)
-      {
-        ProcessDataAndRelease();
-      }
+      if (_requestContexts.Count == _maxRequests) ProcessDataAndRelease();
     }
 
     var result = await taskCompletionSource.Task;
@@ -138,12 +132,9 @@ public class EvolutionCordinator
 
   private List<Individual> MergeInhabitants(List<ObserverServerSnapshot> observers)
   {
-     var allInhabitants = new List<Individual>();
+    var allInhabitants = new List<Individual>();
 
-    foreach (var observer in observers)
-    {
-      allInhabitants.AddRange(observer.Inhabitants);
-    }
+    foreach (var observer in observers) allInhabitants.AddRange(observer.Inhabitants);
 
     return allInhabitants;
   }
@@ -184,7 +175,7 @@ public class EvolutionCordinator
       };
 
       // Serialize the result to JSON
-      string individualResult = JsonConvert.SerializeObject(result);
+      var individualResult = JsonConvert.SerializeObject(result);
 
       // Set the result for this task
       requestContext.TaskCompletionSource.SetResult(individualResult);

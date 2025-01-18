@@ -19,7 +19,7 @@ public class GH_KMeans : GH_Component
   public GH_KMeans()
     : base("K-Means", "K-Means",
       "Description",
-      "Geospiza", "Analytics")
+      "Geospiza", "MachineLearning")
   {
   }
 
@@ -65,13 +65,13 @@ public class GH_KMeans : GH_Component
       var clusters = means.Learn(vectors);
 
       // Use the clusters to predict group memberships:
-      int[] labels = clusters.Decide(vectors);
+      var labels = clusters.Decide(vectors);
 
 
       // Create a new DataTree
       var tree = new GH_Structure<GH_ObjectWrapper>();
 
-      for (int i = 0; i < labels.Length; i++)
+      for (var i = 0; i < labels.Length; i++)
       {
         // Create a new path for each label
         var path = new GH_Path(labels[i]);
@@ -106,21 +106,13 @@ public class GH_KMeans : GH_Component
   /// <summary>
   /// Provides an Icon for the component.
   /// </summary>
-  protected override Bitmap Icon
-  {
-    get
-    {
-      //You can add image files to your project resources and access them like this:
-      // return Resources.IconForThisComponent;
-      return null;
-    }
-  }
+  protected override Bitmap Icon =>
+    //You can add image files to your project resources and access them like this:
+    // return Resources.IconForThisComponent;
+    null;
 
   /// <summary>
   /// Gets the unique ID for this component. Do not change this ID after release.
   /// </summary>
-  public override Guid ComponentGuid
-  {
-    get { return new Guid("C736282F-693C-4B81-838A-4DF5A7A15FCE"); }
-  }
+  public override Guid ComponentGuid => new("C736282F-693C-4B81-838A-4DF5A7A15FCE");
 }
