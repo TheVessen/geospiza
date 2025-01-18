@@ -8,12 +8,12 @@ namespace GeospizaPlugin.Components.Utils;
 public class GH_GeneCollector : GH_Component
 {
   //REF "https://discourse.mcneel.com/t/gene-pool-component/59835/8"
-  
+
   /// <summary>
   /// Initializes a new instance of the GeneSelector class.
   /// </summary>
   public GH_GeneCollector()
-    : base("Gene Collector", "GeneCollector",
+    : base("Gene Collector", "Gene Collector",
       "Collects and identifies parameters for evolutionary optimization. Compatible with numeric sliders and Galapagos gene pools.",
       "Geospiza", "Utils")
   {
@@ -24,7 +24,7 @@ public class GH_GeneCollector : GH_Component
   /// </summary>
   protected override void RegisterInputParams(GH_InputParamManager pManager)
   {
-    pManager.AddGenericParameter("GeneParams", "GP",
+    pManager.AddGenericParameter("Gene Params", "GP",
       "The gene parameters this can be number sliders or a galapagos gene list", GH_ParamAccess.tree);
   }
 

@@ -11,7 +11,7 @@ public class GH_InbreedingPairing : GH_Component
   /// Initializes a new instance of the InbreedingPairing class.
   /// </summary>
   public GH_InbreedingPairing()
-    : base("InbreedingPairing", "IP",
+    : base("Inbreeding Pairing", "IP",
       "This code is a part of a genetic algorithm that pairs individuals based on their genetic similarity or dissimilarity. " +
       "It uses an in-breeding factor to determine the preference for selecting mates.",
       "Geospiza", "PairingStrategies")
@@ -23,11 +23,11 @@ public class GH_InbreedingPairing : GH_Component
   /// </summary>
   protected override void RegisterInputParams(GH_InputParamManager pManager)
   {
-    pManager.AddNumberParameter("InBreedingFactor", "P",
+    pManager.AddNumberParameter("In Breeding Factor", "IBF",
       "Inbreeding Factor, a value between 0 and 1. A value of 0 promotes pairing between individuals with high genetic similarity, " +
       "while a value of 1 encourages pairing between individuals with high genetic dissimilarity.", GH_ParamAccess.item,
       0.2);
-    pManager.AddNumberParameter("DistanceFunction", "DF",
+    pManager.AddNumberParameter("Distance Function", "DF",
       "The distance function to use. 0 for euclidean, 1 for manhattan", GH_ParamAccess.item, 1);
   }
 
@@ -36,7 +36,7 @@ public class GH_InbreedingPairing : GH_Component
   /// </summary>
   protected override void RegisterOutputParams(GH_OutputParamManager pManager)
   {
-    pManager.AddGenericParameter("PairingStrategy", "PS", "The pairing strategy", GH_ParamAccess.item);
+    pManager.AddGenericParameter("Pairing Strategy", "PS", "The pairing strategy", GH_ParamAccess.item);
   }
 
   /// <summary>

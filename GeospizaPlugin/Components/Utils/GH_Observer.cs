@@ -12,7 +12,7 @@ public class GH_Observer : GH_Component
   /// Initializes a new instance of the Observer class.
   /// </summary>
   public GH_Observer()
-    : base("Observer", "Obs",
+    : base("Observer", "Observer",
       "Monitors and displays statistics from evolutionary algorithms including fitness metrics and population data",
       "Geospiza", "Utils")
   {
@@ -32,10 +32,10 @@ public class GH_Observer : GH_Component
   protected override void RegisterOutputParams(GH_OutputParamManager pManager)
   {
     pManager.AddGenericParameter("Individuals", "I", "All individual from the last generation", GH_ParamAccess.list);
-    pManager.AddNumberParameter("AverageFitness", "AF", "Average fitness for each generation", GH_ParamAccess.list);
-    pManager.AddNumberParameter("BestFitness", "BF", "Best fitness for each generation", GH_ParamAccess.list);
-    pManager.AddNumberParameter("WorstFitness", "WF", "Worst fitness for each generation", GH_ParamAccess.list);
-    pManager.AddGenericParameter("BestIndividual", "BI", "The 5 best individuals over all generations",
+    pManager.AddNumberParameter("Average Fitness", "AF", "Average fitness for each generation", GH_ParamAccess.list);
+    pManager.AddNumberParameter("Best Fitness", "BF", "Best fitness for each generation", GH_ParamAccess.list);
+    pManager.AddNumberParameter("Worst Fitness", "WF", "Worst fitness for each generation", GH_ParamAccess.list);
+    pManager.AddGenericParameter("Best Individual", "BI", "The 5 best individuals over all generations",
       GH_ParamAccess.list);
   }
 
@@ -47,7 +47,6 @@ public class GH_Observer : GH_Component
   {
     GH_ObjectWrapper wrapper = null;
 
-    // Reference the input
     if (!DA.GetData(0, ref wrapper)) return;
 
     if (wrapper.Value is EvolutionObserver)

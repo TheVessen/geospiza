@@ -11,7 +11,7 @@ public class GH_IndividualFromJson : GH_Component
   /// Initializes a new instance of the GH_JsonToIndividual class.
   /// </summary>
   public GH_IndividualFromJson()
-    : base("IndividualFromJson", "IndividualFromJson",
+    : base("Individual From Json", "Individual From Json",
       "Converts a JSON string to an individual",
       "Geospiza", "Converter")
   {
@@ -39,9 +39,7 @@ public class GH_IndividualFromJson : GH_Component
   /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
   protected override void SolveInstance(IGH_DataAccess DA)
   {
-    // Declare a variable for the input
     var json = "";
-    // If the input is not retrieved, return
     if (!DA.GetData(0, ref json)) return;
 
     if (json == "") return;

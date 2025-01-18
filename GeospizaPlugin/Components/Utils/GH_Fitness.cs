@@ -12,7 +12,7 @@ public class GH_Fitness : GH_Component
   /// </summary>
   public GH_Fitness()
     : base("Fitness", "F",
-      "Assigns a numerical fitness score that guides the evolutionary optimization process. " + 
+      "Assigns a numerical fitness score that guides the evolutionary optimization process. " +
       "This component connects the fitness evaluation to Geospiza's main evolutionary solver.",
       "Geospiza", "Utils")
   {

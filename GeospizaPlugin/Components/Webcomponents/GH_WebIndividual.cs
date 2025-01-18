@@ -17,7 +17,7 @@ public class GH_WebIndividual : GH_Component
   /// Initializes a new instance of the GH_DisplayObject class.
   /// </summary>
   public GH_WebIndividual()
-    : base("WebIndividual", "WI",
+    : base("Web Individual", "WI",
       "Collects data to be displayed in the web output",
       "Geospiza", "Webcomponents")
   {
@@ -29,7 +29,7 @@ public class GH_WebIndividual : GH_Component
   protected override void RegisterInputParams(GH_InputParamManager pManager)
   {
     pManager.AddGenericParameter("Geo", "G", "Geo to display", GH_ParamAccess.tree);
-    pManager.AddGenericParameter("ThreeMaterial", "TM", "ThreeMaterial", GH_ParamAccess.tree);
+    pManager.AddGenericParameter("Three Material", "TM", "ThreeMaterial", GH_ParamAccess.tree);
   }
 
   /// <summary>

@@ -10,11 +10,9 @@ namespace GeospizaManager.Solvers;
 /// </summary>
 public class SolverSettings
 {
-  // Properties with validation
   private int populationSize;
   private int maxGenerations;
   private int eliteSize;
-
   public ISelectionStrategy SelectionStrategy { get; set; } = null!;
   public ICrossoverStrategy CrossoverStrategy { get; set; } = null!;
   public IMutationStrategy MutationStrategy { get; set; } = null!;
@@ -120,7 +118,6 @@ public class EvoSettingsConverter : JsonConverter
     writer.WriteValue(settings.MaxGenerations);
     writer.WritePropertyName(nameof(settings.EliteSize));
     writer.WriteValue(settings.EliteSize);
-
     writer.WriteEndObject();
   }
 

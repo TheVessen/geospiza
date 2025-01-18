@@ -13,7 +13,7 @@ public class GH_DecodeGene : GH_Component
   ///   Initializes a new instance of the GH_DecodeGene class.
   /// </summary>
   public GH_DecodeGene()
-    : base("Decode Gene", "DecodeGene",
+    : base("Decode Gene", "Decode Gene",
       "Decodes a gene into its name, value and unique identifier",
       "Geospiza", "Utils")
   {
@@ -44,9 +44,9 @@ public class GH_DecodeGene : GH_Component
   /// </summary>
   protected override void RegisterOutputParams(GH_OutputParamManager pManager)
   {
-    pManager.AddTextParameter("GeneName", "GN", "The name of the gene", GH_ParamAccess.list);
-    pManager.AddNumberParameter("GeneValue", "GV", "The value of the gene", GH_ParamAccess.list);
-    pManager.AddTextParameter("GeneGuid", "GG", "The guid of the gene", GH_ParamAccess.list);
+    pManager.AddTextParameter("Gene Name", "GN", "The name of the gene", GH_ParamAccess.list);
+    pManager.AddNumberParameter("Gene Value", "GV", "The value of the gene", GH_ParamAccess.list);
+    pManager.AddTextParameter("Gene Guid", "GG", "The guid of the gene", GH_ParamAccess.list);
   }
 
   /// <summary>

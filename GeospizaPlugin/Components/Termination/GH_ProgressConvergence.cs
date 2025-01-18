@@ -8,12 +8,12 @@ namespace GeospizaPlugin.Components.Termination;
 public class GH_ProgressConvergence : GH_Component
 {
   /// <summary>
-  /// Initializes a new instance of the GH_GeneticDiverity class.
+  /// Initializes a new instance of the ProgressConvergence class.
   /// </summary>
   public GH_ProgressConvergence()
-    : base("ProgressConvergence", "PC",
+    : base("Progress Convergence", "PC",
       "Terminates the genetic algorithm when the progress over the last 5 generations is below a certain threshold",
-      "Geospiza", "TerminationStrategies")
+      "Geospiza", "Termination Strategies")
   {
   }
 
@@ -30,7 +30,7 @@ public class GH_ProgressConvergence : GH_Component
   /// </summary>
   protected override void RegisterOutputParams(GH_OutputParamManager pManager)
   {
-    pManager.AddGenericParameter("TerminationStrategy", "TS", "The termination strategy", GH_ParamAccess.item);
+    pManager.AddGenericParameter("Termination Strategy", "TS", "The termination strategy", GH_ParamAccess.item);
   }
 
   /// <summary>

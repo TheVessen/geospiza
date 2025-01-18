@@ -9,6 +9,8 @@ namespace GeospizaManager.Solvers;
 public class BaseSolver : EvolutionBlueprint
 {
   private const int TerminationEvaluationThreshold = 5;
+  private StateManager StateManager { get; }
+  private EvolutionObserver EvolutionObserver { get; }
 
   public BaseSolver(SolverSettings settings, StateManager stateManager,
     EvolutionObserver evolutionObserver) :
@@ -18,16 +20,11 @@ public class BaseSolver : EvolutionBlueprint
     EvolutionObserver = evolutionObserver;
   }
 
-  private StateManager StateManager { get; }
-  private EvolutionObserver EvolutionObserver { get; }
-
   public override void RunAlgorithm()
   {
-    // Initialize the population
     InitializePopulation(StateManager, EvolutionObserver);
     try
     {
-      // Run the algorithm for the specified number of generations
       for (var i = 0; i < MaxGenerations - 1; i++)
       {
         var populationCopy = new Population(Population);
@@ -70,17 +67,14 @@ public class BaseSolver : EvolutionBlueprint
 
         //TODO: For multi processing here would be the point to send the observer to the main thread
 
-        // If the termination condition is met, stop the algorithm
         if (i > TerminationEvaluationThreshold)
           if (TerminationStrategy.Evaluate(EvolutionObserver))
             break;
 
-        // Replace the current population with the new population
         Population = newPopulation;
         if (StateManager.PreviewLevel == 1) StateManager.GetDocument().ExpirePreview(true);
       }
 
-      // At the end of the algorithm, reinstate the best individual
       var best = Population.SelectTopIndividuals(1);
       best[0].Reinstate(StateManager);
     }

@@ -31,7 +31,7 @@ public class GeoLink : GH_Component
   protected override void RegisterInputParams(GH_InputParamManager pManager)
   {
     pManager.AddGenericParameter("WebGeo", "WG", "Geo to display", GH_ParamAccess.tree);
-    pManager.AddGenericParameter("AdditionalData", "AD", "Additional data to send", GH_ParamAccess.tree);
+    pManager.AddGenericParameter("Additional Data", "AD", "Additional data to send", GH_ParamAccess.tree);
     pManager.AddTextParameter("Endpoint", "E",
       "The endpoint to send the solution to eg. http://127.0.0.1:5173/api/someEndpoint ", GH_ParamAccess.item);
     pManager.AddBooleanParameter("Listen", "L", "Listen for the solution", GH_ParamAccess.item, false);

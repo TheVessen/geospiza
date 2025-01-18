@@ -11,9 +11,9 @@ public class GH_PopulationDiversity : GH_Component
   /// Initializes a new instance of the GH_PopulationDiversity class.
   /// </summary>
   public GH_PopulationDiversity()
-    : base("PopulationDiversity", "PD",
+    : base("Population Diversity", "PD",
       "Terminate the genetic algorithm when the population diversity is below a certain threshold",
-      "Geospiza", "TerminationStrategies")
+      "Geospiza", "Termination Strategies")
   {
   }
 
@@ -31,7 +31,7 @@ public class GH_PopulationDiversity : GH_Component
   /// </summary>
   protected override void RegisterOutputParams(GH_OutputParamManager pManager)
   {
-    pManager.AddGenericParameter("TerminationStrategy", "TS", "The termination strategy", GH_ParamAccess.item);
+    pManager.AddGenericParameter("Termination Strategy", "TS", "The termination strategy", GH_ParamAccess.item);
   }
 
   /// <summary>

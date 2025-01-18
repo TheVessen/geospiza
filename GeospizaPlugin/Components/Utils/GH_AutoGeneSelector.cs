@@ -25,7 +25,7 @@ public class GH_AutoGeneSelector : GH_Component
   {
     pManager.AddBooleanParameter("Clear", "C", "Clear the gene parameters from the doc search", GH_ParamAccess.item,
       false);
-    pManager.AddBooleanParameter("SearchDocument", "SD", "Search the document for gene parameters",
+    pManager.AddBooleanParameter("Search Document", "SD", "Search the document for gene parameters",
       GH_ParamAccess.item, false);
   }
 
@@ -73,10 +73,7 @@ public class GH_AutoGeneSelector : GH_Component
   /// <summary>
   /// Provides an Icon for the component.
   /// </summary>
-  protected override Bitmap Icon =>
-    //You can add image files to your project resources and access them like this:
-    // return Resources.IconForThisComponent;
-    null;
+  protected override Bitmap Icon => null;
 
   /// <summary>
   /// Gets the unique ID for this component. Do not change this ID after release.

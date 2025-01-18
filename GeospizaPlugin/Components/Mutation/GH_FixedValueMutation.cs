@@ -11,7 +11,7 @@ public class GH_FixedValueMutation : GH_Component
   /// Initializes a new instance of the FixedValueMutation class.
   /// </summary>
   public GH_FixedValueMutation()
-    : base("FixedValueMutation", "FVM",
+    : base("Fixed Value Mutation", "Fixed Value Mutation",
       "Applies a fixed value mutation strategy in a genetic algorithm. This strategy alters genes of the " +
       "individuals in the population by a fixed value, aiding in the exploration " +
       "of the solution space. The mutation rate and value are adjustable parameters.",
@@ -24,8 +24,8 @@ public class GH_FixedValueMutation : GH_Component
   /// </summary>
   protected override void RegisterInputParams(GH_InputParamManager pManager)
   {
-    pManager.AddNumberParameter("MutationRate", "MR", "The mutation rate", GH_ParamAccess.item, 0.01);
-    pManager.AddNumberParameter("MutationValue", "V",
+    pManager.AddNumberParameter("Mutation Rate", "MR", "The mutation rate", GH_ParamAccess.item, 0.01);
+    pManager.AddNumberParameter("Mutation Value", "MV",
       "Random int range of Mutation Value(+-MutationValue) to move the tick value", GH_ParamAccess.item, 5);
   }
 
@@ -34,7 +34,7 @@ public class GH_FixedValueMutation : GH_Component
   /// </summary>
   protected override void RegisterOutputParams(GH_OutputParamManager pManager)
   {
-    pManager.AddGenericParameter("MutationStrategy", "MS", "The mutation strategy", GH_ParamAccess.item);
+    pManager.AddGenericParameter("Mutation Strategy", "MS", "The mutation strategy", GH_ParamAccess.item);
   }
 
   /// <summary>

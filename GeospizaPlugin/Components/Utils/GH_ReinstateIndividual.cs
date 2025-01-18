@@ -14,7 +14,7 @@ public class GH_ReinstateIndividual : GH_Component
   /// Initializes a new instance of the ReinstateIndividual class.
   /// </summary>
   public GH_ReinstateIndividual()
-    : base("Reinstate Individual", "Reinstate",
+    : base("Reinstate Individual", "Reinstate Individual",
       "Reactivates a previously archived individual in the current population",
       "Geospiza", "Utils")
   {
@@ -25,7 +25,7 @@ public class GH_ReinstateIndividual : GH_Component
   /// </summary>
   protected override void RegisterInputParams(GH_InputParamManager pManager)
   {
-    pManager.AddGenericParameter("StateManager", "SM", "The state managers", GH_ParamAccess.item);
+    pManager.AddGenericParameter("State Manager", "SM", "The state managers", GH_ParamAccess.item);
     pManager.AddGenericParameter("Individual", "I", "The individual to reinstate", GH_ParamAccess.tree);
     pManager.AddBooleanParameter("Reinstate", "R", "Reinstate the individual", GH_ParamAccess.item, false);
   }
@@ -50,10 +50,8 @@ public class GH_ReinstateIndividual : GH_Component
     if (!DA.GetData(0, ref stateManagerWrapper)) return;
     stateManager = stateManagerWrapper.Value as StateManager;
 
-    // Declare a variable for the input
     var individualWrapper = new GH_Structure<IGH_Goo>();
     if (!DA.GetDataTree(1, out individualWrapper)) return;
-
 
     var data = individualWrapper.AllData(true).ToList();
     if (data.Count == 0) return;
@@ -64,7 +62,6 @@ public class GH_ReinstateIndividual : GH_Component
       return;
     }
 
-    // If the input is not retrieved, return
     individual = data[0].ScriptVariable() as Individual;
     var reinstate = false;
     if (!DA.GetData(2, ref reinstate)) return;

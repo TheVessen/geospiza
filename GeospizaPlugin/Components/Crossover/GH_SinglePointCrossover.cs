@@ -11,7 +11,7 @@ public class GH_SinglePointCrossover : GH_Component
   /// Initializes a new instance of the SinglePointCrossover class.
   /// </summary>
   public GH_SinglePointCrossover()
-    : base("SinglePointCrossover", "SinglePointCrossover",
+    : base("Single Point Crossover", "Single Point Crossover",
       "Single Point Crossover is a genetic algorithm operation used for the new generation population." +
       " It is a method of combining the genetic information of two parents to generate new offspring.  " +
       "In Single Point Crossover, a point on the parent chromosomes is selected. " +
@@ -26,7 +26,7 @@ public class GH_SinglePointCrossover : GH_Component
   /// </summary>
   protected override void RegisterInputParams(GH_InputParamManager pManager)
   {
-    pManager.AddNumberParameter("CrossoverRate", "CR", "The crossover rate", GH_ParamAccess.item, 0.7);
+    pManager.AddNumberParameter("Crossover Rate", "CR", "The crossover rate", GH_ParamAccess.item, 0.7);
   }
 
   /// <summary>
@@ -34,7 +34,7 @@ public class GH_SinglePointCrossover : GH_Component
   /// </summary>
   protected override void RegisterOutputParams(GH_OutputParamManager pManager)
   {
-    pManager.AddGenericParameter("CrossoverStrategy", "CS", "The crossover strategy", GH_ParamAccess.item);
+    pManager.AddGenericParameter("Crossover Strategy", "CS", "The crossover strategy", GH_ParamAccess.item);
   }
 
   /// <summary>

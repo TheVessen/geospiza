@@ -12,7 +12,7 @@ public class GH_ObserverToJson : GH_Component
   /// Initializes a new instance of the GH_ObserverToJson class.
   /// </summary>
   public GH_ObserverToJson()
-    : base("ObserverToJson", "ObserverToJson",
+    : base("Observer To Json", "Observer To Json",
       "Converts an observer to a JSON string",
       "Geospiza", "Converter")
   {

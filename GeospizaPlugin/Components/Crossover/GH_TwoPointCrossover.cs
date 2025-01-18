@@ -11,7 +11,7 @@ public class GH_TwoPointCrossover : GH_Component
   /// Initializes a new instance of the TwoPointCrossover class.
   /// </summary>
   public GH_TwoPointCrossover()
-    : base("TwoPointCrossover", "TPC",
+    : base("Two Point Crossover", "TPC",
       "Two-point crossover is a genetic algorithm operation that generates new offspring by combining the genetic information of two parents." +
       " It selects two points on the parent chromosomes and swaps the data between these points from both parents, resulting in two offspring with mixed genetic information.",
       "Geospiza", "CrossoverStrategies")
@@ -23,7 +23,7 @@ public class GH_TwoPointCrossover : GH_Component
   /// </summary>
   protected override void RegisterInputParams(GH_InputParamManager pManager)
   {
-    pManager.AddNumberParameter("CrossoverRate", "CR", "The crossover rate", GH_ParamAccess.item, 0.7);
+    pManager.AddNumberParameter("Crossover Rate", "CR", "The crossover rate", GH_ParamAccess.item, 0.7);
   }
 
   /// <summary>
@@ -31,7 +31,7 @@ public class GH_TwoPointCrossover : GH_Component
   /// </summary>
   protected override void RegisterOutputParams(GH_OutputParamManager pManager)
   {
-    pManager.AddGenericParameter("CrossoverStrategy", "CS", "The crossover strategy", GH_ParamAccess.item);
+    pManager.AddGenericParameter("Crossover Strategy", "CS", "The crossover strategy", GH_ParamAccess.item);
   }
 
   /// <summary>

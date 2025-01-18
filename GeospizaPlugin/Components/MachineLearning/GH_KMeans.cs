@@ -18,8 +18,8 @@ public class GH_KMeans : GH_Component
   /// </summary>
   public GH_KMeans()
     : base("K-Means", "K-Means",
-      "Description",
-      "Geospiza", "MachineLearning")
+      "Clusters individuals using the K-Means algorithm",
+      "Geospiza", "Machine Learning")
   {
   }
 
@@ -30,7 +30,7 @@ public class GH_KMeans : GH_Component
   {
     pManager.AddGenericParameter("Individuals", "I", "Individuals to cluster", GH_ParamAccess.list);
     pManager.AddNumberParameter("Clusters", "C", "Number of clusters to generate", GH_ParamAccess.item);
-    pManager.AddBooleanParameter("Activate", "A", "Activate the component", GH_ParamAccess.item, false);
+    pManager.AddBooleanParameter("Activate", "A", "Run the clustering", GH_ParamAccess.item, false);
   }
 
   /// <summary>

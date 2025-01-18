@@ -12,7 +12,7 @@ public class IndividualToJson : GH_Component
   /// Initializes a new instance of the IndividualToJson class.
   /// </summary>
   public IndividualToJson()
-    : base("IndividualToJson", "IndividualToJson",
+    : base("Individual To Json", "Individual To Json",
       "Converts an individual to a JSON string",
       "Geospiza", "Converter")
   {
@@ -34,16 +34,13 @@ public class IndividualToJson : GH_Component
     pManager.AddTextParameter("JSON", "J", "The JSON string", GH_ParamAccess.item);
   }
 
-
   /// <summary>
   /// This is the method that actually does the work.
   /// </summary>
   /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
   protected override void SolveInstance(IGH_DataAccess DA)
   {
-    // Declare a variable for the input
     var individualWrapper = new GH_ObjectWrapper();
-    // If the input is not retrieved, return
     if (!DA.GetData(0, ref individualWrapper)) return;
 
     if (individualWrapper.Value is Individual individual)

@@ -11,7 +11,7 @@ public class GH_PercentageMutation : GH_Component
   /// Initializes a new instance of the PercentageMutation class.
   /// </summary>
   public GH_PercentageMutation()
-    : base("PercentageMutation", "PM",
+    : base("Percentage Mutation", "PM",
       "The PercentageMutation applies a mutation to each gene in an individual's gene pool. " +
       "It calculates a mutation amount based on the gene's current value and a predefined mutation percentage, " +
       "then adjusts the gene's value within a valid range, introducing variability in the gene pool.",
@@ -24,7 +24,7 @@ public class GH_PercentageMutation : GH_Component
   /// </summary>
   protected override void RegisterInputParams(GH_InputParamManager pManager)
   {
-    pManager.AddNumberParameter("MutationRate", "MR", "The mutation rate", GH_ParamAccess.item, 0.01);
+    pManager.AddNumberParameter("Mutation Rate", "MR", "The mutation rate", GH_ParamAccess.item, 0.01);
     pManager.AddNumberParameter("Percentage", "P", "The percentage of the population to mutate eg. 0.1 for 10%",
       GH_ParamAccess.item, 0.1);
   }
@@ -34,7 +34,7 @@ public class GH_PercentageMutation : GH_Component
   /// </summary>
   protected override void RegisterOutputParams(GH_OutputParamManager pManager)
   {
-    pManager.AddGenericParameter("MutationStrategy", "MS", "The mutation strategy", GH_ParamAccess.item);
+    pManager.AddGenericParameter("Mutation Strategy", "MS", "The mutation strategy", GH_ParamAccess.item);
   }
 
   /// <summary>

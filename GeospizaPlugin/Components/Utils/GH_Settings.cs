@@ -14,7 +14,7 @@ public class GH_Settings : GH_Component
   ///   Initializes a new instance of the Settings class.
   /// </summary>
   public GH_Settings()
-    : base("Settings", "S",
+    : base("Settings", "Settings",
       "Configure parameters and strategies for the evolutionary algorithm including population size, generations, selection, crossover, and mutation settings.",
       "Geospiza", "Utils")
   {
@@ -37,23 +37,23 @@ public class GH_Settings : GH_Component
   /// </summary>
   protected override void RegisterInputParams(GH_InputParamManager pManager)
   {
-    pManager.AddNumberParameter("PopulationSize", "PS", "The size of the population", GH_ParamAccess.item, 50);
-    pManager.AddNumberParameter("MaxGenerations", "MG", "The maximum number of generations", GH_ParamAccess.item,
+    pManager.AddNumberParameter("Population Size", "PS", "The size of the population", GH_ParamAccess.item, 50);
+    pManager.AddNumberParameter("Max Generations", "MG", "The maximum number of generations", GH_ParamAccess.item,
       25);
-    pManager.AddNumberParameter("EliteSize", "ES", "The number of elite individuals. If 0 no elite will be picked",
+    pManager.AddNumberParameter("Elite Size", "ES", "The number of elite individuals. If 0 no elite will be picked",
       GH_ParamAccess.item, 0);
-    pManager.AddGenericParameter("SelectionStrategy", "SS",
+    pManager.AddGenericParameter("Selection Strategy", "SS",
       "The selection strategy. As default StochasticUniversalSampling is used", GH_ParamAccess.item);
-    pManager.AddGenericParameter("PairingStrategy", "PS",
+    pManager.AddGenericParameter("Pairing Strategy", "PS",
       "The pairing strategy. As default an InBreedingFactor of 0.2 and Manhattan distance will be used",
       GH_ParamAccess.item);
-    pManager.AddGenericParameter("CrossoverStrategy", "CS",
+    pManager.AddGenericParameter("Crossover Strategy", "CS",
       "The crossover strategy. As default TwoPoint crossover will be used with a crossover rate of 0.6",
       GH_ParamAccess.item);
-    pManager.AddGenericParameter("MutationStrategy", "MS",
+    pManager.AddGenericParameter("Mutation Strategy", "MS",
       "The mutation strategy. As default random mutation will be used with a mutation rate of 0.01",
       GH_ParamAccess.item);
-    pManager.AddGenericParameter("TerminationStrategy", "TS",
+    pManager.AddGenericParameter("Termination Strategy", "TS",
       "The termination strategy. As a default it will terminate if the population diversity falls below 2",
       GH_ParamAccess.item);
 

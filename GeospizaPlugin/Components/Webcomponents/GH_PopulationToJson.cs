@@ -40,9 +40,7 @@ public class GH_PopulationToJSON : GH_Component
   /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
   protected override void SolveInstance(IGH_DataAccess DA)
   {
-    // Declare a variable for the input
     var populationWrapper = new GH_ObjectWrapper();
-    // If the input is not retrieved, return
     if (!DA.GetData(0, ref populationWrapper)) return;
 
     if (populationWrapper.Value is Population population)

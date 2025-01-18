@@ -10,7 +10,7 @@ public class GH_AditionalData : GH_Component
   /// Initializes a new instance of the GH_AditionalData class.
   /// </summary>
   public GH_AditionalData()
-    : base("AdditionalData", "AD",
+    : base("Additional Data", "Additional Data",
       "Add additional data to the web output",
       "Geospiza", "Webcomponents")
   {
@@ -30,7 +30,7 @@ public class GH_AditionalData : GH_Component
   /// </summary>
   protected override void RegisterOutputParams(GH_OutputParamManager pManager)
   {
-    pManager.AddGenericParameter("AditionalData", "AD", "The aditional data", GH_ParamAccess.item);
+    pManager.AddGenericParameter("Additional Data", "AD", "The additional data", GH_ParamAccess.item);
   }
 
   /// <summary>
@@ -43,9 +43,9 @@ public class GH_AditionalData : GH_Component
     if (!DA.GetData(0, ref key)) return;
     var value = "";
     if (!DA.GetData(1, ref value)) return;
-    var aditionalData = new Tuple<string, string>(key, value);
+    var additionalData = new Tuple<string, string>(key, value);
 
-    DA.SetData(0, aditionalData);
+    DA.SetData(0, additionalData);
   }
 
   public override GH_Exposure Exposure => GH_Exposure.tertiary;

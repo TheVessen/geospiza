@@ -13,9 +13,9 @@ public class StateManager : AsyncComponent
   /// Initializes a new instance of the StateManager class.
   /// </summary>
   public StateManager()
-    : base("StateManager", "SM",
-      "Description",
-      "Geospiza", "State")
+    : base("State Manager", "SM",
+      "An async component that displays the state of the evolutionary algorithm",
+      "Geospiza", "Utils")
   {
     BaseWorker = new EvoWorkerInstance();
   }

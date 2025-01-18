@@ -12,10 +12,10 @@ public class GH_PoolSelection : GH_Component
   ///   Initializes a new instance of the GH_PoolSelection class.
   /// </summary>
   public GH_PoolSelection()
-    : base("PoolSelection", "PS",
+    : base("Pool Selection", "PS",
       "Performs a pool selection. In Pool Selection, each individual in the population is assigned a selection probability " +
       "proportional to its fitness. Then, a number of individuals are selected randomly based on these probabilities.",
-      "Geospiza", "SelectionStrategy")
+      "Geospiza", "Selection Strategy")
   {
   }
 
@@ -41,7 +41,7 @@ public class GH_PoolSelection : GH_Component
   /// </summary>
   protected override void RegisterOutputParams(GH_OutputParamManager pManager)
   {
-    pManager.AddGenericParameter("SelectionStrategy", "SS", "The selection strategy", GH_ParamAccess.item);
+    pManager.AddGenericParameter("Selection Strategy", "SS", "The selection strategy", GH_ParamAccess.item);
   }
 
   /// <summary>

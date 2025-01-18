@@ -12,7 +12,7 @@ public class GH_SettingToJson : GH_Component
   /// Initializes a new instance of the SettingToJson class.
   /// </summary>
   public GH_SettingToJson()
-    : base("SettingToJson", "SettingToJson",
+    : base("Setting To Json", "Setting To Json",
       "Converts a setting to a JSON string",
       "Geospiza", "Converter")
   {
@@ -40,9 +40,7 @@ public class GH_SettingToJson : GH_Component
   /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
   protected override void SolveInstance(IGH_DataAccess DA)
   {
-    // Declare a variable for the input
     var settingWrapper = new GH_ObjectWrapper();
-    // If the input is not retrieved, return
     if (!DA.GetData(0, ref settingWrapper)) return;
 
     if (settingWrapper.Value is SolverSettings setting)
@@ -56,10 +54,7 @@ public class GH_SettingToJson : GH_Component
   /// <summary>
   /// Provides an Icon for the component.
   /// </summary>
-  protected override Bitmap Icon =>
-    //You can add image files to your project resources and access them like this:
-    // return Resources.IconForThisComponent;
-    null;
+  protected override Bitmap Icon => null;
 
   /// <summary>
   /// Gets the unique ID for this component. Do not change this ID after release.

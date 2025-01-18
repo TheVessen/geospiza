@@ -12,11 +12,11 @@ public class GH_StochasticUniversalSampling : GH_Component
   ///     Initializes a new instance of the GH_StochasticUniversalSampling class.
   /// </summary>
   public GH_StochasticUniversalSampling()
-    : base("StochasticUniversalSampling", "SUS",
+    : base("Stochastic Universal Sampling", "SUS",
       "Performs a Stochastic Universal Sampling. In SUS, the fitness of each individual is used " +
       "to assign a probability of selection. However, instead of selecting individuals " +
       "one at a time, SUS selects all individuals at once by spreading out evenly spaced pointers over the population's",
-      "Geospiza", "SelectionStrategy")
+      "Geospiza", "Selection Strategy")
   {
   }
 
@@ -42,7 +42,7 @@ public class GH_StochasticUniversalSampling : GH_Component
   /// </summary>
   protected override void RegisterOutputParams(GH_OutputParamManager pManager)
   {
-    pManager.AddGenericParameter("SelectionStrategy", "SS", "The selection strategy", GH_ParamAccess.item);
+    pManager.AddGenericParameter("Selection Strategy", "SS", "The selection strategy", GH_ParamAccess.item);
   }
 
   /// <summary>

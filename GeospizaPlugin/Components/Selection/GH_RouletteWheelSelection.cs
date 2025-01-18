@@ -12,10 +12,10 @@ public class GH_RouletteWheelSelection : GH_Component
   ///     Initializes a new instance of the TournamentSelection class.
   /// </summary>
   public GH_RouletteWheelSelection()
-    : base("RouletteWheelSelection", "RWS",
+    : base("Roulette Wheel Selection", "RWS",
       "Performs a roulette wheel selection. In Roulette Wheel Selection, the fitness of an individual is used to assign a probability of selection." +
       "Think of it as a Roulette Wheel where each individual takes up a slice of the wheel, but the size of the slice is proportional to the individual's fitness.",
-      "Geospiza", "SelectionStrategy")
+      "Geospiza", "Selection Strategy")
   {
   }
 
@@ -43,7 +43,7 @@ public class GH_RouletteWheelSelection : GH_Component
   /// </summary>
   protected override void RegisterOutputParams(GH_OutputParamManager pManager)
   {
-    pManager.AddGenericParameter("SelectionStrategy", "SS", "The selection strategy", GH_ParamAccess.item);
+    pManager.AddGenericParameter("Selection Strategy", "SS", "The selection strategy", GH_ParamAccess.item);
   }
 
   /// <summary>

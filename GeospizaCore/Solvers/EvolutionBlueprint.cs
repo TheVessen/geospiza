@@ -6,8 +6,16 @@ namespace GeospizaManager.Solvers;
 
 public abstract class EvolutionBlueprint : IEvolutionarySolver
 {
-  // Other shared properties
   protected readonly Random Random = new();
+  protected Population Population { get; set; } = new();
+  protected int PopulationSize { get; set; }
+  protected int MaxGenerations { get; set; }
+  protected int EliteSize { get; set; }
+  protected ISelectionStrategy SelectionStrategy { get; set; }
+  protected ICrossoverStrategy CrossoverStrategy { get; set; }
+  protected IMutationStrategy MutationStrategy { get; set; }
+  protected PairingStrategy PairingStrategy { get; set; }
+  protected ITerminationStrategy TerminationStrategy { get; set; }
 
   /// <summary>
   ///   Initializes the evolutionary algorithm with the given settings.
@@ -25,22 +33,6 @@ public abstract class EvolutionBlueprint : IEvolutionarySolver
     TerminationStrategy = settings.TerminationStrategy;
   }
 
-  //Inhabitants
-  protected Population Population { get; set; } = new();
-
-  // Parameters
-  protected int PopulationSize { get; set; }
-  protected int MaxGenerations { get; set; }
-  protected int EliteSize { get; set; }
-
-  // Strategies
-  protected ISelectionStrategy SelectionStrategy { get; set; }
-  protected ICrossoverStrategy CrossoverStrategy { get; set; }
-  protected IMutationStrategy MutationStrategy { get; set; }
-  protected PairingStrategy PairingStrategy { get; set; }
-  protected ITerminationStrategy TerminationStrategy { get; set; }
-
-
   /// <summary>
   ///   Main method to run the evolutionary algorithm.
   /// </summary>
@@ -51,7 +43,6 @@ public abstract class EvolutionBlueprint : IEvolutionarySolver
   /// </summary>
   public void InitializePopulation(StateManager stateManager, EvolutionObserver evolutionObserver)
   {
-    //Create an empty population
     var fistGenBestFitness = 0.0;
     var fitnessInstance = Fitness.Instance;
 
@@ -60,7 +51,6 @@ public abstract class EvolutionBlueprint : IEvolutionarySolver
     {
       var individual = new Individual();
 
-      //Go through the gene pool and create a new individual (Totally random)
       foreach (var geneTemplate in stateManager.Genotype)
       {
         var ctg = geneTemplate.Value;

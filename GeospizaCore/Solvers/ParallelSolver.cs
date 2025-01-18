@@ -8,6 +8,8 @@ namespace GeospizaManager.Solvers;
 public class ParallelSolver : EvolutionBlueprint
 {
   private const int TerminationEvaluationThreshold = 5;
+  private StateManager StateManager { get; }
+  private EvolutionObserver EvolutionObserver { get; }
 
   public ParallelSolver(SolverSettings settings, StateManager stateManager,
     EvolutionObserver evolutionObserver) :
@@ -16,9 +18,6 @@ public class ParallelSolver : EvolutionBlueprint
     StateManager = stateManager;
     EvolutionObserver = evolutionObserver;
   }
-
-  private StateManager StateManager { get; }
-  private EvolutionObserver EvolutionObserver { get; }
 
   public override void RunAlgorithm()
   {

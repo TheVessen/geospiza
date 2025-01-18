@@ -12,11 +12,11 @@ public class GH_TournamentSelection : GH_Component
   ///     Initializes a new instance of the TournamentSelection class.
   /// </summary>
   public GH_TournamentSelection()
-    : base("TournamentSelection", "TS",
+    : base("Tournament Selection", "TS",
       "Performs a tournament selection. In Tournament Selection, a subset of individuals is chosen " +
       "from the population, and the individual with the highest " +
       "fitness in this group is selected.The process is repeated until the desired number of individuals is selected.",
-      "Geospiza", "SelectionStrategy")
+      "Geospiza", "Selection Strategy")
   {
   }
 
@@ -37,7 +37,7 @@ public class GH_TournamentSelection : GH_Component
   /// </summary>
   protected override void RegisterInputParams(GH_InputParamManager pManager)
   {
-    pManager.AddNumberParameter("TournamentSize", "TS", "The size of the tournament", GH_ParamAccess.item, 4);
+    pManager.AddNumberParameter("Tournament Size", "TS", "The size of the tournament", GH_ParamAccess.item, 4);
   }
 
   /// <summary>
@@ -45,7 +45,7 @@ public class GH_TournamentSelection : GH_Component
   /// </summary>
   protected override void RegisterOutputParams(GH_OutputParamManager pManager)
   {
-    pManager.AddGenericParameter("SelectionStrategy", "SS", "The selection strategy", GH_ParamAccess.item);
+    pManager.AddGenericParameter("Selection Strategy", "SS", "The selection strategy", GH_ParamAccess.item);
   }
 
   /// <summary>

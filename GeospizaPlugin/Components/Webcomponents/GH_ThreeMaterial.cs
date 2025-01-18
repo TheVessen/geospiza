@@ -17,7 +17,7 @@ public class GH_ThreeMaterial : GH_Component
   /// Initializes a new instance of the GH_ThreeMaterial class.
   /// </summary>
   public GH_ThreeMaterial()
-    : base("ThreeMaterial", "TM",
+    : base("Three Material", "TM",
       "Builds an object for the three.js material",
       "Geospiza", "Webcomponents")
   {

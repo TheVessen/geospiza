@@ -124,7 +124,6 @@ public class TwoPointCrossover : CrossoverStrategy
 
     var counter = 0;
 
-    // Ensure crossoverPoint1 is not equal to crossoverPoint2
     while (crossoverPoint1 == crossoverPoint2)
     {
       crossoverPoint2 = Random.Next(0, genomeLength);

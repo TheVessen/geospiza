@@ -12,11 +12,11 @@ public class GH_BiasedSelection_OBSOLETE : GH_Component
   ///   Initializes a new instance of the GH_BiasedSelection_OBSOLETE class.
   /// </summary>
   public GH_BiasedSelection_OBSOLETE()
-    : base("BiasedSelection", "BS",
+    : base("Biased Selection", "BS",
       "Performs a biased selection. In Biased Selection, each individual in the population is assigned " +
       "a selection probability proportional to its fitness.Then, " +
       "a number of individuals are selected randomly based on these probabilities.",
-      "Geospiza", "SelectionStrategy")
+      "Geospiza", "Selection Strategy")
   {
   }
 
@@ -42,7 +42,7 @@ public class GH_BiasedSelection_OBSOLETE : GH_Component
   /// </summary>
   protected override void RegisterOutputParams(GH_OutputParamManager pManager)
   {
-    pManager.AddGenericParameter("SelectionStrategy", "SS", "The selection strategy", GH_ParamAccess.item);
+    pManager.AddGenericParameter("Selection Strategy", "SS", "The selection strategy", GH_ParamAccess.item);
   }
 
   public override GH_Exposure Exposure { get; } = GH_Exposure.hidden;

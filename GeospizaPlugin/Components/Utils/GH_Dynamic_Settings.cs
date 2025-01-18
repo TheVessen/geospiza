@@ -26,22 +26,22 @@ public class GH_Dynamic_Settings : GH_Component
   /// </summary>
   protected override void RegisterInputParams(GH_InputParamManager pManager)
   {
-    pManager.AddNumberParameter("PopulationSizes", "PS", "The size of the population", GH_ParamAccess.list);
-    pManager.AddNumberParameter("MaxGenerations", "MG", "The maximum number of generations", GH_ParamAccess.list);
-    pManager.AddNumberParameter("EliteSizes", "ES", "The number of elite individuals. If 0 no elite will be picked",
+    pManager.AddNumberParameter("Population Sizes", "PS", "The size of the population", GH_ParamAccess.list);
+    pManager.AddNumberParameter("Max Generations", "MG", "The maximum number of generations", GH_ParamAccess.list);
+    pManager.AddNumberParameter("Elite Sizes", "ES", "The number of elite individuals. If 0 no elite will be picked",
       GH_ParamAccess.list);
-    pManager.AddGenericParameter("SelectionStrategies", "SS",
+    pManager.AddGenericParameter("Selection Strategies", "SS",
       "The selection strategy. As default StochasticUniversalSampling is used", GH_ParamAccess.list);
-    pManager.AddGenericParameter("PairingStrategies", "PS",
+    pManager.AddGenericParameter("Pairing Strategies", "PS",
       "The pairing strategy. As default an InBreedingFactor of 0.2 and Manhattan distance will be used",
       GH_ParamAccess.list);
-    pManager.AddGenericParameter("CrossoverStrategies", "CS",
+    pManager.AddGenericParameter("Crossover Strategies", "CS",
       "The crossover strategy. As default TwoPoint crossover will be used with a crossover rate of 0.6",
       GH_ParamAccess.list);
-    pManager.AddGenericParameter("MutationStrategies", "MS",
+    pManager.AddGenericParameter("Mutation Strategies", "MS",
       "The mutation strategy. As default random mutation will be used with a mutation rate of 0.01",
       GH_ParamAccess.list);
-    pManager.AddGenericParameter("TerminationStrategies", "TS",
+    pManager.AddGenericParameter("Termination Strategies", "TS",
       "The termination strategy. As a default it will terminate if the population diversity falls below 2",
       GH_ParamAccess.list);
   }
@@ -61,39 +61,31 @@ public class GH_Dynamic_Settings : GH_Component
   /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
   protected override void SolveInstance(IGH_DataAccess DA)
   {
-    // Population size
     var populationSizes = new List<GH_Number>();
     if (!DA.GetDataList(0, populationSizes)) return;
 
-    // Max generations
     var maxGenerations = new List<GH_Number>();
     if (!DA.GetDataList(1, maxGenerations)) return;
 
-    // Elite size
     var eliteSizes = new List<GH_Number>();
     if (!DA.GetDataList(2, eliteSizes)) return;
 
-    // Selection strategy
     var selectionStrategiesWrapper = new List<GH_ObjectWrapper>();
     if (!DA.GetDataList(3, selectionStrategiesWrapper)) return;
     var selectionStrategies = selectionStrategiesWrapper.Select(w => w.Value as SelectionStrategy).ToList();
 
-    // Pairing strategy
     var pairingStrategiesWrapper = new List<GH_ObjectWrapper>();
     if (!DA.GetDataList(4, pairingStrategiesWrapper)) return;
     var pairingStrategies = pairingStrategiesWrapper.Select(w => w.Value as PairingStrategy).ToList();
 
-    // Crossover strategy
     var crossoverStrategiesWrapper = new List<GH_ObjectWrapper>();
     if (!DA.GetDataList(5, crossoverStrategiesWrapper)) return;
     var crossoverStrategies = crossoverStrategiesWrapper.Select(w => w.Value as CrossoverStrategy).ToList();
 
-    // Mutation strategy
     var mutationStrategiesWrapper = new List<GH_ObjectWrapper>();
     if (!DA.GetDataList(6, mutationStrategiesWrapper)) return;
     var mutationStrategies = mutationStrategiesWrapper.Select(w => w.Value as MutationStrategy).ToList();
 
-    // Termination strategy
     var terminationStrategiesWrapper = new List<GH_ObjectWrapper>();
     if (!DA.GetDataList(7, terminationStrategiesWrapper)) return;
     var terminationStrategies = terminationStrategiesWrapper.Select(w => w.Value as TerminationStrategy).ToList();
@@ -124,10 +116,7 @@ public class GH_Dynamic_Settings : GH_Component
   /// <summary>
   /// Provides an Icon for the component.
   /// </summary>
-  protected override Bitmap Icon =>
-    //You can add image files to your project resources and access them like this:
-    // return Resources.IconForThisComponent;
-    null;
+  protected override Bitmap Icon => null;
 
   /// <summary>
   /// Gets the unique ID for this component. Do not change this ID after release.

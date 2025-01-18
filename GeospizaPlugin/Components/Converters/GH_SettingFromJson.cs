@@ -11,7 +11,7 @@ public class GH_SettingFromJson : GH_Component
   /// Initializes a new instance of the GH_SettingFromJson class.
   /// </summary>
   public GH_SettingFromJson()
-    : base("SettingFromJson", "SettingFromJson",
+    : base("Setting From Json", "Setting From Json",
       "Converts a JSON string to a setting",
       "Geospiza", "Converter")
   {

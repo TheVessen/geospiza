@@ -5,7 +5,6 @@
         Material: Material;
         Fitness: number;
     }[];
-    // Additional data declared in grasshopper
 };
 
 export type Material = {
