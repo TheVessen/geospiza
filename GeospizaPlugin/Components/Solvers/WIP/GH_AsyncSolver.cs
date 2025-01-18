@@ -10,13 +10,13 @@ using Grasshopper.Kernel.Types;
 
 namespace GeospizaPlugin.Components.Solvers;
 
-public class AsyncSolver : AsyncComponent
+public class GH_AsyncSolver : AsyncComponent
 {
   /// <summary>
   /// Initializes a new instance of the BasicSolver class.
   /// </summary>
-  public AsyncSolver()
-    : base("AsyncSolver", "SOS",
+  public GH_AsyncSolver()
+    : base("GH_AsyncSolver", "SOS",
       "Solver for single objective optimization problems",
       "Geospiza", "Solvers")
   {
@@ -82,7 +82,8 @@ public class AsyncSolver : AsyncComponent
   {
     public EvoAsyncWorker(GH_Component _parent) : base(_parent)
     {
-      _stateManager = StateManager.GetInstance(_parent);
+      var doc = _parent.OnPingDocument();
+      _stateManager = StateManager.GetInstance(_parent,doc);
       _evolutionObserver = EvolutionObserver.GetInstance(_parent);
       this._parent = _parent;
     }
@@ -180,32 +181,12 @@ public class AsyncSolver : AsyncComponent
       {
         return;
       }
-
-      // Set up state manager
-      if (_stateManager.GetDocument() == null)
-      {
-        _stateManager.SetDocument(_parent.OnPingDocument());
-        _stateManager.SetThisComponent(_parent);
-        _stateManager.SetFitnessComponent();
-      }
-
+      
       _stateManager.SetGenes(GeneIds);
       _stateManager.PreviewLevel = PreviewLevel;
 
       // Check if the solver should run
       bool start = (Timestamp != 0 && Timestamp != _lastTimestamp) || Run;
-
-      if (_stateManager.FitnessComponent == null)
-      {
-        _stateManager.SetThisComponent(_parent);
-        _stateManager.SetFitnessComponent();
-
-        if (_stateManager.FitnessComponent == null)
-        {
-          _parent.AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "No fitness component found");
-          return;
-        }
-      }
 
       // Run the solver
       if (start)

@@ -1,46 +1,40 @@
 ﻿using System;
 using System.Drawing;
 using GeospizaManager.Strategies;
+using GeospizaPlugin.Properties;
 using Grasshopper.Kernel;
 
 namespace GeospizaPlugin.Components.Selection;
 
-/// <summary>
-/// </summary>
-public class OBSOLETE_GH_ExclusiveSelection : GH_Component
+public class GH_BiasedSelection : GH_Component
 {
   /// <summary>
-  ///   Initializes a new instance of the GH_ExclusiveSelection class.
+  ///   Initializes a new instance of the GH_BiasedSelection class.
   /// </summary>
-  public OBSOLETE_GH_ExclusiveSelection()
-    : base("ExclusiveSelection", "ES",
-      "Performs an exclusive selection",
+  public GH_BiasedSelection()
+    : base("BiasedSelection", "BS",
+      "Performs a biased selection. In Biased Selection, each individual in the population is assigned " +
+      "a selection probability proportional to its fitness.Then, " +
+      "a number of individuals are selected randomly based on these probabilities.",
       "Geospiza", "SelectionStrategy")
   {
   }
 
-  public override GH_Exposure Exposure => GH_Exposure.hidden;
-
   /// <summary>
   ///   Provides an Icon for the component.
   /// </summary>
-  protected override Bitmap Icon =>
-    //You can add image files to your project resources and access them like this:
-    // return Resources.IconForThisComponent;
-    null;
+  protected override Bitmap Icon => Resources.BiasSelection;
 
   /// <summary>
   ///   Gets the unique ID for this component. Do not change this ID after release.
   /// </summary>
-  public override Guid ComponentGuid => new("D854EADC-0573-4FA9-BFD2-F0C0B9387D40");
+  public override Guid ComponentGuid => new("2A14D98B-C387-4C60-8EAC-28D821DD7948");
 
   /// <summary>
   ///   Registers all the input parameters for this component.
   /// </summary>
   protected override void RegisterInputParams(GH_InputParamManager pManager)
   {
-    pManager.AddNumberParameter("TopPercentage", "TP", "The percentage of the top individuals to be selected",
-      GH_ParamAccess.item, 0.1);
   }
 
   /// <summary>
@@ -57,10 +51,7 @@ public class OBSOLETE_GH_ExclusiveSelection : GH_Component
   /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
   protected override void SolveInstance(IGH_DataAccess DA)
   {
-    double topPercentage = 0;
-    if (!DA.GetData(0, ref topPercentage)) return;
-
-    var selection = new ExclusiveSelection(topPercentage);
+    var selection = new RouletteWheelSelection();
 
     DA.SetData(0, selection);
   }

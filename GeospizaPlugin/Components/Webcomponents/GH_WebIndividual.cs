@@ -48,19 +48,19 @@ public class GH_WebGeo : GH_Component
   /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
   protected override void SolveInstance(IGH_DataAccess DA)
   {
-    GH_Structure<IGH_Goo> GHBaseGeo = new GH_Structure<IGH_Goo>();
+    var GHBaseGeo = new GH_Structure<IGH_Goo>();
     if (!DA.GetDataTree(0, out GHBaseGeo)) return;
     //Base params
-    MeshingParameters mParams = new MeshingParameters();
+    var mParams = new MeshingParameters();
     mParams.SimplePlanes = true;
     //vars
-    List<ThreeMaterial> threeMaterials = new List<ThreeMaterial>();
+    var threeMaterials = new List<ThreeMaterial>();
 
     //Convert to ThreeMaterial
-    GH_Structure<IGH_Goo> materialWrappers = new GH_Structure<IGH_Goo>();
+    var materialWrappers = new GH_Structure<IGH_Goo>();
     DA.GetDataTree(1, out materialWrappers);
 
-    bool isValid = false;
+    var isValid = false;
 
     if (GHBaseGeo.get_Branch(0) != null && materialWrappers.get_Branch(0) != null)
     {
@@ -68,34 +68,25 @@ public class GH_WebGeo : GH_Component
 
       var sameCount = GHBaseGeo.AllData(false).ToList().Count ==
                       materialWrappers.AllData(false).ToList().Count();
-      if (sameCount || materialWrappers.AllData(false).ToList().Count == 1)
-      {
-        isValid = true;
-      }
+      if (sameCount || materialWrappers.AllData(false).ToList().Count == 1) isValid = true;
 
       // If not the same structure, check if materialWrappers contains only one object
-      if (!isValid)
-      {
-        isValid = materialWrappers.AllData(true).Count() == 1;
-      }
+      if (!isValid) isValid = materialWrappers.AllData(true).Count() == 1;
     }
 
     if (!isValid)
     {
-      this.AddRuntimeMessage(GH_RuntimeMessageLevel.Error,
+      AddRuntimeMessage(GH_RuntimeMessageLevel.Error,
         "The input data is not valid. The structure of the material and the geo must be the same or the material must contain only one object");
       return;
     }
 
-    List<Mesh> meshes = Helpers.MeshConverter(GHBaseGeo);
+    var meshes = Helpers.MeshConverter(GHBaseGeo);
 
     foreach (var threeMaterialWrapper in materialWrappers.AllData(false))
     {
-      object internalData = threeMaterialWrapper.ScriptVariable();
-      if (internalData is ThreeMaterial threeMaterial)
-      {
-        threeMaterials.Add(threeMaterial);
-      }
+      var internalData = threeMaterialWrapper.ScriptVariable();
+      if (internalData is ThreeMaterial threeMaterial) threeMaterials.Add(threeMaterial);
     }
 
     var meshBodies = new List<WebIndividual>();
@@ -104,13 +95,9 @@ public class GH_WebGeo : GH_Component
       var mesh = meshes[i];
       ThreeMaterial threeMaterial;
       if (threeMaterials.Count == 1)
-      {
         threeMaterial = threeMaterials[0];
-      }
       else
-      {
         threeMaterial = threeMaterials[i];
-      }
 
       meshBodies.Add(new WebIndividual(mesh, threeMaterial));
     }
@@ -126,8 +113,5 @@ public class GH_WebGeo : GH_Component
   /// <summary>
   /// Gets the unique ID for this component. Do not change this ID after release.
   /// </summary>
-  public override Guid ComponentGuid
-  {
-    get { return new Guid("DD37E066-9E47-4C3C-82A0-0C64141F22B4"); }
-  }
+  public override Guid ComponentGuid => new("DD37E066-9E47-4C3C-82A0-0C64141F22B4");
 }
