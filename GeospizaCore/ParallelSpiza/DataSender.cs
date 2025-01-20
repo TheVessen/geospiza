@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Net.Http;
+using System.Text;
 using GeospizaManager.Utils;
 
 namespace GeospizaManager.GeospizaCordinator;

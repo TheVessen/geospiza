@@ -109,8 +109,12 @@ public class EvoSettingsConverter : JsonConverter
 
     writer.WriteStartObject();
 
-    foreach (var (propertyName, strategy) in strategyProperties)
+    foreach (var kvp in strategyProperties)
+    {
+      var propertyName = kvp.Key;
+      var strategy = kvp.Value;
       WriteStrategy(writer, propertyName, strategy, serializer);
+    }
 
     writer.WritePropertyName(nameof(settings.PopulationSize));
     writer.WriteValue(settings.PopulationSize);

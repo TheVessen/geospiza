@@ -11,7 +11,7 @@ public class EvolutionarySolverCoordinator
   private static readonly object Padlock = new();
   private readonly string _ghFilePath;
   private readonly HttpServer _httpServer;
-  private readonly ConcurrentBag<ObserverServerSnapshot> _receivedObserver = new();
+  private  ConcurrentBag<ObserverServerSnapshot> _receivedObserver = new();
   private TaskCompletionSource<bool> _allObserversReceived = new();
   private bool _comuteInitialized;
   private int _numberOfSolvers;
@@ -94,7 +94,7 @@ public class EvolutionarySolverCoordinator
         lock (_receivedObserver)
         {
           observers = _receivedObserver.ToList();
-          _receivedObserver.Clear();
+          _receivedObserver = new();
         }
 
         var result = ProcessData(observers);

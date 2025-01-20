@@ -86,8 +86,6 @@ public class StateManager
   /// </summary>
   public static StateManager GetInstance(GH_Component solver, GH_Document document)
   {
-    ArgumentNullException.ThrowIfNull(solver);
-    ArgumentNullException.ThrowIfNull(document);
 
     var foundComponent = document.Objects
       .OfType<GH_Component>()
@@ -127,7 +125,6 @@ public class StateManager
   /// </summary>
   public void SetGenes(List<string> geneIds)
   {
-    ArgumentNullException.ThrowIfNull(geneIds);
 
     if (NumberOfGeneIds != geneIds.Count)
     {

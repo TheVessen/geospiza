@@ -2,13 +2,14 @@
 
     <PropertyGroup>
         <OutputType>Exe</OutputType>
-        <TargetFramework>net7.0</TargetFramework>
+        <TargetFrameworks>net7.0; net48</TargetFrameworks>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <RootNamespace>GeospizaServer</RootNamespace>
         <Description>Project for starting a evolutionary cordinator server for handeling multiple
             evolutionary desing solvers
         </Description>
+        <LangVersion>latest</LangVersion>
     </PropertyGroup>
 
     <ItemGroup>

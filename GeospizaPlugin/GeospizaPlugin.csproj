@@ -1,10 +1,11 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
-        <TargetFramework>net7.0</TargetFramework>
+        <TargetFrameworks>net7.0;net48</TargetFrameworks>
+        <EnableDynamicLoading>true</EnableDynamicLoading>
         <TargetExt>.gha</TargetExt>
-        <LangVersion>11</LangVersion>
-        <GenerateResourceUsePreserializedResources>true</GenerateResourceUsePreserializedResources>
-        <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+        <NoWarn>NU1701;NETSDK1086</NoWarn>
+        <EnableWindowsTargeting>true</EnableWindowsTargeting>
+        <LangVersion>latest</LangVersion>
     </PropertyGroup>
 
     <!-- Package metadata -->
@@ -22,13 +23,28 @@
         <PackageReference Include="Accord.MachineLearning" Version="3.8.0" />
         <PackageReference Include="Microsoft.ML" Version="3.0.1" />
         <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-        <PackageReference Include="System.Drawing.Common" Version="8.0.1" />
-        <PackageReference Include="System.Resources.Extensions" Version="8.0.0" />
     </ItemGroup>
 
-    <!-- Grasshopper References -->
+    <PropertyGroup>
+        <GenerateResourceUsePreserializedResources>true</GenerateResourceUsePreserializedResources>
+    </PropertyGroup>
+
+    <!-- Windows-specific configuration -->
+    <PropertyGroup Condition="$(TargetFramework.Contains('-windows')) or $(TargetFramework.StartsWith('net4'))">
+        <UseWindowsForms>true</UseWindowsForms>
+    </PropertyGroup>
+
+    <!-- Rhino References -->
     <ItemGroup>
-        <PackageReference Include="Grasshopper" Version="8.0.23304.9001"  IncludeAssets="compile;build" />
+        <PackageReference Include="Grasshopper" Version="8.0.23304.9001" IncludeAssets="compile;build" />
+        <PackageReference Include="System.Resources.Extensions" Version="5.0.0" />
+    </ItemGroup>
+
+    <!-- MacOS-specific references -->
+    <ItemGroup Condition="!($(TargetFramework.Contains('-windows')) or $(TargetFramework.StartsWith('net4')))">
+        <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies.net48" Version="1.0.3" ExcludeAssets="all" GeneratePathProperty="true" />
+        <Reference Include="$(PkgMicrosoft_NETFramework_ReferenceAssemblies_net48)\build\.NETFramework\v4.8\System.Windows.Forms.dll" Private="False" />
+        <PackageReference Include="System.Drawing.Common" Version="7.0.0" ExcludeAssets="runtime" />
     </ItemGroup>
 
     <!-- System References -->
@@ -52,21 +68,13 @@
             <Generator>ResXFileCodeGenerator</Generator>
             <LastGenOutput>Resources.Designer.cs</LastGenOutput>
         </EmbeddedResource>
-
-        <!-- Icon Resources -->
         <EmbeddedResource Include="Resources\Icons\*.png" />
-
-        <!-- Excluded Resources -->
-        <EmbeddedResource Remove="src\Algorythm\**" />
-        <EmbeddedResource Remove="src\Core\**" />
-        <EmbeddedResource Remove="src\Strategies\**" />
     </ItemGroup>
 
     <!-- Project References -->
     <ItemGroup>
         <ProjectReference Include="..\GeospizaCore\GeospizaCore.csproj" />
     </ItemGroup>
-
 
     <!-- Manifest generation -->
     <Target Name="UpdateManifest">

@@ -98,7 +98,6 @@ public class EvolutionObserver
   /// <exception cref="ArgumentNullException">Thrown when solver is null</exception>
   public static EvolutionObserver GetInstance(GH_Component solver)
   {
-    ArgumentNullException.ThrowIfNull(solver);
     if (_instances.TryGetValue(solver, out var observer) && observer._isDisposed) _instances.TryRemove(solver, out _);
     return _instances.GetOrAdd(solver, _ => new EvolutionObserver());
   }
@@ -109,7 +108,6 @@ public class EvolutionObserver
   /// <param name="currentPopulation">The population to analyze</param>
   public void Snapshot(Population currentPopulation)
   {
-    ArgumentNullException.ThrowIfNull(currentPopulation);
 
     lock (_listLock)
     {
@@ -143,7 +141,6 @@ public class EvolutionObserver
   /// </summary>
   private void SetPopulation(Population population)
   {
-    ArgumentNullException.ThrowIfNull(population);
 
     lock (_listLock)
     {
@@ -209,7 +206,6 @@ public class EvolutionObserver
   /// <returns>New EvolutionObserver instance or null if deserialization fails</returns>
   public static EvolutionObserver? FromJson(string json)
   {
-    ArgumentNullException.ThrowIfNull(json);
 
     var settings = new JsonSerializerSettings
     {

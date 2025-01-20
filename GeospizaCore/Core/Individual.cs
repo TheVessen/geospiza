@@ -85,7 +85,7 @@ public class Individual : IEquatable<Individual>
 
     foreach (var gene in GenePool)
     {
-      var matchingGene = stateManager.Genotype.GetValueOrDefault(gene.GeneGuid);
+      stateManager.Genotype.TryGetValue(gene.GeneGuid,  out var matchingGene);
       matchingGene?.SetTickValue(gene.TickValue, stateManager);
     }
   }
