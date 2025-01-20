@@ -2,10 +2,13 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
+using System.Net.Http;
+using System.Text;
 using GeospizaPlugin.Utils;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
+using Newtonsoft.Json;
 
 namespace GeospizaPlugin.Components.Webcomponents;
 
@@ -82,7 +85,7 @@ public class GeoLink : GH_Component
     var listen = false;
     if (!DA.GetData(3, ref listen)) return;
 
-    if (listen) Helpers.SendWebRequest(meshBodies, additionalData, endpoint, this);
+    if (listen) SendWebRequest(meshBodies, additionalData, endpoint, this);
   }
 
   public override GH_Exposure Exposure => GH_Exposure.primary;
@@ -102,4 +105,51 @@ public class GeoLink : GH_Component
   /// that use the old ID will partially fail during loading.
   /// </summary>
   public override Guid ComponentGuid => new("819d7e1b-ee19-49e1-9116-43156f5e0ce9");
+  
+  public static void SendWebRequest(List<WebIndividual> dataList, List<Tuple<string, string>> additionalData,
+    string endpoint, GH_Component component)
+  {
+    var meshes = dataList.Select(individual => individual.ToAnonymousObject()).ToList();
+
+    var rootObject = new Dictionary<string, object>
+    {
+      { "Meshes", meshes }
+    };
+
+    foreach (var data in additionalData) rootObject.Add(data.Item1, data.Item2);
+
+    var json = JsonConvert.SerializeObject(rootObject);
+
+
+    using (var client = new HttpClient())
+    {
+      HttpResponseMessage response = null;
+
+      try
+      {
+        response = client.GetAsync(endpoint).Result;
+      }
+      catch (Exception ex)
+      {
+        component.AddRuntimeMessage(GH_RuntimeMessageLevel.Error, $"Error: {ex.Message}");
+        return;
+      }
+
+      if (!response.IsSuccessStatusCode)
+      {
+        component.AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "API endpoint is not online.");
+        return;
+      }
+
+      var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+      var result = client.PostAsync(endpoint, content).Result;
+
+      if (result.IsSuccessStatusCode)
+      {
+        // Handle success
+      }
+      // Handle failure
+    }
+  }
 }

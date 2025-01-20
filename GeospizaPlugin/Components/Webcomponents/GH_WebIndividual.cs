@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using GeospizaManager.Core;
+using GeospizaManager.Utils;
 using GeospizaPlugin.Utils;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Data;
@@ -81,7 +82,7 @@ public class GH_WebIndividual : GH_Component
       return;
     }
 
-    var meshes = Helpers.MeshConverter(GHBaseGeo);
+    var meshes = GeoHelpers.MeshConverter(GHBaseGeo);
 
     foreach (var threeMaterialWrapper in materialWrappers.AllData(false))
     {
