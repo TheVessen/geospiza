@@ -28,6 +28,7 @@ This project provides a flexible framework for implementing and running evolutio
 
 ## Installation
 
+dotnet msbuild -target:Package -p:Configuration=Release .\GeospizaPlugin\GeospizaPlugin.csproj
 (TODO)
 
 ## Usage
