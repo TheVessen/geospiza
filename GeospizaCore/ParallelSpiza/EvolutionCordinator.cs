@@ -6,6 +6,9 @@ using Newtonsoft.Json;
 
 namespace GeospizaManager.GeospizaCordinator;
 
+///ATTENTION This is still very much in the works. More documentation  will be added as the project progresses.
+
+
 public class RequestContext
 {
   public TaskCompletionSource<string> TaskCompletionSource { get; set; }
@@ -50,7 +53,7 @@ public class EvolutionCordinator
         }
       }
     }
-    catch (HttpListenerException ex) when (ex.ErrorCode == 995) // ERROR_OPERATION_ABORTED
+    catch (HttpListenerException ex) when (ex.ErrorCode == 995)
     {
       Console.WriteLine("Listener stopped.");
     }
@@ -73,7 +76,6 @@ public class EvolutionCordinator
   {
     string requestBody;
 
-    // Read the POST request body
     using (var reader = new StreamReader(context.Request.InputStream, context.Request.ContentEncoding))
     {
       requestBody = await reader.ReadToEndAsync();
@@ -90,7 +92,6 @@ public class EvolutionCordinator
     }
     catch (JsonException ex)
     {
-      // Handle JSON parsing error
       Console.WriteLine($"Error parsing JSON: {ex.Message}");
 
       // Respond with a 400 Bad Request status code
@@ -112,8 +113,6 @@ public class EvolutionCordinator
       {
         TaskCompletionSource = taskCompletionSource,
         BaseObserver = baseObserver
-        // HttpContext = context, // Not needed unless you need to access it later
-        // Add any other individual parameters here
       };
 
       _requestContexts.Add(requestContext);
@@ -133,7 +132,6 @@ public class EvolutionCordinator
   private List<Individual> MergeInhabitants(List<ObserverServerSnapshot> observers)
   {
     var allInhabitants = new List<Individual>();
-
     foreach (var observer in observers) allInhabitants.AddRange(observer.Inhabitants);
 
     return allInhabitants;
@@ -142,8 +140,6 @@ public class EvolutionCordinator
   private List<Individual> RunEvolution(List<Individual> allInhabitants, int origialPopulationSize)
   {
     var newInhabitants = new List<Individual>();
-
-    // Select the top individuals from the current population (elitism)
     var elite = Elitism.SelectTopIndividuals(origialPopulationSize, allInhabitants);
     newInhabitants.AddRange(elite);
 
@@ -162,10 +158,8 @@ public class EvolutionCordinator
     // Now, process each request individually
     foreach (var requestContext in _requestContexts)
     {
-      // Access individual data
       var observer = requestContext.BaseObserver;
 
-      // Create a result object
       var result = new
       {
         TotalInhabitants = allInhabitants.Count,
@@ -174,15 +168,11 @@ public class EvolutionCordinator
         Message = "Data processed successfully."
       };
 
-      // Serialize the result to JSON
       var individualResult = JsonConvert.SerializeObject(result);
-
-      // Set the result for this task
       requestContext.TaskCompletionSource.SetResult(individualResult);
       counter++;
     }
 
-    // Clear the stored data and request contexts
     _requestContexts.Clear();
   }
 }

@@ -37,10 +37,6 @@ The project is structured in 3 subprojects
 
 See [Articles/README.md](Articles/README.md) for research papers and resources used in developing the algorithms.
 
-## License
-
-This project is licensed under the MIT License - see the [LICENSE.txt](LICENSE.txt) file for details
-
 ## Contributing
 
 We welcome contributions of any size! Here's how you can help:
@@ -90,3 +86,7 @@ We welcome contributions of any size! Here's how you can help:
 - Review documentation
 - Ask in discussions
 - Contact maintainer
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE.txt](LICENSE.txt) file for details

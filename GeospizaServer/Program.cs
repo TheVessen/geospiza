@@ -2,7 +2,9 @@
 using GeospizaManager.GeospizaCordinator;
 
 /// <summary>
-/// !ATENTION! This is still very much in the works. Idea is to have a server managing multiple instances of Geospiza.
+/// !ATENTION! This is still very much in the works. 
+/// 
+/// Idea is to have a server managing multiple instances of Geospiza and have a coordinator manage those instances.
 /// </summary>
 public class Program
 {
