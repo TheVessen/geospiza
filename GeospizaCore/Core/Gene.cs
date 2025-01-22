@@ -45,15 +45,12 @@ public class Gene
   }
 
   /// <summary>
-  /// Gets the tick value of the gene.
+  /// Gets the tick value of the gene. <see cref="GeneTemplate"/> For a gene pool list, this value represents the position on the slider.
   /// <remarks>
   /// </remarks>
   /// </summary>
   public int TickValue { get; private set; }
 
-  /// <summary>
-  /// Gets the unique identifier for the gene.
-  /// </summary>
   public Guid GeneGuid { get; }
 
   /// <summary>
@@ -65,9 +62,6 @@ public class Gene
   /// </remarks>
   public int TickCount { get; }
 
-  /// <summary>
-  /// Gets the name of the gene.
-  /// </summary>
   public string GeneName { get; }
 
   /// <summary>

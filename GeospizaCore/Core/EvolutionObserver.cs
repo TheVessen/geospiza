@@ -154,16 +154,13 @@ public class EvolutionObserver
   }
 
   /// <summary>
-  /// Increments the generation counter
+  /// Increments the generation counter by one
   /// </summary>
   private void UpdateGenerationCounter()
   {
     CurrentGenerationIndex++;
   }
 
-  /// <summary>
-  /// Resets all observations and statistics to initial state
-  /// </summary>
   public void Reset()
   {
     lock (_listLock)
@@ -184,10 +181,6 @@ public class EvolutionObserver
     }
   }
 
-  /// <summary>
-  /// Serializes the observer state to JSON
-  /// </summary>
-  /// <returns>A JSON string representing the observer state</returns>
   public string ToJson()
   {
     var settings = new JsonSerializerSettings
@@ -199,11 +192,6 @@ public class EvolutionObserver
     return JsonConvert.SerializeObject(this, settings);
   }
 
-  /// <summary>
-  /// Creates an EvolutionObserver instance from JSON
-  /// </summary>
-  /// <param name="json">JSON string to deserialize</param>
-  /// <returns>New EvolutionObserver instance or null if deserialization fails</returns>
   public static EvolutionObserver? FromJson(string json)
   {
 
