@@ -6,6 +6,12 @@ A .NET library and Grasshopper plugin for evolutionary algorithms in architectur
 
 This project provides a flexible framework for implementing and running evolutionary algorithms in the Rhinoceros 3D/Grasshopper environment. It's designed to help solve and explore complex optimization problems in architectural and engineering design.
 
+## Why Open Source?
+
+In evolutionary processes, a single individual cannot provide a complete picture of the world. However, the collective contributions of many individuals lead to more diverse, creative solutions and better ways to adapt and thrive.
+
+I believe that the collective effort of many minds can lead to a deeper understanding and spark greater creativity. That’s why this project is open for everyone—to use, share, and, ideally, contribute back.
+
 ## Core Features
 
 - Base evolutionary solvers with parallel computation support
@@ -27,22 +33,13 @@ The project is structured in 3 subprojects
 - Geospiza Server
   - Still a quite earlie idea. The goal of this project is to manage multiple grasshopper instances with rhinocompute to solve test solutions in a more scalable fassion.
 
-## Installation
-
-dotnet msbuild -target:Package -p:Configuration=Release .\GeospizaPlugin\GeospizaPlugin.csproj
-(TODO)
-
-## Usage
-
-(TODO)
-
-## Research References
+## References
 
 See [Articles/README.md](Articles/README.md) for research papers and resources used in developing the algorithms.
 
 ## License
 
-This project is licensed under the Mozilla Public License Version 2.0T License - see the [LICENSE.txt](LICENSE.txt) file for details
+This project is licensed under the MIT License - see the [LICENSE.txt](LICENSE.txt) file for details
 
 ## Contributing
 
@@ -68,18 +65,16 @@ We welcome contributions of any size! Here's how you can help:
 ### Development Process
 
 - Write clean, documented code
-- Add unit tests for new features
 - Keep commits focused and clear
 - Update documentation as needed
 - Follow existing code style
+- Have fun
 
 ### Pull Request Guidelines
 
 - Use descriptive titles
 - Link related issues
 - Explain your changes
-- Include test results
-- Add screenshots for UI changes
 
 ### Community Standards
 
@@ -94,6 +89,4 @@ We welcome contributions of any size! Here's how you can help:
 - Check existing issues and discussions
 - Review documentation
 - Ask in discussions
-- Contact maintainers
-
-We value every contribution and aim to make the process smooth and enjoyable for everyone.
+- Contact maintainer
