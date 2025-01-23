@@ -161,6 +161,10 @@ public class EvolutionObserver
     CurrentGenerationIndex++;
   }
 
+/// <summary>
+/// Resets the observer instance to its initial state
+/// </summary>
+/// <exception cref="InvalidOperationException"></exception>
   public void Reset()
   {
     lock (_listLock)
@@ -181,6 +185,10 @@ public class EvolutionObserver
     }
   }
 
+/// <summary>
+/// Serializes the observer instance to a JSON string
+/// </summary>
+/// <returns></returns>
   public string ToJson()
   {
     var settings = new JsonSerializerSettings
@@ -192,6 +200,11 @@ public class EvolutionObserver
     return JsonConvert.SerializeObject(this, settings);
   }
 
+/// <summary>
+/// Tries to deserialize a JSON string into an EvolutionObserver instance
+/// </summary>
+/// <param name="json"></param>
+/// <returns></returns>
   public static EvolutionObserver? FromJson(string json)
   {
 

@@ -26,11 +26,18 @@ public class Fitness
     _fitness = value;
   }
 
+/// <summary>
+/// Get the current fitness value.
+/// </summary>
+/// <returns></returns>
   public double GetFitness()
   {
     return _fitness;
   }
 
+/// <summary>
+/// Reset the fitness value to 0.
+/// </summary>
   public void ResetFitness()
   {
     _fitness = 0;

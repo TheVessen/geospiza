@@ -51,6 +51,9 @@ public class Gene
   /// </summary>
   public int TickValue { get; private set; }
 
+  /// <summary>
+  /// Gets the unique identifier for the gene.
+  /// </summary>
   public Guid GeneGuid { get; }
 
   /// <summary>
@@ -62,10 +65,13 @@ public class Gene
   /// </remarks>
   public int TickCount { get; }
 
+  /// <summary>
+  /// Name of the gene. Usually the name of the slider in the GH document.
+  /// </summary>
   public string GeneName { get; }
 
   /// <summary>
-  /// Gets or sets the unique identifier for the GH instance.
+  /// Gets or sets the unique identifier for the GH instance of a slider or gene pool.
   /// </summary>
   public Guid GhInstanceGuid { get; set; }
 
@@ -76,6 +82,7 @@ public class Gene
 
   /// <summary>
   /// Sets the tick value of the gene. This function should only be used from a mutation strategy.
+  /// <seealso cref="IMutationStrategy"/>
   /// </summary>
   /// <param name="mutation">The new tick value after mutation.</param>
   public void MutatedValue(int mutation)
@@ -89,13 +96,19 @@ public class Gene
   public class GeneConverter : JsonConverter<Gene>
   {
     /// <summary>
-    /// Writes the JSON representation of the <see cref="Gene"/> object.
+    /// Writes the JSON representation of the Gene object.
     /// </summary>
     /// <param name="writer">The JSON writer.</param>
-    /// <param name="value">The gene object to write.</param>
+    /// <param name="value">The Gene object to serialize.</param>
     /// <param name="serializer">The JSON serializer.</param>
-    public override void WriteJson(JsonWriter writer, Gene value, JsonSerializer serializer)
+    public override void WriteJson(JsonWriter writer, Gene? value, JsonSerializer serializer)
     {
+      if (value is null)
+      {
+        writer.WriteNull();
+        return;
+      }
+
       writer.WriteRawValue(value.ToJson());
     }
 
@@ -108,8 +121,8 @@ public class Gene
     /// <param name="hasExistingValue">Whether the object has an existing value.</param>
     /// <param name="serializer">The JSON serializer.</param>
     /// <returns>The deserialized gene object.</returns>
-    public override Gene? ReadJson(JsonReader reader, Type objectType, Gene existingValue, bool hasExistingValue,
-      JsonSerializer serializer)
+    public override Gene? ReadJson(JsonReader reader, Type objectType, Gene? existingValue, bool hasExistingValue,
+        JsonSerializer serializer)
     {
       var jsonObject = JObject.Load(reader);
       return FromJson(jsonObject.ToString());
@@ -134,6 +147,7 @@ public class Gene
 
     return JsonConvert.SerializeObject(this, settings);
   }
+
 
   public override bool Equals(object? obj)
   {
