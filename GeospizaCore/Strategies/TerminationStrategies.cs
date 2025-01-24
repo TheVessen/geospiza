@@ -1,6 +1,6 @@
-﻿using GeospizaManager.Core;
+﻿using GeospizaCore.Core;
 
-namespace GeospizaManager.Strategies;
+namespace GeospizaCore.Strategies;
 
 public interface ITerminationStrategy
 {
@@ -47,6 +47,9 @@ public class ProgressConvergence : TerminationStrategy
   }
 }
 
+/// <summary>
+/// Termination strategy based on the diversity of the population
+/// </summary>
 public class PopulationDiversity : TerminationStrategy
 {
   public PopulationDiversity(double threshold = 1)
@@ -63,18 +66,18 @@ public class PopulationDiversity : TerminationStrategy
   }
 }
 
-public class MaxGenerations : TerminationStrategy
-{
-  public MaxGenerations(int maxGenerations)
-  {
-    TerminationThreshold = maxGenerations;
-  }
-
-  public override bool Evaluate(EvolutionObserver evolutionObserver)
-  {
-    return evolutionObserver.CurrentGenerationIndex >= TerminationThreshold;
-  }
-}
+// public class MaxGenerations : TerminationStrategy
+// {
+//   public MaxGenerations(int maxGenerations)
+//   {
+//     TerminationThreshold = maxGenerations;
+//   }
+//
+//   public override bool Evaluate(EvolutionObserver evolutionObserver)
+//   {
+//     return evolutionObserver.CurrentGenerationIndex >= TerminationThreshold;
+//   }
+// }
 
 // public class GeneDiversity : TerminationStrategy
 // {

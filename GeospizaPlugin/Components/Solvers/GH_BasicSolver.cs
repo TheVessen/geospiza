@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
-using GeospizaManager.Core;
-using GeospizaManager.Solvers;
+using GeospizaCore.Core;
+using GeospizaCore.Solvers;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Parameters;

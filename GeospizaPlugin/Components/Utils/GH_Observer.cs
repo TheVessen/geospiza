@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Drawing;
-using GeospizaManager.Core;
+using GeospizaCore.Core;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Types;
 

@@ -1,9 +1,9 @@
-﻿using GeospizaManager.Core;
-using GeospizaManager.Strategies;
+﻿using GeospizaCore.Core;
+using GeospizaCore.Strategies;
 
-namespace GeospizaManager.Solvers;
+namespace GeospizaCore.Solvers;
 
-//FOR THE MOMENT A MESS DO NOT USE
+// 💩 FOR THE MOMENT A MESS DO NOT USE! 
 
 public class ParallelSolver : EvolutionBlueprint
 {

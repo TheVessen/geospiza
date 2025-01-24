@@ -1,9 +1,10 @@
 ﻿using System.Collections.Concurrent;
-using GeospizaManager.Utils;
+using GeospizaCore.ParallelSpiza;
+using GeospizaCore.Utils;
 using Grasshopper.Kernel;
 using Newtonsoft.Json;
 
-namespace GeospizaManager.Core;
+namespace GeospizaCore.Core;
 
 /// <summary>
 /// Observes and tracks the evolution of a population across generations.
@@ -108,7 +109,6 @@ public class EvolutionObserver
   /// <param name="currentPopulation">The population to analyze</param>
   public void Snapshot(Population currentPopulation)
   {
-
     lock (_listLock)
     {
       if (_isDisposed) throw new ObjectDisposedException(nameof(EvolutionObserver));
@@ -141,7 +141,6 @@ public class EvolutionObserver
   /// </summary>
   private void SetPopulation(Population population)
   {
-
     lock (_listLock)
     {
       if (_isDisposed) throw new ObjectDisposedException(nameof(EvolutionObserver));
@@ -161,10 +160,10 @@ public class EvolutionObserver
     CurrentGenerationIndex++;
   }
 
-/// <summary>
-/// Resets the observer instance to its initial state
-/// </summary>
-/// <exception cref="InvalidOperationException"></exception>
+  /// <summary>
+  /// Resets the observer instance to its initial state
+  /// </summary>
+  /// <exception cref="InvalidOperationException"></exception>
   public void Reset()
   {
     lock (_listLock)
@@ -185,10 +184,10 @@ public class EvolutionObserver
     }
   }
 
-/// <summary>
-/// Serializes the observer instance to a JSON string
-/// </summary>
-/// <returns></returns>
+  /// <summary>
+  /// Serializes the observer instance to a JSON string
+  /// </summary>
+  /// <returns></returns>
   public string ToJson()
   {
     var settings = new JsonSerializerSettings
@@ -200,14 +199,13 @@ public class EvolutionObserver
     return JsonConvert.SerializeObject(this, settings);
   }
 
-/// <summary>
-/// Tries to deserialize a JSON string into an EvolutionObserver instance
-/// </summary>
-/// <param name="json"></param>
-/// <returns></returns>
+  /// <summary>
+  /// Tries to deserialize a JSON string into an EvolutionObserver instance
+  /// </summary>
+  /// <param name="json"></param>
+  /// <returns></returns>
   public static EvolutionObserver? FromJson(string json)
   {
-
     var settings = new JsonSerializerSettings
     {
       Converters = new List<JsonConverter> { new Individual.IndividualConverter() },

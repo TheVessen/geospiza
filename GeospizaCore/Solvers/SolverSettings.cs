@@ -1,18 +1,17 @@
-﻿using GeospizaManager.Strategies;
+﻿using GeospizaCore.Strategies;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using System;
 
-namespace GeospizaManager.Solvers;
+namespace GeospizaCore.Solvers;
 
 /// <summary>
 /// Represents configuration settings for an evolutionary algorithm solver.
 /// </summary>
 public class SolverSettings
 {
-  private int populationSize;
-  private int maxGenerations;
-  private int eliteSize;
+  private int _populationSize;
+  private int _maxGenerations;
+  private int _eliteSize;
   public ISelectionStrategy SelectionStrategy { get; set; } = null!;
   public ICrossoverStrategy CrossoverStrategy { get; set; } = null!;
   public IMutationStrategy MutationStrategy { get; set; } = null!;
@@ -21,24 +20,24 @@ public class SolverSettings
 
   public int PopulationSize
   {
-    get => populationSize;
-    set => populationSize = value > 0
+    get => _populationSize;
+    set => _populationSize = value > 0
       ? value
       : throw new ArgumentException("Population size must be greater than 0");
   }
 
   public int MaxGenerations
   {
-    get => maxGenerations;
-    set => maxGenerations = value > 0
+    get => _maxGenerations;
+    set => _maxGenerations = value > 0
       ? value
       : throw new ArgumentException("Max generations must be greater than 0");
   }
 
   public int EliteSize
   {
-    get => eliteSize;
-    set => eliteSize = value >= 0 && value <= PopulationSize
+    get => _eliteSize;
+    set => _eliteSize = value >= 0 && value <= PopulationSize
       ? value
       : throw new ArgumentException("Elite size must be between 0 and population size");
   }

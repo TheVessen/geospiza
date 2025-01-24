@@ -1,7 +1,7 @@
-﻿using GeospizaManager.Core;
+﻿using GeospizaCore.Core;
 using Newtonsoft.Json;
 
-namespace GeospizaManager.Strategies;
+namespace GeospizaCore.Strategies;
 
 public interface ICrossoverStrategy
 {

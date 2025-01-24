@@ -1,9 +1,8 @@
 ﻿using System.Collections.Concurrent;
-using GeospizaManager.Compute;
-using GeospizaManager.Core;
-using GeospizaManager.Utils;
+using GeospizaCore.Compute;
+using GeospizaCore.Utils;
 
-namespace GeospizaManager.GeospizaCordinator;
+namespace GeospizaCore.ParallelSpiza;
 
 public class EvolutionarySolverCoordinator
 {
@@ -11,7 +10,7 @@ public class EvolutionarySolverCoordinator
   private static readonly object Padlock = new();
   private readonly string _ghFilePath;
   private readonly HttpServer _httpServer;
-  private  ConcurrentBag<ObserverServerSnapshot> _receivedObserver = new();
+  private ConcurrentBag<ObserverServerSnapshot> _receivedObserver = new();
   private TaskCompletionSource<bool> _allObserversReceived = new();
   private bool _comuteInitialized;
   private int _numberOfSolvers;
@@ -94,7 +93,7 @@ public class EvolutionarySolverCoordinator
         lock (_receivedObserver)
         {
           observers = _receivedObserver.ToList();
-          _receivedObserver = new();
+          _receivedObserver = new ConcurrentBag<ObserverServerSnapshot>();
         }
 
         var result = ProcessData(observers);

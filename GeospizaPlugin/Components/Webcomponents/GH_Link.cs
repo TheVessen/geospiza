@@ -4,7 +4,7 @@ using System.Drawing;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
-using GeospizaPlugin.Utils;
+using GeospizaCore.Web;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
@@ -105,7 +105,7 @@ public class GeoLink : GH_Component
   /// that use the old ID will partially fail during loading.
   /// </summary>
   public override Guid ComponentGuid => new("819d7e1b-ee19-49e1-9116-43156f5e0ce9");
-  
+
   public static void SendWebRequest(List<WebIndividual> dataList, List<Tuple<string, string>> additionalData,
     string endpoint, GH_Component component)
   {

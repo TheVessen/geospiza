@@ -3,7 +3,7 @@ using System.Text;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
-namespace GeospizaManager.GeospizaCordinator;
+namespace GeospizaCore.ParallelSpiza;
 
 public class HttpServer : IDisposable
 {

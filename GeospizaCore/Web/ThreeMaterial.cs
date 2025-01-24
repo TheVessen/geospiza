@@ -1,6 +1,6 @@
 ﻿using System.Drawing;
 
-namespace GeospizaManager.Core;
+namespace GeospizaCore.Web;
 
 /// <summary>
 /// Class for displaying results in Three.js

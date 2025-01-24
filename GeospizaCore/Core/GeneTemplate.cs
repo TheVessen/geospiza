@@ -1,6 +1,6 @@
 ﻿using Grasshopper.Kernel.Special;
 
-namespace GeospizaManager.Core;
+namespace GeospizaCore.Core;
 
 /// <summary>
 /// Represents a template for a gene, which can be initialized with either a gene pool list or a number slider.
@@ -27,7 +27,7 @@ public class GeneTemplate
   }
 
   /// <summary>
-  /// Initializes a new instance of the <see cref="GeneTemplate"/> class with a number slider.
+  /// Initializes a new instance of the <see cref="GeneTemplate"/> class with a number slider. Also <see cref="StateManager"/> fir the inplementation
   /// </summary>
   /// <param name="slider">The number slider.</param>
   public GeneTemplate(GH_NumberSlider slider)
@@ -52,7 +52,7 @@ public class GeneTemplate
   private Type Type { get; }
 
   /// <summary>
-  /// Gets the unique identifier for the GH instance.
+  /// Gets the unique identifier for the GH instance.This is mainly used for the gene pool list to identify a specific slider in the gene pool list.
   /// </summary>
   public Guid GhInstanceGuid { get; }
 
@@ -96,9 +96,9 @@ public class GeneTemplate
     }
     else
     {
-      if (allGenePools != null) allGenePools[GhInstanceGuid].set_TickValue(GenePoolIndex, tickValue);
+      allGenePools[GhInstanceGuid].set_TickValue(GenePoolIndex, tickValue);
       TickValue = tickValue;
-      if (allGenePools != null) allGenePools[GhInstanceGuid].ExpireSolutionTopLevel(false);
+      allGenePools[GhInstanceGuid].ExpireSolutionTopLevel(false);
     }
   }
 }

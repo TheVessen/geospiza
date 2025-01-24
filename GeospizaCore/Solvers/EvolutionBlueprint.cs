@@ -1,20 +1,41 @@
-﻿using GeospizaManager.Core;
-using GeospizaManager.Strategies;
+﻿using GeospizaCore.Core;
+using GeospizaCore.Strategies;
 using Grasshopper.Kernel;
 
-namespace GeospizaManager.Solvers;
+namespace GeospizaCore.Solvers;
 
 public abstract class EvolutionBlueprint : IEvolutionarySolver
 {
   protected readonly Random Random = new();
   protected Population Population { get; set; } = new();
   protected int PopulationSize { get; set; }
+  /// <summary>
+  /// Maximum of generations that should be run. The algorithm will stop after this number of generations or a termination condition is met.
+  /// </summary>
   protected int MaxGenerations { get; set; }
+  /// <summary>
+  /// The number of the best individuals that should be preserved for the next generation.
+  /// </summary>
   protected int EliteSize { get; set; }
+  /// <summary>
+  /// Selection strategy that should be used for the evolutionary algorithm.
+  /// </summary>
   protected ISelectionStrategy SelectionStrategy { get; set; }
+  /// <summary>
+  /// Crossover strategy that should be used for the evolutionary algorithm.
+  /// </summary>
   protected ICrossoverStrategy CrossoverStrategy { get; set; }
+  /// <summary>
+  /// Mutation strategy that should be used for the evolutionary algorithm.
+  /// </summary>
   protected IMutationStrategy MutationStrategy { get; set; }
+  /// <summary>
+  /// Pairing strategy that should be used for the evolutionary algorithm.
+  /// </summary>
   protected PairingStrategy PairingStrategy { get; set; }
+  /// <summary>
+  /// Termination strategy that should be used for the evolutionary algorithm.
+  /// </summary>
   protected ITerminationStrategy TerminationStrategy { get; set; }
 
   /// <summary>
@@ -39,7 +60,7 @@ public abstract class EvolutionBlueprint : IEvolutionarySolver
   public abstract void RunAlgorithm();
 
   /// <summary>
-  ///   Initializes the population for the evolutionary algorithm.
+  ///   Initializes the first population for the evolutionary algorithm.
   /// </summary>
   public void InitializePopulation(StateManager stateManager, EvolutionObserver evolutionObserver)
   {
@@ -60,7 +81,7 @@ public abstract class EvolutionBlueprint : IEvolutionarySolver
           ctg.TickCount, ctg.Name, ctg.GhInstanceGuid,
           ctg.GenePoolIndex);
 
-        individual.AddStableGene(stableGene);
+        individual.AddGene(stableGene);
       }
 
       if (stateManager.PreviewLevel == 0)

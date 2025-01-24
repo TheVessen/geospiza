@@ -1,18 +1,24 @@
-﻿using GeospizaManager.Utils;
-using Grasshopper.Kernel;
-using Grasshopper.Kernel.Special;
+﻿using GeospizaCore.Utils;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
-namespace GeospizaManager.Core;
+namespace GeospizaCore.Core;
 
 public class Individual : IEquatable<Individual>
 {
-  // Properties with private setters for better encapsulation
   public IReadOnlyList<Gene> GenePool { get; }
+
+  /// <summary>
+  /// The fitness of the individual. This is a measure of how well the individual solves the problem.
+  /// </summary>
   public double Fitness { get; private set; }
+
+  /// <summary>
+  /// The probability of the individual to be selected for reproduction.
+  /// </summary>
   public double Probability { get; private set; }
-  public int Generation { get; private set; }
+
+  private int Generation { get; set; }
 
   // Keep private list for internal modifications
   private readonly List<Gene> _genePool;
@@ -23,12 +29,22 @@ public class Individual : IEquatable<Individual>
     GenePool = _genePool.AsReadOnly();
   }
 
+  /// <summary>
+  /// Creates a new individual object from a gene pool.
+  /// </summary>
+  /// <param name="genePool"></param>
+  /// <exception cref="ArgumentNullException"></exception>
   public Individual(IEnumerable<Gene> genePool)
   {
     _genePool = new List<Gene>(genePool ?? throw new ArgumentNullException(nameof(genePool)));
     GenePool = _genePool.AsReadOnly();
   }
 
+  /// <summary>
+  /// Creates a new individual object from an existing individual.
+  /// </summary>
+  /// <param name="individual"></param>
+  /// <exception cref="ArgumentNullException"></exception>
   public Individual(Individual individual)
   {
     if (individual == null) throw new ArgumentNullException(nameof(individual));
@@ -40,10 +56,14 @@ public class Individual : IEquatable<Individual>
     Generation = individual.Generation;
   }
 
+  /// <summary>
+  /// Creates an individual object from its JSON representation.
+  /// </summary>
+  /// <param name="json"></param>
+  /// <exception cref="ArgumentException"></exception>
   public Individual(string json)
   {
     var parsed = FromJson(json) ?? throw new ArgumentException("Failed to parse individual from JSON.", nameof(json));
-
     _genePool = new List<Gene>(parsed.GenePool);
     GenePool = _genePool.AsReadOnly();
     Fitness = parsed.Fitness;
@@ -51,12 +71,22 @@ public class Individual : IEquatable<Individual>
     Generation = parsed.Generation;
   }
 
-  public void AddStableGene(Gene gene)
+  /// <summary>
+  /// Adds a gene to the individual's gene pool.
+  /// </summary>
+  /// <param name="gene"></param>
+  /// <exception cref="ArgumentNullException"></exception>
+  public void AddGene(Gene gene)
   {
     if (gene == null) throw new ArgumentNullException(nameof(gene));
     _genePool.Add(gene);
   }
 
+  /// <summary>
+  /// Sets the fitness of the individual.
+  /// </summary>
+  /// <param name="fitness"></param>
+  /// <exception cref="ArgumentException"></exception>
   public void SetFitness(double fitness)
   {
     if (double.IsNaN(fitness)) throw new ArgumentException("Fitness cannot be NaN", nameof(fitness));
@@ -65,6 +95,11 @@ public class Individual : IEquatable<Individual>
     Fitness = fitness;
   }
 
+  /// <summary>
+  /// Sets the probability of the individual to be selected for reproduction.
+  /// </summary>
+  /// <param name="normalizedFitness"></param>
+  /// <exception cref="ArgumentException"></exception>
   public void SetProbability(double normalizedFitness)
   {
     if (normalizedFitness < 0 || normalizedFitness > 1)
@@ -73,46 +108,30 @@ public class Individual : IEquatable<Individual>
     Probability = normalizedFitness;
   }
 
+  /// <summary>
+  /// Sets the generation of the individual that its living in.
+  /// </summary>
+  /// <param name="generation"></param>
+  /// <exception cref="ArgumentException"></exception>
   public void SetGeneration(int generation)
   {
     if (generation < 0) throw new ArgumentException("Generation cannot be negative", nameof(generation));
     Generation = generation;
   }
 
+  /// <summary>
+  /// Reinstates the individual's gene pool to the state of the state manager. Meaning you see it in your GH document.
+  /// </summary>
+  /// <param name="stateManager"></param>
+  /// <exception cref="ArgumentNullException"></exception>
   public void Reinstate(StateManager stateManager)
   {
     if (stateManager == null) throw new ArgumentNullException(nameof(stateManager));
 
     foreach (var gene in GenePool)
     {
-      stateManager.Genotype.TryGetValue(gene.GeneGuid,  out var matchingGene);
+      stateManager.Genotype.TryGetValue(gene.GeneGuid, out var matchingGene);
       matchingGene?.SetTickValue(gene.TickValue, stateManager);
-    }
-  }
-
-  public void Reinstate(GH_Document doc)
-  {
-    if (doc == null) throw new ArgumentNullException(nameof(doc));
-
-    foreach (var gene in GenePool)
-    {
-      var slider = doc.FindObject(gene.GhInstanceGuid, true)
-                   ?? throw new InvalidOperationException(
-                     $"Gene with GUID {gene.GhInstanceGuid} not found in document.");
-
-      if (slider is GH_NumberSlider numberSlider)
-      {
-        numberSlider.TickValue = gene.TickValue;
-      }
-      else if (slider.GetType().ToString() == "GalapagosComponents.GalapagosGeneListObject")
-      {
-        dynamic genePool = slider;
-        genePool.set_TickValue(gene.GenePoolIndex, gene.TickValue);
-      }
-      else
-      {
-        throw new InvalidOperationException($"Unsupported gene type: {slider.GetType()}");
-      }
     }
   }
 
@@ -132,6 +151,10 @@ public class Individual : IEquatable<Individual>
            Math.Abs(Fitness - other.Fitness) < double.Epsilon;
   }
 
+  /// <summary>
+  /// Returns a hash code for this instance.
+  /// </summary>
+  /// <returns></returns>
   public override int GetHashCode()
   {
     unchecked
@@ -143,6 +166,10 @@ public class Individual : IEquatable<Individual>
     }
   }
 
+  /// <summary>
+  /// Returns a JSON representation of the individual.
+  /// </summary>
+  /// <returns></returns>
   public string ToJson()
   {
     var settings = new JsonSerializerSettings
@@ -154,6 +181,13 @@ public class Individual : IEquatable<Individual>
     return JsonConvert.SerializeObject(this, settings);
   }
 
+  /// <summary>
+  /// Creates an individual object from its JSON representation.
+  /// </summary>
+  /// <param name="json"></param>
+  /// <returns></returns>
+  /// <exception cref="ArgumentException"></exception>
+  /// <exception cref="JsonSerializationException"></exception>
   public static Individual FromJson(string json)
   {
     if (string.IsNullOrEmpty(json))
@@ -169,6 +203,9 @@ public class Individual : IEquatable<Individual>
            ?? throw new JsonSerializationException("Failed to deserialize Individual from JSON");
   }
 
+  /// <summary>
+  /// Returns a string that represents the current object.
+  /// </summary>
   public class IndividualConverter : JsonConverter<Individual>
   {
     public override void WriteJson(JsonWriter writer, Individual value, JsonSerializer serializer)

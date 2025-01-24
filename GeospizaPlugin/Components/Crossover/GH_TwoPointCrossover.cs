@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Drawing;
-using GeospizaManager.Strategies;
+using GeospizaCore.Strategies;
 using Grasshopper.Kernel;
 
 namespace GeospizaPlugin.Components.Crossover;

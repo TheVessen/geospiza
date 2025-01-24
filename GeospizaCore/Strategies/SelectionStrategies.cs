@@ -1,6 +1,6 @@
-﻿using GeospizaManager.Core;
+﻿using GeospizaCore.Core;
 
-namespace GeospizaManager.Strategies;
+namespace GeospizaCore.Strategies;
 
 public interface ISelectionStrategy
 {
@@ -34,7 +34,13 @@ public class TournamentSelection : SelectionStrategy
   /// <summary>
   ///   The size of the tournament in tournament selection.
   /// </summary>
-  /// <remarks>
+  private int TournamentSize { get; }
+
+  /// <summary>
+  ///   Initializes a new instance of the <see cref="TournamentSelection" /> class.
+  /// </summary>
+  /// <param name="tournamentSize"></param>
+  /// /// <remarks>
   ///   Tournament size is a crucial parameter in tournament selection strategy of an evolutionary algorithm.
   ///   It determines the number of individuals that are randomly selected from the population to compete in each tournament.
   ///   Key Impacts:
@@ -55,19 +61,12 @@ public class TournamentSelection : SelectionStrategy
   ///   It's essential to choose an appropriate tournament size based on the problem being solved. Experimentation and
   ///   parameter tuning may be required to find the optimal size for a specific application.
   /// </remarks>
-  public int TournamentSize { get; }
-
-  /// <summary>
-  ///   Initializes a new instance of the <see cref="TournamentSelection" /> class.
-  /// </summary>
-  /// <param name="tournamentSize"></param>
   public TournamentSelection(int tournamentSize)
   {
     if (tournamentSize <= 0) throw new ArgumentException("Tournament size must be greater than 0");
 
     TournamentSize = tournamentSize;
   }
-
 
   public override List<Individual> Select(Population population, int numberOfSelections)
   {

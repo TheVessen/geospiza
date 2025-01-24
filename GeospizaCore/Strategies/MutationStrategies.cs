@@ -1,6 +1,6 @@
-﻿using GeospizaManager.Core;
+﻿using GeospizaCore.Core;
 
-namespace GeospizaManager.Strategies;
+namespace GeospizaCore.Strategies;
 
 public interface IMutationStrategy
 {
@@ -15,9 +15,15 @@ public abstract class MutationStrategy : IMutationStrategy
   public abstract void Mutate(Individual individual);
 }
 
+/// <summary>
+/// The FixedValueMutation class represents a mutation strategy that applies a fixed value mutation to each gene in an individual's gene pool. Meaning that a fixed value is added or subtracted from the gene value.
+/// </summary>
 public class FixedValueMutation : MutationStrategy
 {
-  public int MutationValue { get; }
+  /// <summary>
+  /// A value that is added or subtracted from the gene value.
+  /// </summary>
+  private int MutationValue { get; }
 
   public FixedValueMutation(double mutationRate, int mutationValue)
   {
@@ -40,12 +46,15 @@ public class FixedValueMutation : MutationStrategy
   }
 }
 
+/// <summary>
+/// The PercentageMutation class represents a mutation strategy that applies a percentage-based mutation to each gene in an individual's gene pool. Meaning that a percentage of the gene value is added or subtracted from the gene value.
+/// </summary>
 public class PercentageMutation : MutationStrategy
 {
   /// <summary>
   ///   Mutation in percentage eg. 0.1 for 10%
   /// </summary>
-  public double MutationPercentage { get; }
+  private double MutationPercentage { get; }
 
   public PercentageMutation(double mutationRate, double mutationPercentage)
   {
@@ -74,6 +83,9 @@ public class PercentageMutation : MutationStrategy
   }
 }
 
+/// <summary>
+/// The RandomMutation class represents a mutation strategy that applies a random mutation to each gene in an individual's gene pool. Meaning that a random value is assigned to the gene value. The amount of individuals effected by the mutation is determined by the mutation rate.
+/// </summary>
 public class RandomMutation : MutationStrategy
 {
   public RandomMutation(double mutationRate)

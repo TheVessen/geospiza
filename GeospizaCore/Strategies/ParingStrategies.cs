@@ -1,6 +1,6 @@
-﻿using GeospizaManager.Core;
+﻿using GeospizaCore.Core;
 
-namespace GeospizaManager.Strategies;
+namespace GeospizaCore.Strategies;
 
 public enum DistanceFunctionType
 {

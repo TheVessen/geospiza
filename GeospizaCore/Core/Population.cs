@@ -1,8 +1,8 @@
-﻿using GeospizaManager.Utils;
+﻿using GeospizaCore.Utils;
 using Grasshopper.Kernel;
 using Newtonsoft.Json;
 
-namespace GeospizaManager.Core;
+namespace GeospizaCore.Core;
 
 /// <summary>
 /// Represents a population of individuals in an evolutionary algorithm.

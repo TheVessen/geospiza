@@ -1,9 +1,9 @@
-﻿using GeospizaManager.Utils;
+﻿using GeospizaCore.Utils;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
 
-namespace GeospizaManager.Core;
+namespace GeospizaCore.Core;
 
 /// <summary>
 /// Represents a Gene with various properties and methods for JSON serialization.
@@ -122,7 +122,7 @@ public class Gene
     /// <param name="serializer">The JSON serializer.</param>
     /// <returns>The deserialized gene object.</returns>
     public override Gene? ReadJson(JsonReader reader, Type objectType, Gene? existingValue, bool hasExistingValue,
-        JsonSerializer serializer)
+      JsonSerializer serializer)
     {
       var jsonObject = JObject.Load(reader);
       return FromJson(jsonObject.ToString());

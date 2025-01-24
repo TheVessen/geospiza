@@ -1,7 +1,8 @@
-﻿using GeospizaManager.Utils;
+﻿using GeospizaCore.Core;
+using GeospizaCore.Utils;
 using Newtonsoft.Json;
 
-namespace GeospizaManager.Core;
+namespace GeospizaCore.ParallelSpiza;
 
 /// <summary>
 /// Represents a base class for observing and serializing the state of an evolutionary population.

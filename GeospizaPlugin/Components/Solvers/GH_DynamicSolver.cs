@@ -1,13 +1,11 @@
-﻿
-
-//Looks promising, but not working yet :) Doc will follow
+﻿//Looks promising, but not working yet :) Doc will follow
 
 using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
-using GeospizaManager.Compute;
-using GeospizaManager.Solvers;
+using GeospizaCore.Compute;
+using GeospizaCore.Solvers;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Types;
 
@@ -24,7 +22,7 @@ public class GH_DynamicSolver : GH_Component
       "Geospiza", "Solvers")
   {
   }
-  
+
   public override GH_Exposure Exposure => GH_Exposure.hidden;
 
   /// <summary>
@@ -56,8 +54,8 @@ public class GH_DynamicSolver : GH_Component
   {
     // Variables
     List<GH_ObjectWrapper> settingsWrappers = new();
-    string filePath = "";
-    bool run = false;
+    var filePath = "";
+    var run = false;
 
     // Set variables
     DA.GetDataList(0, settingsWrappers);
@@ -66,10 +64,7 @@ public class GH_DynamicSolver : GH_Component
 
     var settings = settingsWrappers.Select(s => s.Value).Cast<SolverSettings>().ToList();
 
-    if (settings.Count == 0)
-    {
-      AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "No settings provided");
-    }
+    if (settings.Count == 0) AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "No settings provided");
 
     ComputeServer.ApiKey = "API";
     ComputeServer.AuthToken = "TOKEN";
@@ -99,22 +94,13 @@ public class GH_DynamicSolver : GH_Component
   /// <summary>
   /// Provides an Icon for the component.
   /// </summary>
-  protected override Bitmap Icon
-  {
-    get
-    {
-      //You can add image files to your project resources and access them like this:
-      // return Resources.IconForThisComponent;
-      return null;
-    }
-  }
+  protected override Bitmap Icon =>
+    //You can add image files to your project resources and access them like this:
+    // return Resources.IconForThisComponent;
+    null;
 
   /// <summary>
   /// Gets the unique ID for this component. Do not change this ID after release.
   /// </summary>
-  public override Guid ComponentGuid
-  {
-    get { return new Guid("866F5DF3-2C87-4882-81B7-68F9380E316A"); }
-  }
+  public override Guid ComponentGuid => new("866F5DF3-2C87-4882-81B7-68F9380E316A");
 }
-

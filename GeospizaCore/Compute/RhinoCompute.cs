@@ -5,7 +5,7 @@ using Rhino.Collections;
 using Rhino.Geometry;
 using Rhino.Geometry.Intersect;
 
-namespace GeospizaManager.Compute;
+namespace GeospizaCore.Compute;
 //THIS FILE IS FROM THE GITHUB OF https://github.com/mcneel/compute.rhino3d
 //IT IS USED TO MAKE REQUESTS TO THE RHINO COMPUTE SERVER
 //USED FROM THE GUIDE => https://developer.rhino3d.com/guides/compute/compute-net-getting-started/

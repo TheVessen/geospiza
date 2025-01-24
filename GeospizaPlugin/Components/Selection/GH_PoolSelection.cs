@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Drawing;
-using GeospizaManager.Strategies;
+using GeospizaCore.Strategies;
 using GeospizaPlugin.Properties;
 using Grasshopper.Kernel;
 

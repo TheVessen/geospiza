@@ -1,5 +1,4 @@
-﻿using GeospizaManager.Core;
-using GeospizaManager.GeospizaCordinator;
+﻿using GeospizaCore.ParallelSpiza;
 
 /// <summary>
 /// !ATENTION! This is still very much in the works. 

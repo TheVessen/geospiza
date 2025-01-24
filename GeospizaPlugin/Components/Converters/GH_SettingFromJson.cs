@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Drawing;
-using GeospizaManager.Solvers;
+using GeospizaCore.Solvers;
 using Grasshopper.Kernel;
 
 namespace GeospizaPlugin.Components.Converters;

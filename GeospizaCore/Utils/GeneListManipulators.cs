@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace GeospizaPlugin.Utils;
+﻿namespace GeospizaCore.Utils;
 
 public static class GeneListManipulators
 {
@@ -18,18 +16,10 @@ public static class GeneListManipulators
   {
     // Calculate the range of the genepool
     decimal range = genepool.Maximum - genepool.Minimum;
-
-    // Calculate the total number of ticks in the range
     var totalTicks = Convert.ToInt32(range * (decimal)Math.Pow(10, genepool.Decimals));
-
-    // Ensure the tick value is within bounds
     if (tickValue < 0 || tickValue > totalTicks)
       throw new ArgumentOutOfRangeException(nameof(tickValue), "Tick value is out of range.");
-
-    // Convert tick value to its equivalent actual value in the genepool range
     decimal actualValue = genepool.Minimum + (decimal)tickValue / totalTicks * range;
-
-    // Round the actual value to the specified number of decimals
     return Math.Round(actualValue, genepool.Decimals);
   }
 }

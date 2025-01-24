@@ -1,4 +1,4 @@
-﻿namespace GeospizaManager.Core;
+﻿namespace GeospizaCore.Core;
 
 /// <summary>
 /// Describes a pair of individuals

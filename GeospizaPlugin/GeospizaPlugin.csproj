@@ -20,9 +20,9 @@
 
     <!-- NuGet Package References -->
     <ItemGroup>
-        <PackageReference Include="Accord.MachineLearning" Version="3.8.0" />
-        <PackageReference Include="Microsoft.ML" Version="3.0.1" />
-        <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+        <PackageReference Include="Accord.MachineLearning" Version="3.8.0"/>
+        <PackageReference Include="Microsoft.ML" Version="3.0.1"/>
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.3"/>
     </ItemGroup>
 
     <PropertyGroup>
@@ -36,21 +36,21 @@
 
     <!-- Rhino References -->
     <ItemGroup>
-        <PackageReference Include="Grasshopper" Version="8.0.23304.9001" IncludeAssets="compile;build" />
-        <PackageReference Include="System.Resources.Extensions" Version="5.0.0" />
+        <PackageReference Include="Grasshopper" Version="8.0.23304.9001" IncludeAssets="compile;build"/>
+        <PackageReference Include="System.Resources.Extensions" Version="5.0.0"/>
     </ItemGroup>
 
     <!-- MacOS-specific references -->
     <ItemGroup Condition="!($(TargetFramework.Contains('-windows')) or $(TargetFramework.StartsWith('net4')))">
-        <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies.net48" Version="1.0.3" ExcludeAssets="all" GeneratePathProperty="true" />
-        <Reference Include="$(PkgMicrosoft_NETFramework_ReferenceAssemblies_net48)\build\.NETFramework\v4.8\System.Windows.Forms.dll" Private="False" />
-        <PackageReference Include="System.Drawing.Common" Version="7.0.0" ExcludeAssets="runtime" />
+        <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies.net48" Version="1.0.3" ExcludeAssets="all" GeneratePathProperty="true"/>
+        <Reference Include="$(PkgMicrosoft_NETFramework_ReferenceAssemblies_net48)\build\.NETFramework\v4.8\System.Windows.Forms.dll" Private="False"/>
+        <PackageReference Include="System.Drawing.Common" Version="7.0.0" ExcludeAssets="runtime"/>
     </ItemGroup>
 
     <!-- System References -->
     <ItemGroup>
-        <Reference Include="Microsoft.CSharp" />
-        <Reference Include="System.Net.Http" />
+        <Reference Include="Microsoft.CSharp"/>
+        <Reference Include="System.Net.Http"/>
     </ItemGroup>
 
     <!-- Resource Generation -->
@@ -68,12 +68,12 @@
             <Generator>ResXFileCodeGenerator</Generator>
             <LastGenOutput>Resources.Designer.cs</LastGenOutput>
         </EmbeddedResource>
-        <EmbeddedResource Include="Resources\Icons\*.png" />
+        <EmbeddedResource Include="Resources\Icons\*.png"/>
     </ItemGroup>
 
     <!-- Project References -->
     <ItemGroup>
-        <ProjectReference Include="..\GeospizaCore\GeospizaCore.csproj" />
+        <ProjectReference Include="..\GeospizaCore\GeospizaCore.csproj"/>
     </ItemGroup>
 
     <!-- Manifest generation -->
@@ -82,24 +82,24 @@
             <ManifestFile>$(MSBuildProjectDirectory)/dist/package-manager/rhino8/manifest.yml</ManifestFile>
         </PropertyGroup>
         <ItemGroup>
-            <AuthorList Include="$(Authors.Split(';'))" />
-            <KeywordList Include="$(Keywords.Split(';'))" />
-            <ManifestLines Include="name: $(Title)" />
-            <ManifestLines Include="version: $(Version)" />
-            <ManifestLines Include="authors:" />
-            <ManifestLines Include="@(AuthorList->'  - %(Identity)')" />
-            <ManifestLines Include="description: $(Description)" />
-            <ManifestLines Include="keywords:" />
-            <ManifestLines Include="@(KeywordList->'  - %(Identity)')" />
+            <AuthorList Include="$(Authors.Split(';'))"/>
+            <KeywordList Include="$(Keywords.Split(';'))"/>
+            <ManifestLines Include="name: $(Title)"/>
+            <ManifestLines Include="version: $(Version)"/>
+            <ManifestLines Include="authors:"/>
+            <ManifestLines Include="@(AuthorList->'  - %(Identity)')"/>
+            <ManifestLines Include="description: $(Description)"/>
+            <ManifestLines Include="keywords:"/>
+            <ManifestLines Include="@(KeywordList->'  - %(Identity)')"/>
             <!--            <ManifestLines Include="url: $(SupportUrl)" />-->
-            <ManifestLines Include="icon: icon.png" />
+            <ManifestLines Include="icon: icon.png"/>
         </ItemGroup>
-        <WriteLinesToFile File="$(ManifestFile)" Lines="@(ManifestLines)" Overwrite="true" />
+        <WriteLinesToFile File="$(ManifestFile)" Lines="@(ManifestLines)" Overwrite="true"/>
     </Target>
 
     <!-- Build configuration -->
     <Target Name="ConfigurationCheck" BeforeTargets="BuildYakPackage">
-        <Warning Text="Yak package should only be built in Release configuration. Current: $(Configuration)" Condition="'$(Configuration)' != 'Release'" />
+        <Warning Text="Yak package should only be built in Release configuration. Current: $(Configuration)" Condition="'$(Configuration)' != 'Release'"/>
         <PropertyGroup>
             <ShouldBuildYak>$(BuildYakPackage)</ShouldBuildYak>
             <ShouldBuildYak Condition="'$(Configuration)' != 'Release'">false</ShouldBuildYak>
@@ -110,7 +110,7 @@
         <MSBuild Projects="$(MSBuildProjectFile)"
                  Targets="Clean;Build"
                  Properties="Configuration=Release"
-                 BuildInParallel="false" />
+                 BuildInParallel="false"/>
     </Target>
 
     <!-- Yak package build -->
@@ -122,26 +122,26 @@
             <DistFolder>$(MSBuildProjectDirectory)/dist/package-manager/rhino8</DistFolder>
         </PropertyGroup>
 
-        <Warning Text="Could not find Yak executable" Condition="$(YakExecutable) == ''" />
+        <Warning Text="Could not find Yak executable" Condition="$(YakExecutable) == ''"/>
 
         <ItemGroup>
-            <Net48Files Include="$(OutputPath)net48\**\*.*" Condition="'$(Configuration)' == 'Release'" />
-            <Net7Files Include="$(OutputPath)net7.0\**\*.*" Condition="'$(Configuration)' == 'Release'" />
+            <Net48Files Include="$(OutputPath)net48\**\*.*" Condition="'$(Configuration)' == 'Release'"/>
+            <Net7Files Include="$(OutputPath)net7.0\**\*.*" Condition="'$(Configuration)' == 'Release'"/>
         </ItemGroup>
 
         <Copy SourceFiles="@(Net48Files)"
               DestinationFolder="$(DistFolder)\net48\%(RecursiveDir)"
-              Condition="'$(Configuration)' == 'Release'" />
+              Condition="'$(Configuration)' == 'Release'"/>
         <Copy SourceFiles="@(Net7Files)"
               DestinationFolder="$(DistFolder)\net7.0\%(RecursiveDir)"
-              Condition="'$(Configuration)' == 'Release'" />
+              Condition="'$(Configuration)' == 'Release'"/>
 
         <Exec Command="&quot;$(YakExecutable)&quot; build"
               WorkingDirectory="$(DistFolder)"
-              Condition="$(BuildYakPackage) == 'True' and '$(Configuration)' == 'Release'" />
+              Condition="$(BuildYakPackage) == 'True' and '$(Configuration)' == 'Release'"/>
     </Target>
 
     <Target Name="Package" DependsOnTargets="UpdateManifest;BuildRelease;BuildYakPackage">
-        <Message Text="Package built successfully" Importance="high" />
+        <Message Text="Package built successfully" Importance="high"/>
     </Target>
 </Project>

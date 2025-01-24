@@ -1,14 +1,12 @@
 using System.Net;
 using System.Text;
-using GeospizaManager.Core;
-using GeospizaManager.Strategies;
+using GeospizaCore.Core;
+using GeospizaCore.Strategies;
 using Newtonsoft.Json;
 
-namespace GeospizaManager.GeospizaCordinator;
+namespace GeospizaCore.ParallelSpiza;
 
 ///ATTENTION This is still very much in the works. More documentation  will be added as the project progresses.
-
-
 public class RequestContext
 {
   public TaskCompletionSource<string> TaskCompletionSource { get; set; }

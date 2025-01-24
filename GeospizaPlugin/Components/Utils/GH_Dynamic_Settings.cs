@@ -2,8 +2,8 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
-using GeospizaManager.Solvers;
-using GeospizaManager.Strategies;
+using GeospizaCore.Solvers;
+using GeospizaCore.Strategies;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Types;
 

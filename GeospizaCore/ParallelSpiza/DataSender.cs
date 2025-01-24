@@ -1,8 +1,7 @@
-﻿using System.Net.Http;
-using System.Text;
-using GeospizaManager.Utils;
+﻿using System.Text;
+using GeospizaCore.Utils;
 
-namespace GeospizaManager.GeospizaCordinator;
+namespace GeospizaCore.ParallelSpiza;
 
 public class DataSender
 {

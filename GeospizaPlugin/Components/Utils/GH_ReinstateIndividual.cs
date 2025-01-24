@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Drawing;
 using System.Linq;
-using GeospizaManager.Core;
+using GeospizaCore.Core;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;

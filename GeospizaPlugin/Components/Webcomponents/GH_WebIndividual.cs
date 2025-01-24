@@ -2,9 +2,8 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
-using GeospizaManager.Core;
-using GeospizaManager.Utils;
-using GeospizaPlugin.Utils;
+using GeospizaCore.Utils;
+using GeospizaCore.Web;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;

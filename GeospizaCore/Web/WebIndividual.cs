@@ -1,8 +1,6 @@
-﻿using System.Collections.Generic;
-using GeospizaManager.Core;
-using Rhino.Geometry;
+﻿using Rhino.Geometry;
 
-namespace GeospizaPlugin.Utils;
+namespace GeospizaCore.Web;
 
 public class WebIndividual
 {

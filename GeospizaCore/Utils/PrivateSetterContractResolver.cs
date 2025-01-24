@@ -2,7 +2,7 @@
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 
-namespace GeospizaManager.Utils;
+namespace GeospizaCore.Utils;
 
 /// <summary>
 ///   Custom contract resolver to handle private setters during JSON deserialization.

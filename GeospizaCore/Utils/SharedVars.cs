@@ -1,4 +1,4 @@
-﻿namespace GeospizaManager.Utils;
+﻿namespace GeospizaCore.Utils;
 
 public static class SharedVars
 {

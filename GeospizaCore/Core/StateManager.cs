@@ -1,7 +1,7 @@
 ﻿using Grasshopper.Kernel;
 using Grasshopper.Kernel.Special;
 
-namespace GeospizaManager.Core;
+namespace GeospizaCore.Core;
 
 /// <summary>
 /// Manages the state of the local application, including the gene pools and sliders. It is grasshopper file specific.
@@ -86,7 +86,6 @@ public class StateManager
   /// </summary>
   public static StateManager GetInstance(GH_Component solver, GH_Document document)
   {
-
     var foundComponent = document.Objects
       .OfType<GH_Component>()
       .FirstOrDefault(comp => comp.GetType().Name == "GH_Fitness");
@@ -97,6 +96,7 @@ public class StateManager
       return null;
     }
 
+    // Lock the Instances dictionary to ensure thread safety.
     lock (Padlock)
     {
       if (!Instances.TryGetValue(solver, out var instance))
@@ -125,7 +125,6 @@ public class StateManager
   /// </summary>
   public void SetGenes(List<string> geneIds)
   {
-
     if (NumberOfGeneIds != geneIds.Count)
     {
       Reset();
