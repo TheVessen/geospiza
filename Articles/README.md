@@ -6,6 +6,7 @@ This file contains a collection of helpful articles used in developing evolution
 
 - [Evolutionary Algorithms - University of Pennsylvania](https://www.cis.upenn.edu/~cis1890/files/Lecture13.pdf)
 - [Evolution Algorithms - Wikipedia](<https://en.wikipedia.org/wiki/Selection_(evolutionary_algorithm)>)
+- [Galapagos Article](https://hopific.com/galapagos-grasshopper-tutorial/)
 
 ## Selection Strategies
 
