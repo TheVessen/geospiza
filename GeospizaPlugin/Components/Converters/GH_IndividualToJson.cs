@@ -12,7 +12,7 @@ public class IndividualToJson : GH_Component
   /// Initializes a new instance of the IndividualToJson class.
   /// </summary>
   public IndividualToJson()
-    : base("Individual To Json", "Individual To Json",
+    : base("Individual To Json", "IToJ",
       "Converts an individual to a JSON string",
       "Geospiza", "Converter")
   {

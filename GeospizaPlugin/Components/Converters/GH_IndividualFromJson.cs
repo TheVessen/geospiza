@@ -11,7 +11,7 @@ public class GH_IndividualFromJson : GH_Component
   /// Initializes a new instance of the GH_JsonToIndividual class.
   /// </summary>
   public GH_IndividualFromJson()
-    : base("Individual From Json", "Individual From Json",
+    : base("Individual From Json", "IFJ",
       "Converts a JSON string to an individual",
       "Geospiza", "Converter")
   {

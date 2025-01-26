@@ -11,7 +11,7 @@ public class GH_SinglePointCrossover : GH_Component
   /// Initializes a new instance of the SinglePointCrossover class.
   /// </summary>
   public GH_SinglePointCrossover()
-    : base("Single Point Crossover", "Single Point Crossover",
+    : base("Single Point Crossover", "SPC",
       "Single Point Crossover is a genetic algorithm operation used for the new generation population." +
       " It is a method of combining the genetic information of two parents to generate new offspring.  " +
       "In Single Point Crossover, a point on the parent chromosomes is selected. " +
