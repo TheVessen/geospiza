@@ -2,12 +2,13 @@
 using System.Drawing;
 using System.Threading.Tasks;
 using GeospizaCore.ParallelSpiza;
+using GeospizaPlugin.AsyncComponent;
 using GeospizaPlugin.Components.Solvers;
 using Grasshopper.Kernel;
 
 namespace GeospizaPlugin.Components.State;
 
-public class StateManager : AsyncComponent
+public class StateManager : GH_AsyncComponent
 {
   /// <summary>
   /// Initializes a new instance of the StateManager class.
