@@ -1,11 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
-using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using System.Threading;
-using Accord.IO;
 using Fleck;
 using GeospizaCore.Core;
 using GeospizaCore.Solvers;
