@@ -18,19 +18,20 @@ namespace GeospizaPlugin.Components.Solvers
                 "Solver for single objective optimization problems",
                 "Geospiza", "Solvers")
         {
-            BaseWorker = new EvoAsyncWorker();
+            BaseWorker = new EvoAsyncWorker(this);
         }
 
         public override GH_Exposure Exposure => GH_Exposure.primary;
         protected override Bitmap Icon => Properties.Resources.Solver;
         public override Guid ComponentGuid => new Guid("DC3BBA6C-499E-496C-AE42-5488B065C38F");
+
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
             pManager.AddTextParameter("Genes", "GID", "The gene ids from the GeneSelector", GH_ParamAccess.list);
             pManager.AddGenericParameter("Settings", "S", "The settings for the evolutionary algorithm",
                 GH_ParamAccess.item);
-            
-            Param_Integer updateParam = new Param_Integer();
+
+            var updateParam = new Param_Integer();
             updateParam.AddNamedValue("All", 0);
             updateParam.AddNamedValue("Every Generation", 1);
             updateParam.AddNamedValue("If Better", 2);
@@ -39,7 +40,7 @@ namespace GeospizaPlugin.Components.Solvers
             pManager.AddParameter(updateParam, "Preview Level", "PL", "Set how often the preview should update.",
                 GH_ParamAccess.item);
 
-            pManager.AddNumberParameter("Timestamp", "T",
+            pManager.AddIntegerParameter("Timestamp", "T",
                 "Timestamp from the server to determine if the solver should run",
                 GH_ParamAccess.item, 0);
             pManager.AddBooleanParameter("Run", "R", "Run the solver for running locally", GH_ParamAccess.item, false);
@@ -55,122 +56,206 @@ namespace GeospizaPlugin.Components.Solvers
 
         private class EvoAsyncWorker : WorkerInstance
         {
-            public double Num { get; set; }
-            private List<string> GeneIds { get; set; }
+            private readonly object _lockObject = new object();
+            private List<string> _geneIds;
             private SolverSettings _privateSettings;
-            private int PreviewLevel { get; set; }
-            private long Timestamp { get; set; }
-            private bool Run { get; set; }
-            private  EvolutionObserver _evolutionObserver;
-            private long _lastTimestamp = 0;
-            private bool _isRunning = false;
-            private Guid _solutionId = Guid.NewGuid();
-            private Guid _lastSolutionId;
-            private TimeSpan _time;
+            private int _previewLevel;
+            private long _timestamp;
+            private bool _run;
+            private EvolutionObserver _evolutionObserver;
             private StateManager _stateManager;
-            
-            public EvoAsyncWorker() : base(null)
-            {
+            private bool _isRunning = false;
+            private long _lastTimestamp = 0;
+            private Guid _solutionId = Guid.Empty;
+            private Guid _lastSolutionId = Guid.Empty;
 
-            }
+            public EvoAsyncWorker(GH_Component parent) : base(parent) { }
 
             public override void GetData(IGH_DataAccess DA, GH_ComponentParamServer Params)
             {
+                // Temporary local variables; only commit them under lock at the end.
                 var geneIds = new List<string>();
-                if (!DA.GetDataList(0, geneIds)) return;
+                if (!DA.GetDataList(0, geneIds))
+                    return;  // If no input, do nothing.
 
                 var settings = new SolverSettings();
-                if (!DA.GetData(1, ref settings)) return;
-                _privateSettings = settings;
+                if (!DA.GetData(1, ref settings))
+                    return;
 
                 var previewLevel = 0;
-                if (!DA.GetData(2, ref previewLevel)) return;
+                if (!DA.GetData(2, ref previewLevel))
+                    return;
 
-                double timestamp = 0;
-                if (!DA.GetData(3, ref timestamp)) return;
-                long intTimestamp = Convert.ToInt64(timestamp);
+                int timestampInt = 0;
+                if (!DA.GetData(3, ref timestampInt))
+                    return;
+                var intTimestamp = Convert.ToInt64(timestampInt);
 
-                var run = false;
-                if (!DA.GetData(4, ref run)) return;
+                bool run = false;
+                if (!DA.GetData(4, ref run))
+                    return;
                 
-                if(_stateManager == null)
-                    _stateManager = StateManager.GetInstance(Parent, Parent.OnPingDocument());
-                
-                if(_evolutionObserver == null)
-                    _evolutionObserver = EvolutionObserver.GetInstance(Parent);
+                var stateManager = StateManager.GetInstance(Parent, Parent.OnPingDocument());
+                var evolutionObserver = EvolutionObserver.GetInstance(Parent);
 
-                GeneIds = geneIds;
-                PreviewLevel = previewLevel;
-                Timestamp = intTimestamp;
-                Run = run;
+                // Commit everything in a lock so the fields update atomically.
+                lock (_lockObject)
+                {
+                    _geneIds = geneIds;
+                    _privateSettings = settings;
+                    _previewLevel = previewLevel;
+                    _timestamp = intTimestamp;
+                    _run = run;
+
+                    _stateManager = stateManager;
+                    _evolutionObserver = evolutionObserver;
+                }
             }
 
+            /// <summary>
+            /// This method is invoked on the Grasshopper main thread after
+            /// we schedule a solution (via doc.ScheduleSolution).
+            /// Here we actually run the solver (blocking in this example).
+            /// </summary>
             private void ScheduleCallback(GH_Document doc)
             {
-                var start = DateTime.Now;
-                _solutionId = Guid.NewGuid();
-                _evolutionObserver.Reset();
-                
-                var evolutionaryAlgorithm = new BaseSolver(_privateSettings, _stateManager, _evolutionObserver);
-                
-                evolutionaryAlgorithm.RunAlgorithm();
-                
-                Parent.OnPingDocument().ScheduleSolution(100, doc =>
+                Guid currentSolutionId;
+
+                // Lock to guard against multiple parallel solver runs.
+                lock (_lockObject)
                 {
-                    _isRunning = false;
-                    Parent.ExpireSolution(false);
-                });
-                
-                _lastSolutionId = _solutionId;
-                var end = DateTime.Now;
-                var time = end - start;
+                    // If something changed or we were cancelled, we could bail out here.
+                    if (_isRunning) return;
+
+                    // Mark as running, assign a new solution ID
+                    _isRunning = true;
+                    currentSolutionId = Guid.NewGuid();
+                    _solutionId = currentSolutionId;
+                }
+
+                try
+                {
+                    EvolutionObserver observer;
+                    SolverSettings settings;
+                    StateManager sm;
+
+                    // Copy references inside the lock for safe usage outside it
+                    lock (_lockObject)
+                    {
+                        observer = _evolutionObserver;
+                        settings = _privateSettings;
+                        sm = _stateManager;
+                    }
+
+                    // Reset the observer if needed
+                    observer.Reset();
+
+                    // We do a synchronous call to run the solver here
+                    var evolutionaryAlgorithm = new BaseSolver(settings, sm, observer);
+                    evolutionaryAlgorithm.RunAlgorithm();
+                }
+                finally
+                {
+                    lock (_lockObject)
+                    {
+                        if (_solutionId == currentSolutionId)
+                        {
+                            _lastSolutionId = currentSolutionId;
+                            _isRunning = false;
+                        }
+                    }
+
+                    doc.ScheduleSolution(100, doc2 =>
+                    {
+                        doc2.NewSolution(true);
+                    });
+                }
             }
 
-            public override WorkerInstance Duplicate() => new EvoAsyncWorker();
+            public override WorkerInstance Duplicate() => new EvoAsyncWorker(Parent);
 
             public override void DoWork(Action<string, double> ReportProgress, Action Done)
             {
-                if (CancellationToken.IsCancellationRequested) return;
-
-                _evolutionObserver.Reset();
-                if (Run)
+                // If cancellation is requested, just bail out.
+                if (CancellationToken.IsCancellationRequested)
                 {
-                }
-                else if (Timestamp != 0 && Timestamp != _lastTimestamp)
-                {
-                }
-                
-                if (_lastSolutionId != Guid.Empty && _solutionId != _lastSolutionId)
-                {
+                    Done();
                     return;
                 }
-                
-                _stateManager.SetGenes(GeneIds);
-                _stateManager.PreviewLevel = PreviewLevel;
-                
-                var start = (Timestamp != 0 && Timestamp != _lastTimestamp) || Run;
-                
-                if (start)
+
+                bool shouldStart;
+                long localTimestamp;
+                bool localRun;
+                List<string> localGeneIds;
+
+                // Read the necessary fields under lock
+                lock (_lockObject)
                 {
-                    ReportProgress("Running", _evolutionObserver.CurrentGenerationIndex);
-                    _isRunning = true;
-                    Parent.OnPingDocument().ScheduleSolution(100, ScheduleCallback);
-                    _lastTimestamp = Timestamp;
+                    localRun = _run;
+                    localTimestamp = _timestamp;
+                    localGeneIds = _geneIds;
+                    
+                    // Decide if we should start a new solver run
+                    // Conditions:
+                    // 1) The "Run" input is true, or
+                    // 2) There's a new timestamp from the server
+                    // 3) AND we are not already running
+                    shouldStart = (localRun || (localTimestamp != 0 && localTimestamp != _lastTimestamp)) && !_isRunning;
+
+                    if (shouldStart)
+                    {
+                        // Update the state manager with new gene IDs
+                        _stateManager.SetGenes(localGeneIds);
+                        _stateManager.PreviewLevel = _previewLevel;
+
+                        // Update lastTimestamp so we don't trigger again
+                        _lastTimestamp = localTimestamp;
+                    }
                 }
 
+                if (shouldStart)
+                {
+                    // Report that we are running (for progress display in GH)
+                    // Example: "Running" plus the current generation index
+                    lock (_lockObject)
+                    {
+                        // Safely read generation index from observer
+                        if (_evolutionObserver != null)
+                            ReportProgress("Running", _evolutionObserver.CurrentGenerationIndex);
+                        else
+                            ReportProgress("Running", 0);
+                    }
+
+                    // Schedule a new solution after 100 ms, which calls our solver
+                    // on the Grasshopper main thread:
+                    Parent.OnPingDocument().ScheduleSolution(100, ScheduleCallback);
+                }
+
+                // We must always call Done() or Grasshopper thinks the worker is still busy.
                 Done();
             }
 
             public override void SetData(IGH_DataAccess DA)
             {
-                if (_isRunning == false)
+                // We'll read these shared fields atomically
+                bool currentIsRunning;
+                EvolutionObserver currentObserver;
+                StateManager currentStateManager;
+                double currentGenIndex;
+
+                lock (_lockObject)
                 {
-                    DA.SetData(0, _evolutionObserver);
-                    DA.SetData(1, _stateManager);
+                    currentIsRunning = _isRunning;
+                    currentObserver = _evolutionObserver;
+                    currentStateManager = _stateManager;
+                    currentGenIndex = currentObserver?.CurrentGenerationIndex ?? 0;
                 }
 
-                DA.SetData(2, _evolutionObserver.CurrentGenerationIndex);
-                DA.SetData(3, _isRunning);
+                // Send data out
+                DA.SetData(0, currentObserver);
+                DA.SetData(1, currentStateManager);
+                DA.SetData(2, currentGenIndex);
+                DA.SetData(3, currentIsRunning);
             }
         }
     }

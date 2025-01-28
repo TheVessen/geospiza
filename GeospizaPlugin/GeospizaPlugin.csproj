@@ -21,6 +21,7 @@
     <!-- NuGet Package References -->
     <ItemGroup>
         <PackageReference Include="Accord.MachineLearning" Version="3.8.0"/>
+        <PackageReference Include="Fleck" Version="1.2.0" />
         <PackageReference Include="Microsoft.ML" Version="3.0.1"/>
         <PackageReference Include="Newtonsoft.Json" Version="13.0.3"/>
     </ItemGroup>
