@@ -1,18 +1,43 @@
-<script>
+<script lang="ts">
   import { onMount, onDestroy } from "svelte";
+  import type { ServerResponse } from "./types";
 
-  let messages = [];
-  let socket;
-  let connectionStatus = "disconnected";
-  let reconnectTimer;
+  let messages: (string | ServerResponse)[] = $state([]);
+  let socket: WebSocket;
+  let connectionStatus = $state("disconnected");
+  let reconnectTimer: NodeJS.Timeout;
+  let heartbeatTimer: NodeJS.Timeout;
   const WS_URL = "ws://127.0.0.1:8181";
   const RECONNECT_DELAY = 3000;
   const CONNECTION_TIMEOUT = 5000;
+  const HEARTBEAT_INTERVAL = 30000; // 30 seconds
+  let lastPongTime = 0;
+
+  function checkConnection() {
+    const now = Date.now();
+    if (now - lastPongTime > HEARTBEAT_INTERVAL * 2) {
+      socket?.close();
+    }
+  }
+
+  function startHeartbeat() {
+    heartbeatTimer = setInterval(() => {
+      if (socket?.readyState === WebSocket.OPEN) {
+        try {
+          socket.send(JSON.stringify({ command: "ping" }));
+          checkConnection();
+        } catch (err) {
+          socket.close();
+        }
+      }
+    }, HEARTBEAT_INTERVAL);
+  }
 
   function connectWebSocket() {
     try {
       connectionStatus = "connecting";
       socket = new WebSocket(WS_URL);
+      lastPongTime = Date.now(); // Reset pong timer
 
       const timeoutId = setTimeout(() => {
         if (socket.readyState !== WebSocket.OPEN) {
@@ -30,11 +55,16 @@
         console.log("Connected to Grasshopper WebSocket");
         connectionStatus = "connected";
         messages = [...messages, "Connected to server"];
+        startHeartbeat();
       };
 
       socket.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
+          if (data.command === "pong") {
+            lastPongTime = Date.now();
+            return;
+          }
           messages = [
             ...messages,
             typeof data === "object" ? JSON.stringify(data) : data,
@@ -53,6 +83,7 @@
 
       socket.onclose = () => {
         clearTimeout(timeoutId);
+        clearInterval(heartbeatTimer);
         connectionStatus = "disconnected";
         messages = [...messages, "Connection closed"];
         reconnectTimer = setTimeout(connectWebSocket, RECONNECT_DELAY);
@@ -70,6 +101,7 @@
   onDestroy(() => {
     if (socket) socket.close();
     if (reconnectTimer) clearTimeout(reconnectTimer);
+    if (heartbeatTimer) clearInterval(heartbeatTimer);
   });
 
   function runSolver() {
@@ -87,8 +119,6 @@
       messages = [...messages, "Connection not open"];
     }
   }
-
-  // ...existing runSolver and getStatus functions...
 </script>
 
 <main>
@@ -99,10 +129,10 @@
   </div>
 
   <div class="controls">
-    <button on:click={runSolver} disabled={connectionStatus !== "connected"}>
+    <button onclick={runSolver} disabled={connectionStatus !== "connected"}>
       Run Solver
     </button>
-    <button on:click={getStatus} disabled={connectionStatus !== "connected"}>
+    <button onclick={getStatus} disabled={connectionStatus !== "connected"}>
       Get Status
     </button>
   </div>

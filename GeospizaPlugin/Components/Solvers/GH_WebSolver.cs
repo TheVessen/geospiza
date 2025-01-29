@@ -94,18 +94,11 @@ namespace GeospizaPlugin.Components.Solvers
         private class WebSolverWorker : WorkerInstance
         {
             private readonly object _lockObject = new object();
-            private List<string> _geneIds;
-            private SolverSettings _settings;
-            private int _previewLevel;
-            private bool _isActivated;
-            private string _endpoint;
             private EvolutionObserver _evolutionObserver;
             private StateManager _stateManager;
             private bool _isRunning;
-            private bool _webTriggerPending;
-            private static WebSocketServer _wsServer;
-            private static IWebSocketConnection _currentSocket;
-            private static bool _serverStarted;
+            
+            private EvolutionBlueprint _blueprint;
 
             public WebSolverWorker(GH_Component parent) : base(parent)
             {
@@ -113,53 +106,27 @@ namespace GeospizaPlugin.Components.Solvers
 
             public override void DoWork(Action<string, double> ReportProgress, Action Done)
             {
-                // If cancellation is requested, just bail out.
                 if (CancellationToken.IsCancellationRequested)
                 {
                     Done();
                     return;
                 }
 
-                RhinoApp.WriteLine("WebSolverWorker.DoWork");
-
-                _stateManager.SetGenes(_geneIds);
-                _stateManager.PreviewLevel = _previewLevel;
-
                 Parent.OnPingDocument().ScheduleSolution(100, ScheduleCallback);
-
                 // Done();
             }
 
             private void ScheduleCallback(GH_Document doc)
             {
-                Guid currentSolutionId;
                 lock (_lockObject)
                 {
                     if (_isRunning) return;
-
-                    _isRunning = true;
-                    currentSolutionId = Guid.NewGuid();
                 }
 
                 try
                 {
-                    EvolutionObserver observer;
-                    SolverSettings settings;
-                    StateManager sm;
-
-                    lock (_lockObject)
-                    {
-                        observer = _evolutionObserver;
-                        settings = _settings;
-                        sm = _stateManager;
-                    }
-
-                    // Reset the observer if needed
-                    observer.Reset();
-
-                    // We do a synchronous call to run the solver here
-                    var evolutionaryAlgorithm = new BaseSolver(settings, sm, observer);
-                    evolutionaryAlgorithm.RunAlgorithm();
+                    _evolutionObserver.Reset();
+                    _blueprint.RunAlgorithm();
                 }
                 finally
                 {
@@ -194,15 +161,13 @@ namespace GeospizaPlugin.Components.Solvers
 
                 var stateManager = StateManager.GetInstance(Parent, Parent.OnPingDocument());
                 var evolutionObserver = EvolutionObserver.GetInstance(Parent);
-
+                
+                stateManager.SetGenes(geneIds);
+                stateManager.PreviewLevel = previewLevel;
 
                 lock (_lockObject)
                 {
-                    _geneIds = geneIds;
-                    _settings = settings;
-                    _previewLevel = previewLevel;
-                    _isActivated = activated;
-                    _endpoint = endpoint;
+                    _blueprint = new BaseSolver(settings, stateManager, evolutionObserver);
                     _stateManager = stateManager;
                     _evolutionObserver = evolutionObserver;
                 }
@@ -212,14 +177,7 @@ namespace GeospizaPlugin.Components.Solvers
             public override void SetData(IGH_DataAccess DA)
             {
                 string message;
-                lock (_lockObject)
-                {
-                    message = _isRunning ? "Solver running..." :
-                        _isActivated ? "Listening for WebSocket commands" :
-                        "Inactive - set Activate to true to enable";
-                }
-
-                DA.SetData(0, message);
+                DA.SetData(0, "message");
             }
 
             public override WorkerInstance Duplicate() => new WebSolverWorker(Parent);

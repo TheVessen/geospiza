@@ -46,8 +46,7 @@ namespace GeospizaPlugin.AsyncComponent
         private string _endpoint = "ws://127.0.0.1:8181";
         private volatile bool _isRunning;
         public readonly List<CancellationTokenSource> CancellationSources;
-
-
+        
         /// <summary>
         /// Set this property inside the constructor of your derived component. 
         /// </summary>
@@ -57,6 +56,7 @@ namespace GeospizaPlugin.AsyncComponent
         /// Optional: if you have opinions on how the default system task scheduler should treat your workers, set it here.
         /// </summary>
         public TaskCreationOptions? TaskCreationOptions { get; set; } = null;
+        
 
         protected GH_WebsocketComponent(string name, string nickname, string description, string category,
             string subCategory) : base(name, nickname, description, category, subCategory)
@@ -80,7 +80,6 @@ namespace GeospizaPlugin.AsyncComponent
                 {
                     Interlocked.Exchange(ref SetData, 1);
 
-                    // We need to reverse the workers list to set the outputs in the same order as the inputs. 
                     Workers.Reverse();
 
                     Rhino.RhinoApp.InvokeOnUiThread((Action)delegate { ExpireSolution(true); });
@@ -150,7 +149,6 @@ namespace GeospizaPlugin.AsyncComponent
         protected override void AfterSolveInstance()
         {
             System.Diagnostics.Debug.WriteLine("After solve instance was called " + State + " ? " + Workers.Count);
-            // We need to start all the tasks as close as possible to each other.
             if (State == 0 && Tasks.Count > 0 && SetData == 0)
             {
                 System.Diagnostics.Debug.WriteLine("After solve INVOKATIONM");
@@ -163,7 +161,6 @@ namespace GeospizaPlugin.AsyncComponent
 
         protected override void ExpireDownStreamObjects()
         {
-            // Prevents the flash of null data until the new solution is ready
             if (SetData == 1)
             {
                 base.ExpireDownStreamObjects();
@@ -244,34 +241,90 @@ namespace GeospizaPlugin.AsyncComponent
 
         public override void RemovedFromDocument(GH_Document document)
         {
-            base.RemovedFromDocument(document);
+            try
+            {
+                CleanupWebSocket();
 
+                // Cancel any running tasks
+                foreach (var source in CancellationSources)
+                {
+                    try
+                    {
+                        source.Cancel();
+                    }
+                    catch (Exception ex)
+                    {
+                        RhinoApp.WriteLine($"Error cancelling task: {ex.Message}");
+                    }
+                }
+
+                // Clear collections
+                CancellationSources.Clear();
+                Workers.Clear();
+                ProgressReports.Clear();
+                Tasks.Clear();
+
+                _isRunning = false;
+            }
+            catch (Exception ex)
+            {
+                RhinoApp.WriteLine($"Error during component removal cleanup: {ex.Message}");
+            }
+            finally
+            {
+                base.RemovedFromDocument(document);
+            }
+        }
+        
+        private void CleanupWebSocket()
+        {
             try
             {
                 lock (_serverLock)
                 {
-                    if (_wsServer != null)
-                    {
-                        _wsServer.Dispose();
-                        _wsServer = null;
-                    }
-
+                    // Close current connection
                     var socket = _currentSocket;
                     if (socket != null)
                     {
-                        socket.Close();
-                        _currentSocket = null;
+                        try
+                        {
+                            socket.Close();
+                        }
+                        catch (Exception ex)
+                        {
+                            RhinoApp.WriteLine($"Error closing WebSocket connection: {ex.Message}");
+                        }
+                        finally
+                        {
+                            _currentSocket = null;
+                        }
                     }
 
-                    _serverStarted = false;
+                    // Dispose server
+                    if (_wsServer != null)
+                    {
+                        try
+                        {
+                            _wsServer.Dispose();
+                        }
+                        catch (Exception ex)
+                        {
+                            RhinoApp.WriteLine($"Error disposing WebSocket server: {ex.Message}");
+                        }
+                        finally
+                        {
+                            _wsServer = null;
+                            _serverStarted = false;
+                        }
+                    }
                 }
             }
             catch (Exception ex)
             {
-                // Log the error appropriately
-                RhinoApp.WriteLine($"Error during cleanup: {ex.Message}");
+                RhinoApp.WriteLine($"Error during WebSocket cleanup: {ex.Message}");
             }
         }
+
 
 
         public void StartWebSocketServer(WorkerInstance workerInstance)
