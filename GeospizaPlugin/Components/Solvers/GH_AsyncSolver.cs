@@ -69,14 +69,16 @@ namespace GeospizaPlugin.Components.Solvers
             private Guid _solutionId = Guid.Empty;
             private Guid _lastSolutionId = Guid.Empty;
 
-            public EvoAsyncWorker(GH_Component parent) : base(parent) { }
+            public EvoAsyncWorker(GH_Component parent) : base(parent)
+            {
+            }
 
             public override void GetData(IGH_DataAccess DA, GH_ComponentParamServer Params)
             {
                 // Temporary local variables; only commit them under lock at the end.
                 var geneIds = new List<string>();
                 if (!DA.GetDataList(0, geneIds))
-                    return;  // If no input, do nothing.
+                    return; // If no input, do nothing.
 
                 var settings = new SolverSettings();
                 if (!DA.GetData(1, ref settings))
@@ -94,7 +96,7 @@ namespace GeospizaPlugin.Components.Solvers
                 bool run = false;
                 if (!DA.GetData(4, ref run))
                     return;
-                
+
                 var stateManager = StateManager.GetInstance(Parent, Parent.OnPingDocument());
                 var evolutionObserver = EvolutionObserver.GetInstance(Parent);
 
@@ -165,10 +167,7 @@ namespace GeospizaPlugin.Components.Solvers
                         }
                     }
 
-                    doc.ScheduleSolution(100, doc2 =>
-                    {
-                        doc2.NewSolution(true);
-                    });
+                    doc.ScheduleSolution(100, doc2 => { doc2.NewSolution(true); });
                 }
             }
 
@@ -194,13 +193,14 @@ namespace GeospizaPlugin.Components.Solvers
                     localRun = _run;
                     localTimestamp = _timestamp;
                     localGeneIds = _geneIds;
-                    
+
                     // Decide if we should start a new solver run
                     // Conditions:
                     // 1) The "Run" input is true, or
                     // 2) There's a new timestamp from the server
                     // 3) AND we are not already running
-                    shouldStart = (localRun || (localTimestamp != 0 && localTimestamp != _lastTimestamp)) && !_isRunning;
+                    shouldStart = (localRun || (localTimestamp != 0 && localTimestamp != _lastTimestamp)) &&
+                                  !_isRunning;
 
                     if (shouldStart)
                     {

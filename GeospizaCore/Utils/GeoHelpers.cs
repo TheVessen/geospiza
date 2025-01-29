@@ -6,48 +6,48 @@ namespace GeospizaCore.Utils;
 
 public static class GeoHelpers
 {
-  public static List<Mesh> MeshConverter(GH_Structure<IGH_Goo> meshStruct)
-  {
-    var meshes = new List<Mesh>();
-    var mParams = new MeshingParameters();
-    mParams.SimplePlanes = true;
-    foreach (var goo in meshStruct.AllData(true))
+    public static List<Mesh> MeshConverter(GH_Structure<IGH_Goo> meshStruct)
     {
-      try
-      {
-        var internalData = goo.ScriptVariable(); // This method gets the underlying geometry data.
-
-        switch (internalData)
+        var meshes = new List<Mesh>();
+        var mParams = new MeshingParameters();
+        mParams.SimplePlanes = true;
+        foreach (var goo in meshStruct.AllData(true))
         {
-          case Mesh mesh:
-            meshes.Add(mesh);
-            break;
+            try
+            {
+                var internalData = goo.ScriptVariable(); // This method gets the underlying geometry data.
 
-          case Brep brep:
-            var brepMeshes = Mesh.CreateFromBrep(brep, mParams);
-            var joinedMesh = new Mesh();
-            foreach (var brepMesh in brepMeshes) joinedMesh.Append(brepMesh);
+                switch (internalData)
+                {
+                    case Mesh mesh:
+                        meshes.Add(mesh);
+                        break;
 
-            meshes.Add(joinedMesh);
-            break;
+                    case Brep brep:
+                        var brepMeshes = Mesh.CreateFromBrep(brep, mParams);
+                        var joinedMesh = new Mesh();
+                        foreach (var brepMesh in brepMeshes) joinedMesh.Append(brepMesh);
 
-          case Surface surface:
-            var surfaceMesh = Mesh.CreateFromSurface(surface, mParams);
-            meshes.Add(surfaceMesh);
-            break;
+                        meshes.Add(joinedMesh);
+                        break;
 
-          default:
-            throw new Exception("Could not convert geo to mesh");
+                    case Surface surface:
+                        var surfaceMesh = Mesh.CreateFromSurface(surface, mParams);
+                        meshes.Add(surfaceMesh);
+                        break;
+
+                    default:
+                        throw new Exception("Could not convert geo to mesh");
+                }
+            }
+            catch
+            {
+                throw new Exception("Something went wrong in the casting process");
+            }
+
+            if (meshes.Count == 0) throw new Exception("No meshes to convert");
         }
-      }
-      catch
-      {
-        throw new Exception("Something went wrong in the casting process");
-      }
 
-      if (meshes.Count == 0) throw new Exception("No meshes to convert");
+        return meshes;
     }
-
-    return meshes;
-  }
 }

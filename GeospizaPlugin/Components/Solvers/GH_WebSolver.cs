@@ -14,7 +14,7 @@ using Rhino;
 
 namespace GeospizaPlugin.Components.Solvers
 {
-    public class GH_WebSolver : GH_AsyncComponent
+    public class GH_WebSolver : GH_WebsocketComponent
     {
         public GH_WebSolver()
             : base("Web Solver", "WS",
@@ -114,34 +114,66 @@ namespace GeospizaPlugin.Components.Solvers
             public override void DoWork(Action<string, double> ReportProgress, Action Done)
             {
                 // If cancellation is requested, just bail out.
-                // if (CancellationToken.IsCancellationRequested)
-                // {
-                //     Done();
-                //     return;
-                // }
-            
+                if (CancellationToken.IsCancellationRequested)
+                {
+                    Done();
+                    return;
+                }
+
+                RhinoApp.WriteLine("WebSolverWorker.DoWork");
+
                 _stateManager.SetGenes(_geneIds);
                 _stateManager.PreviewLevel = _previewLevel;
 
-                var _do = Parent.OnPingDocument();
-                // bool shouldRun;
-                // lock (_lockObject)
-                // {
-                //     shouldRun = _webTriggerPending && _isActivated && !_isRunning;
-                //     if (shouldRun)
-                //     {
-                //     }
-                // }
-                //
-                // if (shouldRun)
-                // {
-                //     ReportProgress("Running WebSocket triggered solver", 0);
-                //     Parent.OnPingDocument().ScheduleSolution(100, ScheduleCallback);
-                // }
+                Parent.OnPingDocument().ScheduleSolution(100, ScheduleCallback);
 
-
-                Done();
+                // Done();
             }
+
+            private void ScheduleCallback(GH_Document doc)
+            {
+                Guid currentSolutionId;
+                lock (_lockObject)
+                {
+                    if (_isRunning) return;
+
+                    _isRunning = true;
+                    currentSolutionId = Guid.NewGuid();
+                }
+
+                try
+                {
+                    EvolutionObserver observer;
+                    SolverSettings settings;
+                    StateManager sm;
+
+                    lock (_lockObject)
+                    {
+                        observer = _evolutionObserver;
+                        settings = _settings;
+                        sm = _stateManager;
+                    }
+
+                    // Reset the observer if needed
+                    observer.Reset();
+
+                    // We do a synchronous call to run the solver here
+                    var evolutionaryAlgorithm = new BaseSolver(settings, sm, observer);
+                    evolutionaryAlgorithm.RunAlgorithm();
+                }
+                finally
+                {
+                    lock (_lockObject)
+                    {
+                        {
+                            _isRunning = false;
+                        }
+                    }
+
+                    doc.ScheduleSolution(100, doc2 => { doc2.NewSolution(true); });
+                }
+            }
+
 
             public override void GetData(IGH_DataAccess DA, GH_ComponentParamServer Params)
             {
@@ -163,6 +195,7 @@ namespace GeospizaPlugin.Components.Solvers
                 var stateManager = StateManager.GetInstance(Parent, Parent.OnPingDocument());
                 var evolutionObserver = EvolutionObserver.GetInstance(Parent);
 
+
                 lock (_lockObject)
                 {
                     _geneIds = geneIds;
@@ -172,87 +205,6 @@ namespace GeospizaPlugin.Components.Solvers
                     _endpoint = endpoint;
                     _stateManager = stateManager;
                     _evolutionObserver = evolutionObserver;
-                }
-
-                if (activated && !_serverStarted)
-                {
-                    StartWebSocketServer();
-                }
-            }
-
-            private void StartWebSocketServer()
-            {
-                lock (_lockObject)
-                {
-                    if (_serverStarted) return;
-
-                    _wsServer = new WebSocketServer(_endpoint);
-                    _wsServer.Start(socket =>
-                    {
-                        socket.OnOpen = () => _currentSocket = socket;
-                        socket.OnClose = () =>
-                        {
-                            if (_currentSocket == socket) _currentSocket = null;
-                        };
-                        socket.OnMessage = message =>
-                        {
-                            var msg = JsonSerializer.Deserialize<WebSocketMessage>(message);
-                            RhinoApp.WriteLine($"Received WebSocket message: {msg.Command}");
-
-                            var doc = Parent.OnPingDocument();
-
-                            if (msg.Command?.ToLowerInvariant() == "run")
-                            {
-                                lock (_lockObject)
-                                {
-                                    _webTriggerPending = true;
-                                }
-
-                                if (doc != null)
-                                {
-                                    doc.ScheduleSolution(100, ScheduleCallback);
-                                }
-                            }
-                        };
-                    });
-                    _serverStarted = true;
-                }
-            }
-
-            private void ScheduleCallback(GH_Document doc)
-            {
-                lock (_lockObject)
-                {
-                    if (_isRunning) return;
-                    _isRunning = true;
-                }
-
-                try
-                {
-                    EvolutionObserver observer;
-                    SolverSettings settings;
-                    StateManager sm;
-
-                    lock (_lockObject)
-                    {
-                        observer = _evolutionObserver;
-                        settings = _settings;
-                        sm = _stateManager;
-                        _webTriggerPending = false;
-                    }
-
-                    observer.Reset();
-                    var solver = new BaseSolver(settings, sm, observer);
-                    solver.RunAlgorithm();
-                }
-                finally
-                {
-                    lock (_lockObject)
-                    {
-                        _isRunning = false;
-                    }
-
-                    doc.ScheduleSolution(100, d => d.NewSolution(true));
                 }
             }
 

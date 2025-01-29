@@ -9,16 +9,16 @@ namespace GeospizaCore.Utils;
 /// </summary>
 public class PrivateSetterContractResolver : DefaultContractResolver
 {
-  protected override JsonProperty CreateProperty(MemberInfo member, MemberSerialization memberSerialization)
-  {
-    var property = base.CreateProperty(member, memberSerialization);
-    if (!property.Writable)
+    protected override JsonProperty CreateProperty(MemberInfo member, MemberSerialization memberSerialization)
     {
-      var prop = member as PropertyInfo;
-      var hasPrivateSetter = prop?.GetSetMethod(true) != null;
-      property.Writable = hasPrivateSetter;
-    }
+        var property = base.CreateProperty(member, memberSerialization);
+        if (!property.Writable)
+        {
+            var prop = member as PropertyInfo;
+            var hasPrivateSetter = prop?.GetSetMethod(true) != null;
+            property.Writable = hasPrivateSetter;
+        }
 
-    return property;
-  }
+        return property;
+    }
 }

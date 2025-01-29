@@ -13,37 +13,37 @@ namespace GeospizaCore.ParallelSpiza;
 /// </summary>
 public class ObserverServerSnapshot
 {
-  public int CurrentGenerationIndex { get; set; }
-  public List<Individual> Inhabitants { get; set; }
-  public int Count => Inhabitants.Count;
-  public string RequestId { get; private set; }
+    public int CurrentGenerationIndex { get; set; }
+    public List<Individual> Inhabitants { get; set; }
+    public int Count => Inhabitants.Count;
+    public string RequestId { get; private set; }
 
-  public ObserverServerSnapshot(EvolutionObserver observer)
-  {
-    CurrentGenerationIndex = observer.CurrentGenerationIndex;
-    Inhabitants = observer.CurrentPopulation.Inhabitants;
-    RequestId = new Guid().ToString();
-  }
-
-  public string ToJson()
-  {
-    var settings = new JsonSerializerSettings
+    public ObserverServerSnapshot(EvolutionObserver observer)
     {
-      Formatting = Formatting.Indented,
-      Converters = new List<JsonConverter> { new Individual.IndividualConverter() }
-    };
+        CurrentGenerationIndex = observer.CurrentGenerationIndex;
+        Inhabitants = observer.CurrentPopulation.Inhabitants;
+        RequestId = new Guid().ToString();
+    }
 
-    return JsonConvert.SerializeObject(this, settings);
-  }
-
-  public static ObserverServerSnapshot? FromJson(string json)
-  {
-    var settings = new JsonSerializerSettings
+    public string ToJson()
     {
-      Converters = new List<JsonConverter> { new Individual.IndividualConverter() },
-      ContractResolver = new PrivateSetterContractResolver()
-    };
+        var settings = new JsonSerializerSettings
+        {
+            Formatting = Formatting.Indented,
+            Converters = new List<JsonConverter> { new Individual.IndividualConverter() }
+        };
 
-    return JsonConvert.DeserializeObject<ObserverServerSnapshot>(json, settings);
-  }
+        return JsonConvert.SerializeObject(this, settings);
+    }
+
+    public static ObserverServerSnapshot? FromJson(string json)
+    {
+        var settings = new JsonSerializerSettings
+        {
+            Converters = new List<JsonConverter> { new Individual.IndividualConverter() },
+            ContractResolver = new PrivateSetterContractResolver()
+        };
+
+        return JsonConvert.DeserializeObject<ObserverServerSnapshot>(json, settings);
+    }
 }

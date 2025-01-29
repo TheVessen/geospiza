@@ -4,6 +4,6 @@ namespace GeospizaCore.Solvers;
 
 public interface IEvolutionarySolver
 {
-  void InitializePopulation(StateManager stateManager, EvolutionObserver evolutionObserver);
-  void RunAlgorithm();
+    void InitializePopulation(StateManager stateManager, EvolutionObserver evolutionObserver);
+    void RunAlgorithm();
 }

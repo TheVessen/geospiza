@@ -3,17 +3,20 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Grasshopper.Kernel;
 using Timer = System.Timers.Timer;
+using Fleck;
+using Rhino;
 
 namespace GeospizaPlugin.AsyncComponent
 {
     /// <summary>
     /// Inherit your component from this class to make all the async goodness available.
     /// </summary>
-    public abstract class GH_AsyncComponent : GH_Component
+    public abstract class GH_WebsocketComponent : GH_Component
     {
         public override Guid ComponentGuid =>
             throw new Exception("ComponentGuid should be overriden in any descendant of GH_AsyncComponent!");
@@ -36,31 +39,26 @@ namespace GeospizaPlugin.AsyncComponent
 
         List<Task> Tasks;
 
+        private static readonly object _serverLock = new object();
+        private static WebSocketServer _wsServer;
+        private static volatile IWebSocketConnection _currentSocket;
+        private static volatile bool _serverStarted;
+        private string _endpoint = "ws://127.0.0.1:8181";
+        private volatile bool _isRunning;
         public readonly List<CancellationTokenSource> CancellationSources;
+
 
         /// <summary>
         /// Set this property inside the constructor of your derived component. 
         /// </summary>
         public WorkerInstance BaseWorker { get; set; }
-        
-        public void Dispose ()
-        {
-            DisplayProgressTimer.Dispose();
-            
-            foreach (var source in CancellationSources)
-            {
-                source.Dispose();
-            }
-            
-           
-        }
 
         /// <summary>
         /// Optional: if you have opinions on how the default system task scheduler should treat your workers, set it here.
         /// </summary>
         public TaskCreationOptions? TaskCreationOptions { get; set; } = null;
 
-        protected GH_AsyncComponent(string name, string nickname, string description, string category,
+        protected GH_WebsocketComponent(string name, string nickname, string description, string category,
             string subCategory) : base(name, nickname, description, category, subCategory)
         {
             DisplayProgressTimer = new Timer(333) { AutoReset = false };
@@ -86,6 +84,7 @@ namespace GeospizaPlugin.AsyncComponent
                     Workers.Reverse();
 
                     Rhino.RhinoApp.InvokeOnUiThread((Action)delegate { ExpireSolution(true); });
+                    _isRunning = false;
                 }
             };
 
@@ -119,6 +118,11 @@ namespace GeospizaPlugin.AsyncComponent
             }
 
             Rhino.RhinoApp.InvokeOnUiThread((Action)delegate { OnDisplayExpired(true); });
+        }
+
+        public void setEndpoint(string endpoint)
+        {
+            _endpoint = endpoint;
         }
 
         protected override void BeforeSolveInstance()
@@ -168,7 +172,6 @@ namespace GeospizaPlugin.AsyncComponent
 
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            //return;
             if (State == 0)
             {
                 if (BaseWorker == null)
@@ -184,26 +187,12 @@ namespace GeospizaPlugin.AsyncComponent
                     return;
                 }
 
-                // Let the worker collect data.
                 currentWorker.GetData(DA, Params);
 
-                // Create the task
-                var tokenSource = new CancellationTokenSource();
-                currentWorker.CancellationToken = tokenSource.Token;
-                currentWorker.Id = $"Worker-{DA.Iteration}";
-
-                var currentRun = TaskCreationOptions != null
-                    ? new Task(() => currentWorker.DoWork(ReportProgress, Done), tokenSource.Token,
-                        (TaskCreationOptions)TaskCreationOptions)
-                    : new Task(() => currentWorker.DoWork(ReportProgress, Done), tokenSource.Token);
-
-                // Add cancellation source to our bag
-                CancellationSources.Add(tokenSource);
-
-                // Add the worker to our list
-                Workers.Add(currentWorker);
-
-                Tasks.Add(currentRun);
+                if (!_serverStarted || _wsServer == null || _currentSocket == null)
+                {
+                    StartWebSocketServer(currentWorker);
+                }
 
                 return;
             }
@@ -251,6 +240,127 @@ namespace GeospizaPlugin.AsyncComponent
             Interlocked.Exchange(ref SetData, 0);
             Message = "Cancelled";
             OnDisplayExpired(true);
+        }
+
+        public override void RemovedFromDocument(GH_Document document)
+        {
+            base.RemovedFromDocument(document);
+
+            try
+            {
+                lock (_serverLock)
+                {
+                    if (_wsServer != null)
+                    {
+                        _wsServer.Dispose();
+                        _wsServer = null;
+                    }
+
+                    var socket = _currentSocket;
+                    if (socket != null)
+                    {
+                        socket.Close();
+                        _currentSocket = null;
+                    }
+
+                    _serverStarted = false;
+                }
+            }
+            catch (Exception ex)
+            {
+                // Log the error appropriately
+                RhinoApp.WriteLine($"Error during cleanup: {ex.Message}");
+            }
+        }
+
+
+        public void StartWebSocketServer(WorkerInstance workerInstance)
+        {
+            lock (_serverLock)
+            {
+                if (_serverStarted)
+                    return;
+
+                try
+                {
+                    // Validate endpoint format
+                    if (!Uri.TryCreate(_endpoint, UriKind.Absolute, out Uri uri) ||
+                        !uri.Scheme.Equals("ws", StringComparison.OrdinalIgnoreCase))
+                    {
+                        RhinoApp.WriteLine($"Invalid WebSocket endpoint format: {_endpoint}");
+                        return;
+                    }
+
+                    _wsServer = new WebSocketServer(_endpoint);
+                    _wsServer.RestartAfterListenError = true;
+
+                    _wsServer.Start(socket =>
+                    {
+                        socket.OnOpen = () =>
+                        {
+                            lock (_serverLock)
+                            {
+                                _currentSocket = socket;
+                                RhinoApp.WriteLine($"Client connected from {socket.ConnectionInfo.ClientIpAddress}");
+                                socket.Send("Connected to server");
+                            }
+                        };
+
+                        socket.OnClose = () =>
+                        {
+                            lock (_serverLock)
+                            {
+                                if (_currentSocket == socket)
+                                    _currentSocket = null;
+                                RhinoApp.WriteLine("WebSocket client disconnected.");
+                            }
+                        };
+
+                        socket.OnError = (exception) =>
+                        {
+                            RhinoApp.WriteLine($"WebSocket error: {exception.Message}");
+                        };
+
+                        socket.OnMessage = message =>
+                        {
+                            RhinoApp.WriteLine("Message received: " + message);
+                            var msg = JsonSerializer.Deserialize<WebSocketMessage>(message);
+                            
+                            if (msg?.Command?.ToLowerInvariant() == "run")
+                            {
+                                lock (_serverLock)
+                                {
+                                    if (_isRunning)
+                                        return;
+                            
+                                    RhinoApp.WriteLine("Run command received.");
+                                    var tokenSource = new CancellationTokenSource();
+                                    var currentRun = TaskCreationOptions != null
+                                        ? new Task(() => workerInstance.DoWork(ReportProgress, Done), tokenSource.Token,
+                                            (TaskCreationOptions)TaskCreationOptions)
+                                        : new Task(() => workerInstance.DoWork(ReportProgress, Done),
+                                            tokenSource.Token);
+                            
+                                    CancellationSources.Add(tokenSource);
+                                    currentRun.Start();
+                                }
+                            }
+                            else if (msg?.Command?.ToLowerInvariant() == "cancel")
+                            {
+                                RequestCancellation();
+                            }
+                        };
+                    });
+                    RhinoApp.WriteLine($"WebSocket server started on {_endpoint}");
+                    _serverStarted = true;
+                }
+                catch (Exception ex)
+                {
+                    RhinoApp.WriteLine($"Failed to start WebSocket server: {ex.Message}");
+                    _serverStarted = false;
+                    _wsServer = null;
+                }
+            }
         }
     }
 }
