@@ -77,6 +77,12 @@ public class EvolutionObserver
     /// </summary>
     public IReadOnlyList<double> FitnessStandardDeviation => _fitnessStandardDeviation;
 
+    // Define a delegate for the event
+    public delegate void SnapshotTakenEventHandler(object sender, SnapshotEventArgs e);
+
+    // Define an event based on the delegate
+    public event SnapshotTakenEventHandler SnapshotTaken;
+    
     private readonly List<double> _averageFitness = new();
     private readonly List<double> _bestFitness = new();
     private readonly List<double> _worstFitness = new();
@@ -127,6 +133,8 @@ public class EvolutionObserver
 
         SetPopulation(currentPopulation);
         UpdateGenerationCounter();
+        
+        OnSnapshotTaken(new SnapshotEventArgs(CurrentGenerationIndex, CurrentPopulation));
     }
 
     private static double CalculateStandardDeviation(IEnumerable<Individual> inhabitants)
@@ -214,5 +222,22 @@ public class EvolutionObserver
         };
 
         return JsonConvert.DeserializeObject<EvolutionObserver>(json, settings);
+    }
+    
+    protected virtual void OnSnapshotTaken(SnapshotEventArgs e)
+    {
+      SnapshotTaken?.Invoke(this, e);
+    }
+    
+    public class SnapshotEventArgs : EventArgs
+    {
+      public int GenerationIndex { get; }
+      public Population Population { get; }
+
+      public SnapshotEventArgs(int generationIndex, Population population)
+      {
+        GenerationIndex = generationIndex;
+        Population = population;
+      }
     }
 }
