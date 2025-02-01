@@ -76,6 +76,8 @@ namespace GeospizaPlugin.Components.Solvers
           GH_ParamAccess.item,
           "ws://127.0.0.1:8181"
       );
+      
+      pManager.AddGenericParameter("WebIndividual", "WI", "The individual to be displayed in the web interface", GH_ParamAccess.list);
     }
 
     protected override void RegisterOutputParams(GH_OutputParamManager pManager)

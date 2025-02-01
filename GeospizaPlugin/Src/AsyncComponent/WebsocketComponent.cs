@@ -198,7 +198,8 @@ namespace GeospizaPlugin.AsyncComponent
           AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Endpoint not provided.");
           return;
         }
-
+        
+        //TODO: Get the webinstance of this and 
         currentWorker.GetData(DA, Params);
 
         if (!_serverStarted || _wsServer == null || _currentSocket == null)

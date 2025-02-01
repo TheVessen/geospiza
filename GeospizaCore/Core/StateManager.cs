@@ -63,7 +63,7 @@ public class StateManager
     /// The fitness component associated with the StateManager.
     /// </summary>
     public GH_Component FitnessComponent { get; private set; }
-
+    
     /// <summary>
     /// A dictionary that holds the genotype, where the key is a Guid and the value is a GeneTemplate object.
     /// </summary>
@@ -89,6 +89,11 @@ public class StateManager
         var foundComponent = document.Objects
             .OfType<GH_Component>()
             .FirstOrDefault(comp => comp.GetType().Name == "GH_Fitness");
+        
+        var webIndividualComponents = document.Objects
+            .OfType<GH_Component>()
+            .Where(comp => comp.GetType().Name == "GH_WebIndividual")
+            .ToList();
 
         if (foundComponent == null)
         {
