@@ -39,6 +39,8 @@ public class StateManager
     private int NumberOfGeneIds { get; set; }
 
     private int _previewLevel;
+    
+    public bool IsRunning { get; set; }
 
     /// <summary>
     /// The preview level for the StateManager. Valid values are:
@@ -136,6 +138,11 @@ public class StateManager
             NumberOfGeneIds = geneIds.Count;
             SetGenePool(geneIds);
         }
+    }
+    
+    public double GetFitness()
+    {
+        return FitnessSingleton.GetFitness();
     }
 
     /// <summary>

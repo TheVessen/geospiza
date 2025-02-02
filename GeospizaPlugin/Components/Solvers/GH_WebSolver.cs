@@ -78,6 +78,7 @@ namespace GeospizaPlugin.Components.Solvers
       );
       
       pManager.AddGenericParameter("WebIndividual", "WI", "The individual to be displayed in the web interface", GH_ParamAccess.list);
+      pManager[5].Optional = true;
     }
 
     protected override void RegisterOutputParams(GH_OutputParamManager pManager)
@@ -124,7 +125,9 @@ namespace GeospizaPlugin.Components.Solvers
         try
         {
           EvolutionObserver.Reset();
+          _stateManager.IsRunning = true;
           _blueprint.RunAlgorithm();
+          _stateManager.IsRunning = false;
         }
         finally
         {
