@@ -1,4 +1,5 @@
 ﻿using System.Drawing;
+using System.Text.Json.Serialization;
 
 namespace GeospizaCore.Web;
 
@@ -23,8 +24,15 @@ public class ThreeMaterial
         Opacity = 1.0;
     }
 
+    [JsonPropertyName("color")]
     public Color Color { get; set; }
+
+    [JsonPropertyName("metalness")]
     public double Metalness { get; set; }
+
+    [JsonPropertyName("roughness")]
     public double Roughness { get; set; }
+
+    [JsonPropertyName("opacity")]
     public double Opacity { get; set; }
 }

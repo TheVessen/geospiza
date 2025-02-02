@@ -14,6 +14,7 @@
   // Solver related variables
   let fitnessValues: number[] = $state([]);
   let fitnessValue = $derived(fitnessValues[fitnessValues.length - 1] || 0);
+  let currentGeneration = $state(0);
   const MESH_UPDATE_INTERVAL = 10;
 
   // Three.js related variables
@@ -25,6 +26,7 @@
 
   function handleMessage(data: SolverResponse) {
     fitnessValues = [...fitnessValues, data.fitness];
+    currentGeneration = data.currentGeneration;
     if (
       data.meshes?.length > 0 &&
       fitnessValues.length % MESH_UPDATE_INTERVAL === 0
@@ -110,14 +112,18 @@
           <h2 class="text-xl font-semibold text-white">Solver Status</h2>
         </div>
         <div class="space-y-3 text-gray-300">
-          <p><span class="font-medium">Status:</span> {connectionStatus}</p>
+          <p><span class="font-bold">Status:</span> {connectionStatus}</p>
           <p>
-            <span class="font-medium">Current Fitness:</span>
+            <span class="font-bold">Current Fitness:</span>
             {fitnessValue || "N/A"}
           </p>
           <p>
-            <span class="font-medium">Number of Individuals:</span>
+            <span class="font-bold">Number of Individuals:</span>
             {fitnessValues.length}
+          </p>
+          <p>
+            <span class="font-bold">Current Generation:</span>
+            {currentGeneration}
           </p>
         </div>
         <div class="mt-6">

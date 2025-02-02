@@ -1,13 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
-
 using GeospizaCore.Core;
 using GeospizaCore.Solvers;
 using GeospizaPlugin.AsyncComponent;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Parameters;
 using Grasshopper.Kernel.Types;
+
+//Attention this component combined with the WebSolverWorker work, but its quite a mess and needs to get a proper cleanup
 
 namespace GeospizaPlugin.Components.Solvers
 {

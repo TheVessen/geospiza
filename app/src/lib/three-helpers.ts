@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/Addons.js";
-import type { MeshData } from "./types";
+import type { Color, MeshData } from "./types";
 
 
 export function initThree(canvas: HTMLCanvasElement) {
@@ -73,10 +73,10 @@ export function getThreeMeshData(webIndividual: MeshData[]): THREE.Group<THREE.O
   const group = new THREE.Group();
 
   webIndividual.forEach((meshData) => {
-    const vertices = new Float32Array(meshData.Vertices);
-    const faceIndices = meshData.Indices;
+    const vertices = new Float32Array(meshData.vertices);
+    const faceIndices = meshData.indices;
     scaleAndRotateVertices(vertices, 0.001);
-    const color = rgbStringToThreeColor(meshData.Material.Color);
+    const color = rgbStringToThreeColor(meshData.material.color);
     const mesh = VerticesToThreeMesh(vertices, faceIndices);
 
     mesh.material = new THREE.MeshStandardMaterial({
@@ -191,7 +191,8 @@ function scaleAndRotateVertices(vertices: Float32Array | undefined, scaleFactor:
   }
 }
 
-function rgbStringToThreeColor(rgbString: string) {
-  const [r, g, b] = rgbString.split(",").map((val) => parseInt(val) / 255);
-  return new THREE.Color(r, g, b);
+function rgbStringToThreeColor(color: Color): THREE.Color {
+  // Get hex string without alpha channel (remove first 2 chars 'ff')
+  const hex = color.name.substring(2);
+  return new THREE.Color(`#${hex}`);
 }

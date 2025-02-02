@@ -1,4 +1,5 @@
-﻿using Rhino.Geometry;
+﻿using System.Text.Json.Serialization;
+using Rhino.Geometry;
 
 namespace GeospizaCore.Web;
 
@@ -36,9 +37,9 @@ public class WebIndividual
         Material = material;
     }
 
-    public List<double> Vertices { get; set; } = new();
-    public List<int> Indices { get; set; } = new();
-    public ThreeMaterial Material { get; set; }
+    [JsonPropertyName("vertices")] public List<double> Vertices { get; set; } = new();
+    [JsonPropertyName("indices")] public List<int> Indices { get; set; } = new();
+    [JsonPropertyName("indices")] public ThreeMaterial Material { get; set; }
 
     public object ToAnonymousObject()
     {

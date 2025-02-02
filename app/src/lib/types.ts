@@ -1,18 +1,30 @@
+export type Color = {
+  r: number;
+  g: number;
+  b: number;
+  a: number;
+  isKnownColor: boolean;
+  isEmpty: boolean;
+  isNamedColor: boolean;
+  isSystemColor: boolean;
+  name: string;
+};
+
 export type Material = {
-  Color: string;
-  Metalness: number;
-  Roughness: number;
-  Opacity: number;
+  color: Color;
+  metalness: number;
+  roughness: number;
+  opacity: number;
 };
 
 export type MeshData = {
-  Indices: number[];
-  Vertices: number[];
-  Material: Material;
+  vertices: number[];
+  indices: number[];
+  material: Material;
 }
 
 export type SolverResponse = {
   meshes: MeshData[];
   fitness: number;
+  currentGeneration: number;
 };
-

@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Grasshopper.Kernel;
@@ -12,10 +13,10 @@ using Rhino;
 using System.Text.Json.Serialization;
 using GeospizaCore.Core;
 using GeospizaCore.Web;
-using GeospizaPlugin.Components.Solvers;
 using Grasshopper.Kernel.Types;
-using Newtonsoft.Json;
 using JsonSerializer = System.Text.Json.JsonSerializer;
+
+//Attention it's quite a mess and needs to get a proper cleanup lot of unused and unecessary code
 
 namespace GeospizaPlugin.AsyncComponent
 {
@@ -156,24 +157,46 @@ namespace GeospizaPlugin.AsyncComponent
 
         protected override void AfterSolveInstance()
         {
-            var observer = EvolutionObserver.GetInstance(this);
             var stateManager = StateManager.GetInstance(this, OnPingDocument());
-                var currentFitness = stateManager?.GetFitness() ?? 0;
-            if (observer != null && _currentSocket != null)
-            {
-                var rootObject = new Dictionary<string, object> { };
-                if (_individuals.Count != 0)
-                {
-                    
-                    var meshes = _individuals.Select(individual => individual.ToAnonymousObject()).ToList();
-                    rootObject.Add("meshes", meshes);
-                }
-                
-                rootObject.Add("fitness", currentFitness);
+            // If the algorithm is not running whe don't need to send data to the client
+            if (!stateManager.IsRunning) return;
 
-                var json = JsonConvert.SerializeObject(rootObject);
+            if (_currentSocket != null)
+            {
+                var observer = EvolutionObserver.GetInstance(this);
+                var json = _collectClientData(observer, stateManager);
                 _currentSocket.Send(json);
             }
+        }
+
+        /// <summary>
+        /// Collects the data to be sent to the client. Don't forget to update the types.ts on int the app (SolverResponse) to match the data you are sending.
+        /// </summary>
+        /// <param name="observer"></param>
+        /// <param name="stateManager"></param>
+        /// <returns></returns>
+        private string _collectClientData(EvolutionObserver observer, StateManager stateManager)
+        {
+            var currentFitness = stateManager?.GetFitness() ?? 0;
+            var rootObject = new Dictionary<string, object> { };
+            if (_individuals.Count != 0)
+            {
+                var meshes = _individuals.Select(individual => individual.ToAnonymousObject()).ToList();
+                rootObject.Add("meshes", meshes);
+            }
+
+            rootObject.Add("fitness", currentFitness);
+            rootObject.Add("currentGeneration", observer.CurrentGenerationIndex);
+            
+            var options = new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                WriteIndented = true
+            };
+
+            var json = JsonSerializer.Serialize(rootObject, options);
+            
+            return json;
         }
 
         protected override void ExpireDownStreamObjects()
