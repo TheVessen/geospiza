@@ -18,8 +18,14 @@ using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace GeospizaPlugin.AsyncComponent;
 
+// This component is still in its early stages and is not yet fully functional. If you feel adventurous, you can try to implement the missing parts.
+
+
 /// <summary>
 ///     Base component providing asynchronous execution and WebSocket communication support.
+/// <remarks>
+/// This component is based on the implementation from speckle systems <a href="https://github.com/specklesystems/GrasshopperAsyncComponent"/>
+/// </remarks>
 /// </summary>
 public abstract class GH_WebsocketComponent : GH_Component
 {
