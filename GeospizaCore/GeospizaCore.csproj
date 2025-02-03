@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFrameworks>net7.0;net48</TargetFrameworks>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <LangVersion>latest</LangVersion>
+    </PropertyGroup>
+
+
+    <ItemGroup>
+        <PackageReference Include="Grasshopper" Version="8.0.23304.9001"/>
+        <PackageReference Include="Microsoft.Extensions.Logging" Version="7.0.0"/>
+        <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="7.0.0"/>
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.3"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Reference Include="Microsoft.CSharp"/>
+        <Reference Include="System.Net.Http"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Folder Include="Compute\"/>
+    </ItemGroup>
+
+</Project>
