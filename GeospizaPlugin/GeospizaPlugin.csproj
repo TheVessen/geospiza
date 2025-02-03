@@ -10,7 +10,7 @@
 
     <!-- Package metadata -->
     <PropertyGroup>
-        <Version>0.1.2.0</Version>
+        <Version>0.2.0.0</Version>
         <Title>Geospiza</Title>
         <Company>VektorNode AG</Company>
         <Authors>Felix Brunold;Geospiza</Authors>
