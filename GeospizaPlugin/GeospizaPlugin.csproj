@@ -1,0 +1,148 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFrameworks>net7.0;net48</TargetFrameworks>
+        <EnableDynamicLoading>true</EnableDynamicLoading>
+        <TargetExt>.gha</TargetExt>
+        <NoWarn>NU1701;NETSDK1086</NoWarn>
+        <EnableWindowsTargeting>true</EnableWindowsTargeting>
+        <LangVersion>latest</LangVersion>
+    </PropertyGroup>
+
+    <!-- Package metadata -->
+    <PropertyGroup>
+        <Version>0.2.1.0</Version>
+        <Title>Geospiza</Title>
+        <Company>VektorNode AG</Company>
+        <Authors>Felix Brunold;Geospiza</Authors>
+        <Description><![CDATA[Geospiza is a plugin designed for Grasshopper that implements evolutionary algorithms, and is compatible with headless Rhino environments eg. rhino.compute. It includes a range of selection, mutation, and crossover methods, allowing for versatility in addressing different types of computational problems. This tool is primarily aimed at facilitating the exploration and optimization of solutions in design and architecture-related computational tasks.]]></Description>
+        <Keywords>evolutionary_algorithm;genetic_algorithm;rhino_compute;web;solver;optimization</Keywords>
+    </PropertyGroup>
+
+    <!-- NuGet Package References -->
+    <ItemGroup>
+        <PackageReference Include="Accord.MachineLearning" Version="3.8.0"/>
+        <PackageReference Include="Fleck" Version="1.2.0"/>
+        <PackageReference Include="Microsoft.ML" Version="3.0.1"/>
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.3"/>
+    </ItemGroup>
+
+    <PropertyGroup>
+        <GenerateResourceUsePreserializedResources>true</GenerateResourceUsePreserializedResources>
+    </PropertyGroup>
+
+    <!-- Windows-specific configuration -->
+    <PropertyGroup Condition="$(TargetFramework.Contains('-windows')) or $(TargetFramework.StartsWith('net4'))">
+        <UseWindowsForms>true</UseWindowsForms>
+    </PropertyGroup>
+
+    <!-- Rhino References -->
+    <ItemGroup>
+        <PackageReference Include="Grasshopper" Version="8.0.23304.9001" IncludeAssets="compile;build"/>
+        <PackageReference Include="System.Resources.Extensions" Version="5.0.0"/>
+    </ItemGroup>
+
+    <!-- MacOS-specific references -->
+    <ItemGroup Condition="!($(TargetFramework.Contains('-windows')) or $(TargetFramework.StartsWith('net4')))">
+        <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies.net48" Version="1.0.3" ExcludeAssets="all" GeneratePathProperty="true"/>
+        <Reference Include="$(PkgMicrosoft_NETFramework_ReferenceAssemblies_net48)\build\.NETFramework\v4.8\System.Windows.Forms.dll" Private="False"/>
+        <PackageReference Include="System.Drawing.Common" Version="7.0.0" ExcludeAssets="runtime"/>
+    </ItemGroup>
+
+    <!-- System References -->
+    <ItemGroup>
+        <Reference Include="Microsoft.CSharp"/>
+        <Reference Include="System.Net.Http"/>
+    </ItemGroup>
+
+    <!-- Resource Generation -->
+    <ItemGroup>
+        <Compile Update="Properties\Resources.Designer.cs">
+            <DesignTime>True</DesignTime>
+            <AutoGen>True</AutoGen>
+            <DependentUpon>Resources.resx</DependentUpon>
+        </Compile>
+    </ItemGroup>
+
+    <!-- Resources -->
+    <ItemGroup>
+        <EmbeddedResource Update="Properties\Resources.resx">
+            <Generator>ResXFileCodeGenerator</Generator>
+            <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+        </EmbeddedResource>
+        <EmbeddedResource Include="Resources\Icons\*.png"/>
+    </ItemGroup>
+
+    <!-- Project References -->
+    <ItemGroup>
+        <ProjectReference Include="..\GeospizaCore\GeospizaCore.csproj"/>
+    </ItemGroup>
+
+    <!-- Manifest generation -->
+    <Target Name="UpdateManifest">
+        <PropertyGroup>
+            <ManifestFile>$(MSBuildProjectDirectory)/dist/package-manager/rhino8/manifest.yml</ManifestFile>
+        </PropertyGroup>
+        <ItemGroup>
+            <AuthorList Include="$(Authors.Split(';'))"/>
+            <KeywordList Include="$(Keywords.Split(';'))"/>
+            <ManifestLines Include="name: $(Title)"/>
+            <ManifestLines Include="version: $(Version)"/>
+            <ManifestLines Include="authors:"/>
+            <ManifestLines Include="@(AuthorList->'  - %(Identity)')"/>
+            <ManifestLines Include="description: $(Description)"/>
+            <ManifestLines Include="keywords:"/>
+            <ManifestLines Include="@(KeywordList->'  - %(Identity)')"/>
+            <!--            <ManifestLines Include="url: $(SupportUrl)" />-->
+            <ManifestLines Include="icon: icon.png"/>
+        </ItemGroup>
+        <WriteLinesToFile File="$(ManifestFile)" Lines="@(ManifestLines)" Overwrite="true"/>
+    </Target>
+
+    <!-- Build configuration -->
+    <Target Name="ConfigurationCheck" BeforeTargets="BuildYakPackage">
+        <Warning Text="Yak package should only be built in Release configuration. Current: $(Configuration)" Condition="'$(Configuration)' != 'Release'"/>
+        <PropertyGroup>
+            <ShouldBuildYak>$(BuildYakPackage)</ShouldBuildYak>
+            <ShouldBuildYak Condition="'$(Configuration)' != 'Release'">false</ShouldBuildYak>
+        </PropertyGroup>
+    </Target>
+
+    <Target Name="BuildRelease" DependsOnTargets="UpdateManifest">
+        <MSBuild Projects="$(MSBuildProjectFile)"
+                 Targets="Clean;Build"
+                 Properties="Configuration=Release"
+                 BuildInParallel="false"/>
+    </Target>
+
+    <!-- Yak package build -->
+    <Target Name="BuildYakPackage" DependsOnTargets="BuildRelease">
+        <PropertyGroup>
+            <YakExecutable Condition="$(YakExecutable) == '' and $([MSBuild]::IsOSPlatform(windows))">C:\Program Files\Rhino 8\System\Yak.exe</YakExecutable>
+            <YakExecutable Condition="$(YakExecutable) == '' and $([MSBuild]::IsOSPlatform(macos))">/Applications/Rhino\ 8.app/Contents/Resources/bin/yak</YakExecutable>
+            <BuildYakPackage Condition="$(BuildYakPackage) == '' and $(YakExecutable) != '' and Exists($(YakExecutable)) and '$(Configuration)' == 'Release'">True</BuildYakPackage>
+            <DistFolder>$(MSBuildProjectDirectory)/dist/package-manager/rhino8</DistFolder>
+        </PropertyGroup>
+
+        <Warning Text="Could not find Yak executable" Condition="$(YakExecutable) == ''"/>
+
+        <ItemGroup>
+            <Net48Files Include="$(OutputPath)net48\**\*.*" Condition="'$(Configuration)' == 'Release'"/>
+            <Net7Files Include="$(OutputPath)net7.0\**\*.*" Condition="'$(Configuration)' == 'Release'"/>
+        </ItemGroup>
+
+        <Copy SourceFiles="@(Net48Files)"
+              DestinationFolder="$(DistFolder)\net48\%(RecursiveDir)"
+              Condition="'$(Configuration)' == 'Release'"/>
+        <Copy SourceFiles="@(Net7Files)"
+              DestinationFolder="$(DistFolder)\net7.0\%(RecursiveDir)"
+              Condition="'$(Configuration)' == 'Release'"/>
+
+        <Exec Command="&quot;$(YakExecutable)&quot; build"
+              WorkingDirectory="$(DistFolder)"
+              Condition="$(BuildYakPackage) == 'True' and '$(Configuration)' == 'Release'"/>
+    </Target>
+
+    <Target Name="Package" DependsOnTargets="UpdateManifest;BuildRelease;BuildYakPackage">
+        <Message Text="Package built successfully" Importance="high"/>
+    </Target>
+</Project>
