@@ -2,10 +2,14 @@
 using System.Threading;
 using Grasshopper.Kernel;
 
+
 namespace GeospizaPlugin.AsyncComponent
 {
     /// <summary>
-    /// Base class for asynchronous worker instances (with synchronous DoWork).
+    /// Base class for asynchronous worker instances
+    /// <remarks>
+    /// This class is based on the example by speckle systems: <a href="https://github.com/specklesystems/GrasshopperAsyncComponent"> GitHub</a>
+    /// </remarks>
     /// </summary>
     public abstract class WorkerInstance
     {
@@ -36,9 +40,5 @@ namespace GeospizaPlugin.AsyncComponent
         /// </summary>
         public abstract void SetData(IGH_DataAccess DA);
 
-        /// <summary>
-        /// Creates a duplicate of the current worker instance.
-        /// </summary>
-        public abstract WorkerInstance Duplicate();
     }
 }

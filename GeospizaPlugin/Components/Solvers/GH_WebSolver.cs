@@ -47,7 +47,6 @@ namespace GeospizaPlugin.Components.Solvers
         }
     }
 
-
     /// <summary>
     /// The synchronous worker for the WebSolver component.
     /// </summary>
@@ -144,11 +143,6 @@ namespace GeospizaPlugin.Components.Solvers
         public override void SetData(IGH_DataAccess DA)
         {
             //Set in the after solve instance
-        }
-
-        public override WorkerInstance Duplicate()
-        {
-            return new WebSolverWorker(Parent);
         }
     }
 }

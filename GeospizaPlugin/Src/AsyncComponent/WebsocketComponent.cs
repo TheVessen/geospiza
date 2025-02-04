@@ -5,10 +5,8 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
-using Fleck;
 using GeospizaCore.Core;
 using GeospizaCore.Web;
-using GeospizaPlugin.Components.Solvers;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
@@ -17,7 +15,8 @@ using Rhino;
 namespace GeospizaPlugin.AsyncComponent
 {
     /// <summary>
-    /// Base component providing asynchronous execution and WebSocket communication without progress reporting.
+    /// Base component providing asynchronous execution and WebSocket communication.
+    /// This class is based on the example by speckle systems: <a href="https://github.com/specklesystems/GrasshopperAsyncComponent"> GitHub</a>
     /// </summary>
     public abstract class GH_WebsocketComponent : GH_Component
     {
@@ -25,8 +24,8 @@ namespace GeospizaPlugin.AsyncComponent
         private CancellationTokenSource _globalCancellationTokenSource = new CancellationTokenSource();
         protected WorkerInstance BaseWorker { get; set; }
         private string Endpoint { get; set; } = "ws://127.0.0.1:8181";
-        protected WebSocketService _wsService;
-        
+        private WebSocketService _wsService;
+
         Action Done;
 
         protected GH_WebsocketComponent(string name, string nickname, string description, string category,
@@ -35,12 +34,9 @@ namespace GeospizaPlugin.AsyncComponent
         {
             Done = () =>
             {
-                
                 RhinoApp.InvokeOnUiThread(() => OnDisplayExpired(true));
                 _wsService?.SendMessage(JsonSerializer.Serialize(new { status = "done" }));
             };
-
-            
         }
 
         /// <summary>
@@ -215,7 +211,7 @@ namespace GeospizaPlugin.AsyncComponent
             {
                 { "fitness", stateManager?.GetFitness() ?? 0 },
                 { "currentGeneration", observer?.CurrentGenerationIndex ?? 0 },
-                {"status", stateManager?.IsRunning ?? false ? "running" : "finished"}
+                { "status", stateManager?.IsRunning ?? false ? "running" : "finished" }
             };
 
             if (individuals.Any())
