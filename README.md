@@ -27,11 +27,11 @@ The project is structured in 3 subprojects
 <br>
 
 - Geospiza Core
-  - This is the core code it holds the main classes, and implements the strategies for the evultionary solver
+  - This is the core code it holds the main classes, and implements the strategies for the evolutionary solver
 - Geospiza Plugin
   - The main part for the grasshopper. It here are all the grasshopper component live
 - Geospiza Server
-  - Still a quite earlie idea. The goal of this project is to manage multiple grasshopper instances with rhinocompute to solve test solutions in a more scalable fassion.
+  - Still a quite early idea. The goal of this project is to manage multiple grasshopper instances with rhinocompute to solve test solutions in a more scalable fashion.
 - app
   - SvelteKit app for using the web solver
 
