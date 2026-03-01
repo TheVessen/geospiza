@@ -29,7 +29,8 @@ public class ProgressConvergence : TerminationStrategy
         var averageFitness = evolutionObserver.AverageFitness;
         var bestFitness = evolutionObserver.BestFitness;
 
-        if (averageFitness.Count < ProgessRange || bestFitness.Count < ProgessRange) return false;
+        // Need at least ProgessRange + 1 entries to compute ProgessRange deltas
+        if (averageFitness.Count <= ProgessRange || bestFitness.Count <= ProgessRange) return false;
 
         var totalNormalizedDelta = 0.0;
 
@@ -37,7 +38,10 @@ public class ProgressConvergence : TerminationStrategy
         {
             var averageDelta =
                 Math.Abs(averageFitness[averageFitness.Count - i] - averageFitness[averageFitness.Count - (i + 1)]);
-            var normalizedDelta = averageDelta / bestFitness[bestFitness.Count - i];
+            var bestValue = Math.Abs(bestFitness[bestFitness.Count - i]);
+
+            // If best fitness is zero, use the raw delta (cannot normalize)
+            var normalizedDelta = bestValue > 0 ? averageDelta / bestValue : averageDelta;
             totalNormalizedDelta += normalizedDelta;
         }
 

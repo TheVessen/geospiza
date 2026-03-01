@@ -49,14 +49,12 @@ public class BaseSolver : EvolutionBlueprint
                         MutateChildren(children);
                         newPopulation.AddIndividuals(children);
                     }
-
-                    newPopulation.AddIndividuals(matingPool);
                 }
 
                 if (newPopulation.Count > PopulationSize)
                 {
                     newPopulation.Inhabitants.Sort((inhabitant1, inhabitant2) =>
-                        inhabitant1.Fitness.CompareTo(inhabitant2.Fitness));
+                        inhabitant2.Fitness.CompareTo(inhabitant1.Fitness));
                     var removeCount = newPopulation.Count - PopulationSize;
                     newPopulation.Inhabitants.RemoveRange(PopulationSize, removeCount);
                 }
@@ -101,7 +99,8 @@ public class BaseSolver : EvolutionBlueprint
 
     private void MutateChildren(List<Individual> children)
     {
-        PerformOperation(children, MutationStrategy.MutationRate, MutationStrategy.Mutate);
+        foreach (var child in children)
+            MutationStrategy.Mutate(child);
     }
 
     private List<Individual> PerformOperation(IndividualPair individualPair, double rate,
@@ -112,10 +111,4 @@ public class BaseSolver : EvolutionBlueprint
         return new List<Individual> { individualPair.Individual1, individualPair.Individual2 };
     }
 
-    private void PerformOperation(List<Individual> individuals, double rate, Action<Individual> operation)
-    {
-        foreach (var individual in individuals)
-            if (Random.NextDouble() < rate)
-                operation(individual);
-    }
 }

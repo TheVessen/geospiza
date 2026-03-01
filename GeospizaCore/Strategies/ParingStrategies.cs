@@ -62,9 +62,17 @@ public class PairingStrategy
         List<Individual> sortedMates;
 
         if (DistanceFunction == DistanceFunctionType.Euclidean)
-            sortedMates = potentialMates.OrderBy(mate => EuclideanDistance(individual, mate)).ToList();
+            sortedMates = potentialMates
+                .Where(mate => !ReferenceEquals(mate, individual))
+                .OrderBy(mate => EuclideanDistance(individual, mate)).ToList();
         else
-            sortedMates = potentialMates.OrderBy(mate => ManhattanDistance(individual, mate)).ToList();
+            sortedMates = potentialMates
+                .Where(mate => !ReferenceEquals(mate, individual))
+                .OrderBy(mate => ManhattanDistance(individual, mate)).ToList();
+
+        // Fallback: if the individual is the only one in the list, pair with self
+        if (sortedMates.Count == 0)
+            return individual;
 
         var mateIndex = (int)((inBreedingFactor + 1) / 2 * (sortedMates.Count - 1));
         return sortedMates[mateIndex];

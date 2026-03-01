@@ -208,8 +208,7 @@ public class NsgaIISolver : EvolutionBlueprint
     private void MutateChildren(List<Individual> children)
     {
         foreach (var child in children)
-            if (Random.NextDouble() < MutationStrategy.MutationRate)
-                MutationStrategy.Mutate(child);
+            MutationStrategy.Mutate(child);
     }
 
     /// <summary>

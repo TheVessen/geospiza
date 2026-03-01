@@ -43,7 +43,7 @@ public class GH_Settings : GH_Component
         pManager.AddNumberParameter("Elite Size", "ES", "The number of elite individuals. If 0 no elite will be picked",
             GH_ParamAccess.item, 1);
         pManager.AddGenericParameter("Selection Strategy", "SS",
-            "The selection strategy. As default StochasticUniversalSampling is used", GH_ParamAccess.item);
+            "The selection strategy. As default TournamentSelection with size 3 is used", GH_ParamAccess.item);
         pManager.AddGenericParameter("Pairing Strategy", "PS",
             "The pairing strategy. As default an InBreedingFactor of 0.2 and Manhattan distance will be used",
             GH_ParamAccess.item);
@@ -107,7 +107,7 @@ public class GH_Settings : GH_Component
         DA.GetData(7, ref terminationStrategyContainer);
 
         selectionStrategy =
-            selectionStrategyContainer?.Value as ISelectionStrategy ?? new StochasticUniversalSampling();
+            selectionStrategyContainer?.Value as ISelectionStrategy ?? new TournamentSelection(3);
         pairingStrategy = pairingStrategyContainer?.Value as PairingStrategy ?? new PairingStrategy(0.2);
         crossoverStrategy = crossoverStrategyContainer?.Value as ICrossoverStrategy ?? new TwoPointCrossover(0.7);
         mutationStrategy = mutationStrategyContainer?.Value as IMutationStrategy ?? new RandomMutation(0.03);

@@ -66,16 +66,14 @@ public class ParallelSolver : EvolutionBlueprint
                         newPopulation.AddIndividuals(children);
                     }
 
-                    // Add the individuals from the mating pool to the new population
-                    newPopulation.AddIndividuals(matingPool);
                 }
 
                 // If the new population is larger than the specified size, remove the least fit individuals
                 if (newPopulation.Count > PopulationSize)
                 {
-                    // Sort newPopulation based on fitness in ascending order
+                    // Sort newPopulation based on fitness in descending order (keep the best)
                     newPopulation.Inhabitants.Sort((inhabitant1, inhabitant2) =>
-                        inhabitant1.Fitness.CompareTo(inhabitant2.Fitness));
+                        inhabitant2.Fitness.CompareTo(inhabitant1.Fitness));
                     // Remove the individuals with the worst fitness
                     var removeCount = newPopulation.Count - PopulationSize;
                     newPopulation.Inhabitants.RemoveRange(PopulationSize, removeCount);
@@ -125,7 +123,8 @@ public class ParallelSolver : EvolutionBlueprint
 
     private void MutateChildren(List<Individual> children)
     {
-        PerformOperation(children, MutationStrategy.MutationRate, MutationStrategy.Mutate);
+        foreach (var child in children)
+            MutationStrategy.Mutate(child);
     }
 
     private List<Individual> PerformOperation(IndividualPair individualPair, double rate,
@@ -136,10 +135,4 @@ public class ParallelSolver : EvolutionBlueprint
         return new List<Individual> { individualPair.Individual1, individualPair.Individual2 };
     }
 
-    private void PerformOperation(List<Individual> individuals, double rate, Action<Individual> operation)
-    {
-        foreach (var individual in individuals)
-            if (Random.NextDouble() < rate)
-                operation(individual);
-    }
 }

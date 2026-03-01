@@ -83,7 +83,7 @@ public class PercentageMutation : MutationStrategy
             if (Random.NextDouble() < MutationRate)
             {
                 var currentValue = t.TickValue;
-                var mutationAmount = (int)(currentValue * MutationPercentage);
+                var mutationAmount = Math.Max(1, (int)(currentValue * MutationPercentage));
                 var newValue = currentValue + Random.Next(-mutationAmount, mutationAmount + 1);
                 var attempts = 0;
                 while ((newValue < 0 || newValue > t.TickCount) && attempts < 100)
@@ -116,7 +116,7 @@ public class RandomMutation : MutationStrategy
         foreach (var t in individual.GenePool)
             if (Random.NextDouble() < MutationRate)
             {
-                var newValue = Random.Next(0, t.TickCount);
+                var newValue = Random.Next(0, t.TickCount + 1);
                 t.MutatedValue(newValue);
             }
     }
