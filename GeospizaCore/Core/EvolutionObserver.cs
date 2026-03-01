@@ -30,6 +30,7 @@ public class EvolutionObserver
     private readonly List<Individual> _bestIndividuals = new();
     private readonly List<int> _diversity = new();
     private readonly List<double> _fitnessStandardDeviation = new();
+    private readonly List<IReadOnlyList<Individual>> _paretoFronts = new();
 
     /// <summary>
     ///     Lock object for thread-safe access to internal lists
@@ -95,6 +96,12 @@ public class EvolutionObserver
     /// </summary>
     public IReadOnlyList<double> FitnessStandardDeviation => _fitnessStandardDeviation;
 
+    /// <summary>
+    ///     Gets the Pareto-optimal front (rank 0) recorded per generation.
+    ///     Empty lists are stored for generations using single-objective fitness.
+    /// </summary>
+    public IReadOnlyList<IReadOnlyList<Individual>> ParetoFronts => _paretoFronts;
+
     public event GenerationCompletedEventHandler GenerationCompleted;
 
     /// <summary>
@@ -121,28 +128,60 @@ public class EvolutionObserver
             if (_isDisposed) throw new ObjectDisposedException(nameof(EvolutionObserver));
 
             var inhabitants = currentPopulation.Inhabitants;
-            _bestFitness.Add(inhabitants.Max(inh => inh.Fitness));
-            _worstFitness.Add(inhabitants.Min(inh => inh.Fitness));
-            _averageFitness.Add(currentPopulation.GetAverageFitness());
-            _totalFitness.Add(currentPopulation.CalculateTotalFitness());
+            var n = inhabitants.Count;
+
+            // Single pass: min, max, and sum
+            var best = double.MinValue;
+            var worst = double.MaxValue;
+            var sum = 0.0;
+            for (var i = 0; i < n; i++)
+            {
+                var f = inhabitants[i].Fitness;
+                if (f > best) best = f;
+                if (f < worst) worst = f;
+                sum += f;
+            }
+            var average = sum / n;
+
+            // Second pass: variance for standard deviation
+            var sumOfSquares = 0.0;
+            for (var i = 0; i < n; i++)
+            {
+                var diff = inhabitants[i].Fitness - average;
+                sumOfSquares += diff * diff;
+            }
+
+            _bestFitness.Add(best);
+            _worstFitness.Add(worst);
+            _totalFitness.Add(sum);
+            _averageFitness.Add(average);
+            _fitnessStandardDeviation.Add(Math.Sqrt(sumOfSquares / n));
             _numberOfUniqueIndividuals.Add(currentPopulation.GetDiversity());
 
-            var standardDeviation = CalculateStandardDeviation(inhabitants);
-            _fitnessStandardDeviation.Add(standardDeviation);
+            // Pareto front tracking — only when individuals carry multi-objective data.
+            // Read ParetoRank already assigned by the solver (no re-sort here, which would overwrite
+            // the combined-pool ranks used for next-generation tournament selection).
+            // Store copies so historical fronts are not mutated by subsequent sorts.
+            if (n > 0 && inhabitants[0].Objectives != null && inhabitants[0].Objectives.Length > 0)
+            {
+                var front0 = inhabitants
+                    .Where(ind => ind.ParetoRank == 0)
+                    .Select(ind => new Individual(ind))
+                    .ToList();
+                _paretoFronts.Add(front0.Count > 0
+                    ? (IReadOnlyList<Individual>)front0
+                    : Array.Empty<Individual>());
+            }
+            else
+            {
+                _paretoFronts.Add(Array.Empty<Individual>());
+            }
         }
 
         SetPopulation(currentPopulation);
         UpdateGenerationCounter();
 
         OnGenerationCompleted(new GenerationCompletedEventArgs(CurrentGenerationIndex, CurrentPopulation));
-    }
-
-    private static double CalculateStandardDeviation(IEnumerable<Individual> inhabitants)
-    {
-        var fitnessList = inhabitants.Select(i => i.Fitness).ToList();
-        var average = fitnessList.Average();
-        var sumOfSquaresOfDifferences = fitnessList.Sum(val => Math.Pow(val - average, 2));
-        return Math.Sqrt(sumOfSquaresOfDifferences / fitnessList.Count);
     }
 
     /// <summary>
@@ -155,8 +194,9 @@ public class EvolutionObserver
             if (_isDisposed) throw new ObjectDisposedException(nameof(EvolutionObserver));
 
             CurrentPopulation = population;
-            var bestIndividual = population.SelectTopIndividuals(1).FirstOrDefault()
-                                 ?? throw new InvalidOperationException("No individuals found in population");
+            if (population.Inhabitants.Count == 0)
+                throw new InvalidOperationException("No individuals found in population");
+            var bestIndividual = population.Inhabitants.Aggregate((a, b) => a.Fitness >= b.Fitness ? a : b);
             _bestIndividuals.Add(bestIndividual);
         }
     }
@@ -187,6 +227,7 @@ public class EvolutionObserver
             _diversity.Clear();
             _bestIndividuals.Clear();
             _fitnessStandardDeviation.Clear();
+            _paretoFronts.Clear();
 
             CurrentPopulation = null;
             CurrentGenerationIndex = 0;

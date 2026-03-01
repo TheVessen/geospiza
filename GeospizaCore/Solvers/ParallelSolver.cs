@@ -25,16 +25,14 @@ public class ParallelSolver : EvolutionBlueprint
         // Initialize the population
         InitializePopulation(StateManager, EvolutionObserver);
 
+        var completed = false;
         try
         {
             // Run the algorithm for the specified number of generations
             for (var i = 0; i < MaxGenerations - 1; i++)
             {
                 if (cancellationToken.IsCancellationRequested)
-                {
-                    Console.WriteLine("Algorithm cancelled.");
                     break;
-                }
 
                 // Create a copy of the current population
                 var populationCopy = new Population(Population);
@@ -93,8 +91,6 @@ public class ParallelSolver : EvolutionBlueprint
                 StateManager.GetDocument().ExpirePreview(false);
                 EvolutionObserver.Snapshot(newPopulation);
 
-                var populationHash = newPopulation.GetHashCode();
-
                 //TODO: For multi processing here would be the point to send the observer to the main thread
 
                 // If the termination condition is met, stop the algorithm
@@ -107,14 +103,18 @@ public class ParallelSolver : EvolutionBlueprint
                 if (StateManager.PreviewLevel == 1) StateManager.GetDocument().ExpirePreview(true);
             }
 
-            // At the end of the algorithm, reinstate the best individual
-            var best = Population.SelectTopIndividuals(1);
-            best[0].Reinstate(StateManager);
+            completed = !cancellationToken.IsCancellationRequested;
         }
         catch (Exception ex)
         {
-            // Handle any exceptions that occur during the algorithm
-            Console.WriteLine($@"An error occurred: {ex.Message}");
+            Console.Error.WriteLine($"Solver error: {ex.Message}");
+        }
+
+        // At the end of the algorithm, reinstate the best individual
+        if (completed)
+        {
+            var best = Population.SelectTopIndividuals(1);
+            best[0].Reinstate(StateManager);
         }
     }
 
@@ -131,7 +131,7 @@ public class ParallelSolver : EvolutionBlueprint
     private List<Individual> PerformOperation(IndividualPair individualPair, double rate,
         Func<Individual, Individual, List<Individual>> operation)
     {
-        if (!(Random.NextDouble() < rate))
+        if (Random.NextDouble() < rate)
             return operation(individualPair.Individual1, individualPair.Individual2);
         return new List<Individual> { individualPair.Individual1, individualPair.Individual2 };
     }

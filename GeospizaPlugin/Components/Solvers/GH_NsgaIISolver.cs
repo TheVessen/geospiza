@@ -12,7 +12,12 @@ using Grasshopper.Kernel.Types;
 
 namespace GeospizaPlugin.Components.Solvers;
 
-public class GH_BasicSolver : GH_Component
+/// <summary>
+///     Grasshopper component that runs the NSGA-II multi-objective evolutionary algorithm.
+///     Mirrors <see cref="GH_BasicSolver" /> but instantiates <see cref="NsgaIISolver" />.
+///     Requires a <c>GH_MultiObjectiveFitness</c> component on the canvas.
+/// </summary>
+public class GH_NsgaIISolver : GH_Component
 {
     private bool _isLocked;
     private bool _isRunning;
@@ -20,9 +25,10 @@ public class GH_BasicSolver : GH_Component
     private SolverSettings _privateSettings;
     private Guid _solutionId = Guid.NewGuid();
 
-    public GH_BasicSolver()
-        : base("Basic Solver", "BS",
-            "Runs a basic evolutionary algorithm",
+    public GH_NsgaIISolver()
+        : base("NSGA-II Solver", "NSGA2",
+            "Runs an NSGA-II multi-objective evolutionary algorithm. " +
+            "Connect a Multi-Objective Fitness (MOF) component to supply objectives.",
             "Geospiza", "Solvers")
     {
     }
@@ -32,7 +38,7 @@ public class GH_BasicSolver : GH_Component
 
     protected override Bitmap Icon => Resources.Solver;
 
-    public override Guid ComponentGuid => new("DC3BBA6C-488E-496C-AE62-5488B065C38F");
+    public override Guid ComponentGuid => new("B2C3D4E5-F6A7-8901-BCDE-F12345678901");
 
     protected override void RegisterInputParams(GH_InputParamManager pManager)
     {
@@ -80,11 +86,13 @@ public class GH_BasicSolver : GH_Component
 
     protected override void RegisterOutputParams(GH_OutputParamManager pManager)
     {
-        pManager.AddGenericParameter("Observer", "LP", "The EvolutionObserver (last population info, etc.)",
+        pManager.AddGenericParameter("Observer", "LP",
+            "The EvolutionObserver containing Pareto fronts and per-generation statistics",
             GH_ParamAccess.item);
         pManager.AddGenericParameter("State Manager", "SM", "The StateManager handling gene states",
             GH_ParamAccess.item);
-        pManager.AddNumberParameter("Current Generation", "CG", "The current generation index", GH_ParamAccess.item);
+        pManager.AddNumberParameter("Current Generation", "CG", "The current generation index",
+            GH_ParamAccess.item);
         pManager.AddBooleanParameter("Is Running", "IR", "Indicates whether the solver is running",
             GH_ParamAccess.item);
     }
@@ -129,29 +137,15 @@ public class GH_BasicSolver : GH_Component
 
     private void ScheduleCallback(GH_Document doc)
     {
-        var maxGenerations = _privateSettings.MaxGenerations;
-
-        void OnGenerationCompleted(object sender, EvolutionObserver.GenerationCompletedEventArgs e)
-        {
-            Message = $"Gen {e.GenerationIndex}/{maxGenerations}";
-            OnDisplayExpired(true);
-        }
-
         try
         {
             var cancellationToken = new CancellationTokenSource();
+
             _solutionId = Guid.NewGuid();
-
             EvolutionObserver.Reset();
-            EvolutionObserver.GenerationCompleted += OnGenerationCompleted;
 
-            Message = "Running...";
-            OnDisplayExpired(true);
-
-            var solver = new BaseSolver(_privateSettings, StateManager, EvolutionObserver);
+            var solver = new NsgaIISolver(_privateSettings, StateManager, EvolutionObserver);
             solver.RunAlgorithm(cancellationToken.Token);
-
-            Message = "Done";
 
             OnPingDocument().ScheduleSolution(100, d =>
             {
@@ -165,12 +159,7 @@ public class GH_BasicSolver : GH_Component
         catch (Exception)
         {
             _isLocked = false;
-            Message = "Error";
             throw;
-        }
-        finally
-        {
-            EvolutionObserver.GenerationCompleted -= OnGenerationCompleted;
         }
     }
 
@@ -188,7 +177,7 @@ public class GH_BasicSolver : GH_Component
         }
 
         Params.Output[2].ClearData();
-        Params.Output[2].AddVolatileData(new GH_Path(0), 0, EvolutionObserver.CurrentGenerationIndex);
+        Params.Output[2].AddVolatileData(new GH_Path(0), 0, EvolutionObserver?.CurrentGenerationIndex ?? 0);
 
         Params.Output[3].ClearData();
         Params.Output[3].AddVolatileData(new GH_Path(0), 0, _isRunning);

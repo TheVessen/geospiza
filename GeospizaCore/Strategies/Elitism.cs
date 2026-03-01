@@ -12,8 +12,11 @@ public static class Elitism
     /// <returns></returns>
     public static List<Individual> SelectTopIndividuals(int eliteSize, List<Individual> inhabitants)
     {
-        var copiedPopulation = inhabitants.Select(individual => new Individual(individual)).ToList();
-        copiedPopulation.Sort((a, b) => b.Fitness.CompareTo(a.Fitness));
-        return copiedPopulation.Take(eliteSize).ToList();
+        var clampedSize = Math.Min(eliteSize, inhabitants.Count);
+        return inhabitants
+            .OrderByDescending(ind => ind.Fitness)
+            .Take(clampedSize)
+            .Select(ind => new Individual(ind))
+            .ToList();
     }
 }

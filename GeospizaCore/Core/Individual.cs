@@ -40,6 +40,9 @@ public class Individual : IEquatable<Individual>
         Fitness = individual.Fitness;
         Probability = 0;
         Generation = individual.Generation;
+        Objectives = individual.Objectives != null ? (double[])individual.Objectives.Clone() : null;
+        ParetoRank = individual.ParetoRank;
+        CrowdingDistance = individual.CrowdingDistance;
     }
 
     /// <summary>
@@ -69,6 +72,21 @@ public class Individual : IEquatable<Individual>
     ///     The probability of the individual to be selected for reproduction.
     /// </summary>
     public double Probability { get; private set; }
+
+    /// <summary>
+    ///     Multi-objective fitness values. Null when single-objective mode is used.
+    /// </summary>
+    public double[]? Objectives { get; private set; }
+
+    /// <summary>
+    ///     Pareto dominance rank (0 = Pareto-optimal front). Set by NSGA-II sort.
+    /// </summary>
+    public int ParetoRank { get; private set; }
+
+    /// <summary>
+    ///     Crowding distance within a Pareto front. Higher is better for diversity.
+    /// </summary>
+    public double CrowdingDistance { get; private set; }
 
     private int Generation { get; set; }
 
@@ -116,6 +134,21 @@ public class Individual : IEquatable<Individual>
             throw new ArgumentException("Normalized fitness must be between 0 and 1", nameof(normalizedFitness));
 
         Probability = normalizedFitness;
+    }
+
+    public void SetObjectives(double[] objectives)
+    {
+        Objectives = objectives;
+    }
+
+    public void SetParetoRank(int rank)
+    {
+        ParetoRank = rank;
+    }
+
+    public void SetCrowdingDistance(double distance)
+    {
+        CrowdingDistance = distance;
     }
 
     /// <summary>

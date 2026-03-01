@@ -96,14 +96,20 @@ public class GeneTemplate
 
         if (Type == typeof(GH_NumberSlider))
         {
-            if (allSliders != null) allSliders[GhInstanceGuid].TickValue = tickValue;
-            TickValue = tickValue;
+            if (allSliders != null && allSliders.TryGetValue(GhInstanceGuid, out var slider))
+            {
+                slider.TickValue = tickValue;
+                TickValue = tickValue;
+            }
         }
         else
         {
-            allGenePools[GhInstanceGuid].set_TickValue(GenePoolIndex, tickValue);
-            TickValue = tickValue;
-            allGenePools[GhInstanceGuid].ExpireSolutionTopLevel(false);
+            if (allGenePools != null && allGenePools.TryGetValue(GhInstanceGuid, out var genePool))
+            {
+                genePool.set_TickValue(GenePoolIndex, tickValue);
+                TickValue = tickValue;
+                genePool.ExpireSolutionTopLevel(false);
+            }
         }
     }
 }

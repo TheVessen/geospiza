@@ -84,7 +84,10 @@ public class PairingStrategy
         double distance = 0;
 
         for (var i = 0; i < ind1.GenePool.Count; i++)
-            distance += Math.Pow(ind1.GenePool[i].TickValue - ind2.GenePool[i].TickValue, 2);
+        {
+            var delta = ind1.GenePool[i].TickValue - ind2.GenePool[i].TickValue;
+            distance += delta * delta;
+        }
 
         return Math.Sqrt(distance);
     }

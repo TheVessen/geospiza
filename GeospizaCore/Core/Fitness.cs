@@ -11,6 +11,7 @@ public class Fitness
     private static readonly Lazy<Fitness> _instance = new(() => new Fitness());
 
     private double _fitness;
+    private double[] _objectives = Array.Empty<double>();
 
     private Fitness()
     {
@@ -35,11 +36,22 @@ public class Fitness
         return _fitness;
     }
 
+    public void SetObjectives(double[] values)
+    {
+        _objectives = values;
+    }
+
+    public double[] GetObjectives()
+    {
+        return _objectives;
+    }
+
     /// <summary>
     ///     Reset the fitness value to 0.
     /// </summary>
     public void ResetFitness()
     {
         _fitness = 0;
+        _objectives = Array.Empty<double>();
     }
 }

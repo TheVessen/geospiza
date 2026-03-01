@@ -22,7 +22,11 @@ public class HttpServer : IDisposable
 
     public void Dispose()
     {
-        StopAsync().GetAwaiter().GetResult();
+        if (_listener.IsListening)
+        {
+            _cancellationTokenSource?.Cancel();
+            _listener.Stop();
+        }
         _cancellationTokenSource?.Dispose();
         _listener.Close();
     }

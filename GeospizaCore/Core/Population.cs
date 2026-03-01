@@ -60,8 +60,9 @@ public class Population
     /// <exception cref="System.Exception">Thrown if the document or fitness component is null.</exception>
     public void TestPopulation(StateManager stateManager, EvolutionObserver evolutionObserver)
     {
-        // Get the maximum fitness value observed so far
-        var max = evolutionObserver.BestFitness.Max();
+        // Get the best fitness seen so far; Last() is O(1) and equals Max() when elitism preserves the best
+        var bestFitness = evolutionObserver.BestFitness;
+        var max = bestFitness.Count > 0 ? bestFitness[bestFitness.Count - 1] : double.MinValue;
 
         // Iterate through each individual in the population
         foreach (var individual in Inhabitants)
@@ -73,8 +74,8 @@ public class Population
 
                 if (genotype == null) throw new Exception("Genotype is null for" + gene.GeneName);
 
-                var matchingGene = genotype[gene.GeneGuid];
-                matchingGene?.SetTickValue(gene.TickValue, stateManager);
+                if (genotype.TryGetValue(gene.GeneGuid, out var matchingGene))
+                    matchingGene.SetTickValue(gene.TickValue, stateManager);
             }
 
             // Get the document from the state manager
@@ -96,6 +97,52 @@ public class Population
             individual.SetFitness(Fitness.Instance.GetFitness());
 
             // If the preview level is 2, update the document preview if the individual's fitness is the new maximum
+            if (stateManager.PreviewLevel != 2) continue;
+            if (!(max < individual.Fitness)) continue;
+
+            doc.ExpirePreview(true);
+            max = individual.Fitness;
+        }
+    }
+
+    /// <summary>
+    ///     Tests the population for multi-objective optimization by evaluating each individual's objectives
+    ///     and updating their <see cref="Individual.Objectives" /> values.
+    ///     Also sets <see cref="Individual.Fitness" /> to <c>objectives[0]</c> for observer backward-compatibility.
+    /// </summary>
+    public void TestPopulationMultiObjective(StateManager stateManager, EvolutionObserver evolutionObserver)
+    {
+        var bestFitness = evolutionObserver.BestFitness;
+        var max = bestFitness.Count > 0 ? bestFitness[bestFitness.Count - 1] : double.MinValue;
+
+        foreach (var individual in Inhabitants)
+        {
+            foreach (var gene in individual.GenePool)
+            {
+                var genotype = stateManager.Genotype;
+                if (genotype == null) throw new Exception("Genotype is null for " + gene.GeneName);
+                if (genotype.TryGetValue(gene.GeneGuid, out var matchingGene))
+                    matchingGene.SetTickValue(gene.TickValue, stateManager);
+            }
+
+            var doc = stateManager.GetDocument();
+            if (doc == null) throw new Exception("Document is null");
+
+            if (stateManager.PreviewLevel == 0)
+                doc.NewSolution(false);
+            else
+                doc.NewSolution(false, GH_SolutionMode.Silent);
+
+            var fitnessComponent = stateManager.FitnessComponent;
+            if (fitnessComponent == null) throw new Exception("Fitness component is null");
+
+            fitnessComponent.ExpireSolution(false);
+
+            var objectives = Fitness.Instance.GetObjectives();
+            individual.SetObjectives(objectives);
+            if (objectives.Length > 0)
+                individual.SetFitness(objectives[0]);
+
             if (stateManager.PreviewLevel != 2) continue;
             if (!(max < individual.Fitness)) continue;
 
@@ -128,14 +175,9 @@ public class Population
     /// <returns></returns>
     public int GetDiversity()
     {
-        var diversity = 0;
-        var uniqueHashes = new HashSet<int>();
-
-        foreach (var individual in Inhabitants)
-            if (uniqueHashes.Add(individual.GetHashCode()))
-                diversity++;
-
-        return diversity;
+        // HashSet<Individual> uses Equals() to resolve collisions, so distinct individuals
+        // with the same hash code are still counted correctly.
+        return new HashSet<Individual>(Inhabitants).Count;
     }
 
     /// <summary>
@@ -145,11 +187,8 @@ public class Population
     /// <returns></returns>
     public List<Individual> SelectTopIndividuals(int eliteSize)
     {
-        var bestIndividuals = new List<Individual>();
-        var sortedPopulation = Inhabitants.OrderByDescending(ind => ind.Fitness).ToList();
-        for (var i = 0; i < eliteSize; i++) bestIndividuals.Add(sortedPopulation[i]);
-
-        return bestIndividuals;
+        var clampedSize = Math.Min(eliteSize, Inhabitants.Count);
+        return Inhabitants.OrderByDescending(ind => ind.Fitness).Take(clampedSize).ToList();
     }
 
     /// <summary>

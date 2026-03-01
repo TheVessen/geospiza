@@ -24,15 +24,13 @@ public class BaseSolver : EvolutionBlueprint
     public override void RunAlgorithm(CancellationToken cancellationToken)
     {
         InitializePopulation(StateManager, EvolutionObserver);
+        var completed = false;
         try
         {
             for (var i = 0; i < MaxGenerations - 1; i++)
             {
                 if (cancellationToken.IsCancellationRequested)
-                {
-                    Console.WriteLine("Algorithm cancelled.");
                     break;
-                }
 
                 var populationCopy = new Population(Population);
                 var newPopulation = new Population();
@@ -82,12 +80,17 @@ public class BaseSolver : EvolutionBlueprint
                 if (StateManager.PreviewLevel == 1) StateManager.GetDocument().ExpirePreview(true);
             }
 
-            var best = Population.SelectTopIndividuals(1);
-            best[0].Reinstate(StateManager);
+            completed = !cancellationToken.IsCancellationRequested;
         }
         catch (Exception ex)
         {
-            Console.WriteLine($@"An error occurred: {ex.Message}");
+            Console.Error.WriteLine($"Solver error: {ex.Message}");
+        }
+
+        if (completed)
+        {
+            var best = Population.SelectTopIndividuals(1);
+            best[0].Reinstate(StateManager);
         }
     }
 
@@ -104,7 +107,7 @@ public class BaseSolver : EvolutionBlueprint
     private List<Individual> PerformOperation(IndividualPair individualPair, double rate,
         Func<Individual, Individual, List<Individual>> operation)
     {
-        if (!(Random.NextDouble() < rate))
+        if (Random.NextDouble() < rate)
             return operation(individualPair.Individual1, individualPair.Individual2);
         return new List<Individual> { individualPair.Individual1, individualPair.Individual2 };
     }

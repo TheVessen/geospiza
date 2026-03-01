@@ -39,19 +39,19 @@ public class GH_Settings : GH_Component
     {
         pManager.AddNumberParameter("Population Size", "PS", "The size of the population", GH_ParamAccess.item, 50);
         pManager.AddNumberParameter("Max Generations", "MG", "The maximum number of generations", GH_ParamAccess.item,
-            25);
+            50);
         pManager.AddNumberParameter("Elite Size", "ES", "The number of elite individuals. If 0 no elite will be picked",
-            GH_ParamAccess.item, 0);
+            GH_ParamAccess.item, 1);
         pManager.AddGenericParameter("Selection Strategy", "SS",
             "The selection strategy. As default StochasticUniversalSampling is used", GH_ParamAccess.item);
         pManager.AddGenericParameter("Pairing Strategy", "PS",
             "The pairing strategy. As default an InBreedingFactor of 0.2 and Manhattan distance will be used",
             GH_ParamAccess.item);
         pManager.AddGenericParameter("Crossover Strategy", "CS",
-            "The crossover strategy. As default TwoPoint crossover will be used with a crossover rate of 0.6",
+            "The crossover strategy. As default TwoPoint crossover will be used with a crossover rate of 0.7",
             GH_ParamAccess.item);
         pManager.AddGenericParameter("Mutation Strategy", "MS",
-            "The mutation strategy. As default random mutation will be used with a mutation rate of 0.01",
+            "The mutation strategy. As default random mutation will be used with a mutation rate of 0.03",
             GH_ParamAccess.item);
         pManager.AddGenericParameter("Termination Strategy", "TS",
             "The termination strategy. As a default it will terminate if the population diversity falls below 2",
@@ -109,8 +109,8 @@ public class GH_Settings : GH_Component
         selectionStrategy =
             selectionStrategyContainer?.Value as ISelectionStrategy ?? new StochasticUniversalSampling();
         pairingStrategy = pairingStrategyContainer?.Value as PairingStrategy ?? new PairingStrategy(0.2);
-        crossoverStrategy = crossoverStrategyContainer?.Value as ICrossoverStrategy ?? new TwoPointCrossover(0.6);
-        mutationStrategy = mutationStrategyContainer?.Value as IMutationStrategy ?? new RandomMutation(0.01);
+        crossoverStrategy = crossoverStrategyContainer?.Value as ICrossoverStrategy ?? new TwoPointCrossover(0.7);
+        mutationStrategy = mutationStrategyContainer?.Value as IMutationStrategy ?? new RandomMutation(0.03);
         terminationStrategy = terminationStrategyContainer?.Value as ITerminationStrategy ?? new PopulationDiversity(2);
 
         if (populationSize <= 0)

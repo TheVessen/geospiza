@@ -91,7 +91,9 @@ public class StateManager
     {
         var foundComponent = document.Objects
             .OfType<GH_Component>()
-            .FirstOrDefault(comp => comp.GetType().Name == "GH_Fitness");
+            .FirstOrDefault(comp =>
+                comp.GetType().Name == "GH_Fitness" ||
+                comp.GetType().Name == "GH_MultiObjectiveFitness");
 
         var webIndividualComponents = document.Objects
             .OfType<GH_Component>()
@@ -100,7 +102,8 @@ public class StateManager
 
         if (foundComponent == null)
         {
-            solver.AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Fitness component not found");
+            solver.AddRuntimeMessage(GH_RuntimeMessageLevel.Error,
+                "Fitness component not found. Add a Fitness or Multi-Objective Fitness component to the canvas.");
             return null;
         }
 

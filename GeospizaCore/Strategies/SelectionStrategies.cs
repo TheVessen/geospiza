@@ -91,8 +91,11 @@ public class TournamentSelection : SelectionStrategy
                 tournament.Add(population.Inhabitants[randomIndex]);
             }
 
-            // Select the best individual from the tournament
-            var bestIndividual = tournament.OrderBy(ind => ind.Fitness).First();
+            // Select the best individual from the tournament (O(n) scan, no allocation)
+            var bestIndividual = tournament[0];
+            for (var j = 1; j < tournament.Count; j++)
+                if (tournament[j].Fitness > bestIndividual.Fitness)
+                    bestIndividual = tournament[j];
             selectedIndividuals.Add(bestIndividual);
         }
 
@@ -375,17 +378,18 @@ public class StochasticUniversalSampling : SelectionStrategy
     public override List<Individual> Select(Population population, int numberOfSelections)
     {
         var selectedIndividuals = new List<Individual>();
-        var totalFitness = population.Inhabitants.Sum(individual => individual.Fitness);
+        var totalFitness = population.CalculateTotalFitness();
 
         var distance = 1.0 / numberOfSelections;
         var start = Random.NextDouble() * distance;
+        var inhabitants = population.Inhabitants;
 
         for (var i = 0; i < numberOfSelections; i++)
         {
             var selectionPoint = start + i * distance;
             double runningSum = 0;
 
-            foreach (var individual in population.Inhabitants)
+            foreach (var individual in inhabitants)
             {
                 runningSum += individual.Fitness / totalFitness;
                 if (runningSum >= selectionPoint)

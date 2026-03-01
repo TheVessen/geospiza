@@ -34,13 +34,20 @@ public class FixedValueMutation : MutationStrategy
 
     public override void Mutate(Individual individual)
     {
+        if (MutationValue <= 0) return;
         foreach (var t in individual.GenePool)
             if (Random.NextDouble() < MutationRate)
             {
                 var currentValue = t.TickValue;
                 var newValue = currentValue + Random.Next(-MutationValue, MutationValue);
-                while (newValue < 0 || newValue > t.TickCount)
+                var attempts = 0;
+                while ((newValue < 0 || newValue > t.TickCount) && attempts < 100)
+                {
                     newValue = currentValue + Random.Next(-MutationValue, MutationValue);
+                    attempts++;
+                }
+                if (newValue < 0 || newValue > t.TickCount)
+                    newValue = Math.Min(Math.Max(newValue, 0), t.TickCount);
 
                 t.MutatedValue(newValue);
             }
@@ -73,16 +80,22 @@ public class PercentageMutation : MutationStrategy
     public override void Mutate(Individual individual)
     {
         foreach (var t in individual.GenePool)
-        {
-            var currentValue = t.TickValue;
-            var mutationAmount = (int)(currentValue * MutationPercentage);
-            var newValue = currentValue + Random.Next(-mutationAmount, mutationAmount + 1);
+            if (Random.NextDouble() < MutationRate)
+            {
+                var currentValue = t.TickValue;
+                var mutationAmount = (int)(currentValue * MutationPercentage);
+                var newValue = currentValue + Random.Next(-mutationAmount, mutationAmount + 1);
+                var attempts = 0;
+                while ((newValue < 0 || newValue > t.TickCount) && attempts < 100)
+                {
+                    newValue = currentValue + Random.Next(-mutationAmount, mutationAmount + 1);
+                    attempts++;
+                }
+                if (newValue < 0 || newValue > t.TickCount)
+                    newValue = Math.Min(Math.Max(newValue, 0), t.TickCount);
 
-            while (newValue < 0 || newValue > t.TickCount)
-                newValue = currentValue + Random.Next(-mutationAmount, mutationAmount + 1);
-
-            t.MutatedValue(newValue);
-        }
+                t.MutatedValue(newValue);
+            }
     }
 }
 
