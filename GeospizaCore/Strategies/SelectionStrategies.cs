@@ -198,6 +198,7 @@ public class RouletteWheelSelection : SelectionStrategy
 ///     regardless of their fitness, a chance to be selected.
 ///     However, it also ensures that fitter individuals have a higher chance of being selected.
 /// </remarks>
+[Obsolete("Functionally identical to RouletteWheelSelection. Use RouletteWheelSelection instead.")]
 public class PoolSelection : SelectionStrategy
 {
     /// <summary>

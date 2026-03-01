@@ -16,12 +16,12 @@ public abstract class TerminationStrategy : ITerminationStrategy
 
 public class ProgressConvergence : TerminationStrategy
 {
-    private readonly int ProgessRange;
+    private readonly int ProgressRange;
 
-    public ProgressConvergence(double threshold = 0.1, int progessRange = 5)
+    public ProgressConvergence(double threshold = 0.1, int progressRange = 5)
     {
         TerminationThreshold = threshold;
-        ProgessRange = progessRange;
+        ProgressRange = progressRange;
     }
 
     public override bool Evaluate(EvolutionObserver evolutionObserver)
@@ -29,12 +29,12 @@ public class ProgressConvergence : TerminationStrategy
         var averageFitness = evolutionObserver.AverageFitness;
         var bestFitness = evolutionObserver.BestFitness;
 
-        // Need at least ProgessRange + 1 entries to compute ProgessRange deltas
-        if (averageFitness.Count <= ProgessRange || bestFitness.Count <= ProgessRange) return false;
+        // Need at least ProgressRange + 1 entries to compute ProgressRange deltas
+        if (averageFitness.Count <= ProgressRange || bestFitness.Count <= ProgressRange) return false;
 
         var totalNormalizedDelta = 0.0;
 
-        for (var i = 1; i <= ProgessRange; i++)
+        for (var i = 1; i <= ProgressRange; i++)
         {
             var averageDelta =
                 Math.Abs(averageFitness[averageFitness.Count - i] - averageFitness[averageFitness.Count - (i + 1)]);
@@ -45,7 +45,7 @@ public class ProgressConvergence : TerminationStrategy
             totalNormalizedDelta += normalizedDelta;
         }
 
-        var finalNormalizedDelta = totalNormalizedDelta / ProgessRange;
+        var finalNormalizedDelta = totalNormalizedDelta / ProgressRange;
 
         return finalNormalizedDelta < TerminationThreshold;
     }
@@ -69,30 +69,3 @@ public class PopulationDiversity : TerminationStrategy
         return diversity <= TerminationThreshold;
     }
 }
-
-// public class MaxGenerations : TerminationStrategy
-// {
-//   public MaxGenerations(int maxGenerations)
-//   {
-//     TerminationThreshold = maxGenerations;
-//   }
-//
-//   public override bool Evaluate(EvolutionObserver evolutionObserver)
-//   {
-//     return evolutionObserver.CurrentGenerationIndex >= TerminationThreshold;
-//   }
-// }
-
-// public class GeneDiversity : TerminationStrategy
-// {
-//   public GeneDiversity(double threshold = 1)
-//   {
-//     TerminationThreshold = threshold;
-//   }
-//
-//   public override bool Evaluate(EvolutionObserver observer)
-//   {
-//     var population = observer.CurrentPopulation;
-//
-//   }
-// }

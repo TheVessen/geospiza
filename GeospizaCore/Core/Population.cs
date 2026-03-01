@@ -35,6 +35,7 @@ public class Population
     public int Count => Inhabitants.Count;
 
     /// <summary>
+    ///     Adds a single individual to the population.
     /// </summary>
     /// <param name="individual"></param>
     public void AddIndividual(Individual individual)
@@ -60,49 +61,10 @@ public class Population
     /// <exception cref="System.Exception">Thrown if the document or fitness component is null.</exception>
     public void TestPopulation(StateManager stateManager, EvolutionObserver evolutionObserver)
     {
-        // Get the best fitness seen so far; Last() is O(1) and equals Max() when elitism preserves the best
-        var bestFitness = evolutionObserver.BestFitness;
-        var max = bestFitness.Count > 0 ? bestFitness[bestFitness.Count - 1] : double.MinValue;
-
-        // Iterate through each individual in the population
-        foreach (var individual in Inhabitants)
+        EvaluateIndividuals(stateManager, evolutionObserver, individual =>
         {
-            // Set the tick values for each gene in the individual's gene pool
-            foreach (var gene in individual.GenePool)
-            {
-                var genotype = stateManager.Genotype;
-
-                if (genotype == null) throw new Exception("Genotype is null for" + gene.GeneName);
-
-                if (genotype.TryGetValue(gene.GeneGuid, out var matchingGene))
-                    matchingGene.SetTickValue(gene.TickValue, stateManager);
-            }
-
-            // Get the document from the state manager
-            var doc = stateManager.GetDocument();
-            if (doc == null) throw new Exception("Document is null");
-
-            // Solve the document based on the preview level
-            if (stateManager.PreviewLevel == 0)
-                doc.NewSolution(false);
-            else
-                doc.NewSolution(false, GH_SolutionMode.Silent);
-
-            // Get the fitness component from the state manager
-            var fitnessComponent = stateManager.FitnessComponent;
-            if (fitnessComponent == null) throw new Exception("Fitness component is null");
-
-            // Expire the solution of the fitness component to update the fitness value
-            fitnessComponent.ExpireSolution(false);
             individual.SetFitness(Fitness.Instance.GetFitness());
-
-            // If the preview level is 2, update the document preview if the individual's fitness is the new maximum
-            if (stateManager.PreviewLevel != 2) continue;
-            if (!(max < individual.Fitness)) continue;
-
-            doc.ExpirePreview(true);
-            max = individual.Fitness;
-        }
+        });
     }
 
     /// <summary>
@@ -111,6 +73,21 @@ public class Population
     ///     Also sets <see cref="Individual.Fitness" /> to <c>objectives[0]</c> for observer backward-compatibility.
     /// </summary>
     public void TestPopulationMultiObjective(StateManager stateManager, EvolutionObserver evolutionObserver)
+    {
+        EvaluateIndividuals(stateManager, evolutionObserver, individual =>
+        {
+            var objectives = Fitness.Instance.GetObjectives();
+            individual.SetObjectives(objectives);
+            if (objectives.Length > 0)
+                individual.SetFitness(objectives[0]);
+        });
+    }
+
+    /// <summary>
+    ///     Shared evaluation loop: applies genes, solves the document, and delegates fitness assignment to the caller.
+    /// </summary>
+    private void EvaluateIndividuals(StateManager stateManager, EvolutionObserver evolutionObserver,
+        Action<Individual> assignFitness)
     {
         var bestFitness = evolutionObserver.BestFitness;
         var max = bestFitness.Count > 0 ? bestFitness[bestFitness.Count - 1] : double.MinValue;
@@ -137,11 +114,7 @@ public class Population
             if (fitnessComponent == null) throw new Exception("Fitness component is null");
 
             fitnessComponent.ExpireSolution(false);
-
-            var objectives = Fitness.Instance.GetObjectives();
-            individual.SetObjectives(objectives);
-            if (objectives.Length > 0)
-                individual.SetFitness(objectives[0]);
+            assignFitness(individual);
 
             if (stateManager.PreviewLevel != 2) continue;
             if (!(max < individual.Fitness)) continue;
@@ -192,16 +165,7 @@ public class Population
     }
 
     /// <summary>
-    ///     Calculates the probability of each individual in the population being selected for reproduction.
-    ///     The probability is based on the individual's fitness relative to the total fitness of the population.
-    /// </summary>
-    public void CalculateProbability()
-    {
-        var totalFitness = CalculateTotalFitness();
-        foreach (var individual in Inhabitants) individual.SetProbability(individual.Fitness / totalFitness);
-    }
-
-    /// <summary>
+    ///     Returns a hash code for this population based on its inhabitants.
     /// </summary>
     /// <returns></returns>
     public override int GetHashCode()

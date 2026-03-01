@@ -7,9 +7,6 @@ namespace GeospizaCore.Core;
 /// </summary>
 public class GeneTemplate
 {
-    private dynamic? _genPoolList;
-    private GH_NumberSlider? _slider;
-
     /// <summary>
     ///     Initializes a new instance of the <see cref="GeneTemplate" /> class with a gene pool list and a gene index.
     /// </summary>
@@ -17,7 +14,6 @@ public class GeneTemplate
     /// <param name="geneIndex">The index of the gene in the gene pool.</param>
     public GeneTemplate(dynamic genPoolList, int geneIndex)
     {
-        _genPoolList = genPoolList;
         GenePoolIndex = geneIndex;
         TickCount = genPoolList.TickCount;
         GeneGuid = Guid.NewGuid();
@@ -27,13 +23,11 @@ public class GeneTemplate
     }
 
     /// <summary>
-    ///     Initializes a new instance of the <see cref="GeneTemplate" /> class with a number slider. Also
-    ///     <see cref="StateManager" /> fir the inplementation
+    ///     Initializes a new instance of the <see cref="GeneTemplate" /> class with a number slider.
     /// </summary>
     /// <param name="slider">The number slider.</param>
     public GeneTemplate(GH_NumberSlider slider)
     {
-        _slider = slider;
         TickCount = slider.TickCount;
         GeneGuid = Guid.NewGuid();
         Type = slider.GetType();

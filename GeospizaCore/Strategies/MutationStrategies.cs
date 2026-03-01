@@ -36,21 +36,13 @@ public class FixedValueMutation : MutationStrategy
     {
         if (MutationValue <= 0) return;
         foreach (var t in individual.GenePool)
-            if (Random.NextDouble() < MutationRate)
-            {
-                var currentValue = t.TickValue;
-                var newValue = currentValue + Random.Next(-MutationValue, MutationValue);
-                var attempts = 0;
-                while ((newValue < 0 || newValue > t.TickCount) && attempts < 100)
-                {
-                    newValue = currentValue + Random.Next(-MutationValue, MutationValue);
-                    attempts++;
-                }
-                if (newValue < 0 || newValue > t.TickCount)
-                    newValue = Math.Min(Math.Max(newValue, 0), t.TickCount);
+        {
+            if (Random.NextDouble() >= MutationRate) continue;
 
-                t.MutatedValue(newValue);
-            }
+            var newValue = t.TickValue + Random.Next(-MutationValue, MutationValue);
+            newValue = Math.Min(Math.Max(newValue, 0), t.TickCount);
+            t.MutatedValue(newValue);
+        }
     }
 }
 
@@ -80,22 +72,14 @@ public class PercentageMutation : MutationStrategy
     public override void Mutate(Individual individual)
     {
         foreach (var t in individual.GenePool)
-            if (Random.NextDouble() < MutationRate)
-            {
-                var currentValue = t.TickValue;
-                var mutationAmount = Math.Max(1, (int)(currentValue * MutationPercentage));
-                var newValue = currentValue + Random.Next(-mutationAmount, mutationAmount + 1);
-                var attempts = 0;
-                while ((newValue < 0 || newValue > t.TickCount) && attempts < 100)
-                {
-                    newValue = currentValue + Random.Next(-mutationAmount, mutationAmount + 1);
-                    attempts++;
-                }
-                if (newValue < 0 || newValue > t.TickCount)
-                    newValue = Math.Min(Math.Max(newValue, 0), t.TickCount);
+        {
+            if (Random.NextDouble() >= MutationRate) continue;
 
-                t.MutatedValue(newValue);
-            }
+            var mutationAmount = Math.Max(1, (int)(t.TickValue * MutationPercentage));
+            var newValue = t.TickValue + Random.Next(-mutationAmount, mutationAmount + 1);
+            newValue = Math.Min(Math.Max(newValue, 0), t.TickCount);
+            t.MutatedValue(newValue);
+        }
     }
 }
 
@@ -114,10 +98,9 @@ public class RandomMutation : MutationStrategy
     public override void Mutate(Individual individual)
     {
         foreach (var t in individual.GenePool)
-            if (Random.NextDouble() < MutationRate)
-            {
-                var newValue = Random.Next(0, t.TickCount + 1);
-                t.MutatedValue(newValue);
-            }
+        {
+            if (Random.NextDouble() >= MutationRate) continue;
+            t.MutatedValue(Random.Next(0, t.TickCount + 1));
+        }
     }
 }

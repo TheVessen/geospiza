@@ -12,6 +12,10 @@ using Grasshopper.Kernel.Types;
 
 namespace GeospizaPlugin.Components.Solvers;
 
+/// <summary>
+///     Grasshopper component that runs the single-objective generational evolutionary algorithm.
+///     Mirrors <see cref="GH_NsgaIISolver" /> but instantiates <see cref="BaseSolver" />.
+/// </summary>
 public class GH_BasicSolver : GH_Component
 {
     private bool _isLocked;
@@ -139,7 +143,7 @@ public class GH_BasicSolver : GH_Component
 
         try
         {
-            var cancellationToken = new CancellationTokenSource();
+            using var cts = new CancellationTokenSource();
             _solutionId = Guid.NewGuid();
 
             EvolutionObserver.Reset();
@@ -149,28 +153,23 @@ public class GH_BasicSolver : GH_Component
             OnDisplayExpired(true);
 
             var solver = new BaseSolver(_privateSettings, StateManager, EvolutionObserver);
-            solver.RunAlgorithm(cancellationToken.Token);
+            solver.RunAlgorithm(cts.Token);
 
             Message = "Done";
-
-            OnPingDocument().ScheduleSolution(100, d =>
-            {
-                _isRunning = false;
-                _isLocked = false;
-                ExpireSolution(false);
-            });
-
             _lastSolutionId = _solutionId;
         }
         catch (Exception)
         {
-            _isLocked = false;
             Message = "Error";
             throw;
         }
         finally
         {
+            // Unlock before returning so GH's SolveInstance call (in the same solve cycle,
+            // immediately after this callback) sees _isLocked = false and writes outputs cleanly.
             EvolutionObserver.GenerationCompleted -= OnGenerationCompleted;
+            _isRunning = false;
+            _isLocked = false;
         }
     }
 
@@ -195,7 +194,7 @@ public class GH_BasicSolver : GH_Component
         }
 
         Params.Output[2].ClearData();
-        Params.Output[2].AddVolatileData(new GH_Path(0), 0, EvolutionObserver.CurrentGenerationIndex);
+        Params.Output[2].AddVolatileData(new GH_Path(0), 0, EvolutionObserver?.CurrentGenerationIndex ?? 0);
 
         Params.Output[3].ClearData();
         Params.Output[3].AddVolatileData(new GH_Path(0), 0, _isRunning);

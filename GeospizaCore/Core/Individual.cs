@@ -239,7 +239,7 @@ public class Individual : IEquatable<Individual>
     }
 
     /// <summary>
-    ///     Returns a string that represents the current object.
+    ///     Custom JSON converter for the <see cref="Individual" /> class.
     /// </summary>
     public class IndividualConverter : JsonConverter<Individual>
     {

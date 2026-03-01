@@ -4,10 +4,11 @@ using GeospizaCore.Strategies;
 namespace GeospizaCore.Solvers;
 
 /// <summary>
-///     Base class for evolutionary solvers
+///     Single-objective generational evolutionary solver with elitism and pluggable strategies.
 /// </summary>
 public class BaseSolver : EvolutionBlueprint
 {
+    // Termination is skipped for the first N generations to avoid premature convergence detection.
     private const int TerminationEvaluationThreshold = 5;
 
     public BaseSolver(SolverSettings settings, StateManager stateManager,
@@ -32,50 +33,46 @@ public class BaseSolver : EvolutionBlueprint
                 if (cancellationToken.IsCancellationRequested)
                     break;
 
-                var populationCopy = new Population(Population);
+                // Snapshot the current population for selection; elite copies are taken from it directly.
+                var selectionPool = new Population(Population);
                 var newPopulation = new Population();
 
                 var elite = Elitism.SelectTopIndividuals(EliteSize, Population.Inhabitants);
                 newPopulation.AddIndividuals(elite);
 
-                while (newPopulation.Count < PopulationSize)
-                {
-                    var matingPool = SelectionStrategy.Select(populationCopy, PopulationSize);
-                    var matingPairs = PairingStrategy.PairIndividuals(matingPool);
+                // Select only the individuals needed to fill the spots left after elitism.
+                var matingPool = SelectionStrategy.Select(selectionPool, PopulationSize - newPopulation.Count);
 
-                    foreach (var pair in matingPairs)
-                    {
-                        var children = PerformCrossover(pair);
-                        MutateChildren(children);
-                        newPopulation.AddIndividuals(children);
-                    }
+                foreach (var pair in PairingStrategy.PairIndividuals(matingPool))
+                {
+                    if (newPopulation.Count >= PopulationSize) break;
+                    var children = ApplyCrossover(pair);
+                    MutateChildren(children);
+                    newPopulation.AddIndividuals(children);
                 }
 
+                // The last pair may push count one over if both children were added; trim if so.
                 if (newPopulation.Count > PopulationSize)
-                {
-                    newPopulation.Inhabitants.Sort((inhabitant1, inhabitant2) =>
-                        inhabitant2.Fitness.CompareTo(inhabitant1.Fitness));
-                    var removeCount = newPopulation.Count - PopulationSize;
-                    newPopulation.Inhabitants.RemoveRange(PopulationSize, removeCount);
-                }
+                    newPopulation.Inhabitants.RemoveRange(PopulationSize, newPopulation.Count - PopulationSize);
 
-                foreach (var inhabitant in newPopulation.Inhabitants) inhabitant.SetGeneration(i + 1);
+                foreach (var inhabitant in newPopulation.Inhabitants)
+                    inhabitant.SetGeneration(i + 1);
 
-                // Test the fitness of the new population
                 newPopulation.TestPopulation(StateManager, EvolutionObserver);
 
-                // Record statistics for the current population
                 StateManager.GetDocument().ExpirePreview(false);
                 EvolutionObserver.Snapshot(newPopulation);
 
                 //TODO: For multi processing here would be the point to send the observer to the main thread
 
-                if (i > TerminationEvaluationThreshold)
-                    if (TerminationStrategy.Evaluate(EvolutionObserver))
-                        break;
-
+                // Update before the termination check so the last evaluated generation is always current.
                 Population = newPopulation;
-                if (StateManager.PreviewLevel == 1) StateManager.GetDocument().ExpirePreview(true);
+
+                if (i > TerminationEvaluationThreshold && TerminationStrategy.Evaluate(EvolutionObserver))
+                    break;
+
+                if (StateManager.PreviewLevel == 1)
+                    StateManager.GetDocument().ExpirePreview(true);
             }
 
             completed = !cancellationToken.IsCancellationRequested;
@@ -92,9 +89,11 @@ public class BaseSolver : EvolutionBlueprint
         }
     }
 
-    private List<Individual> PerformCrossover(IndividualPair individualPair)
+    private List<Individual> ApplyCrossover(IndividualPair pair)
     {
-        return PerformOperation(individualPair, CrossoverStrategy.CrossoverRate, CrossoverStrategy.Crossover);
+        if (Random.NextDouble() < CrossoverStrategy.CrossoverRate)
+            return CrossoverStrategy.Crossover(pair.Individual1, pair.Individual2);
+        return new List<Individual> { pair.Individual1, pair.Individual2 };
     }
 
     private void MutateChildren(List<Individual> children)
@@ -102,13 +101,4 @@ public class BaseSolver : EvolutionBlueprint
         foreach (var child in children)
             MutationStrategy.Mutate(child);
     }
-
-    private List<Individual> PerformOperation(IndividualPair individualPair, double rate,
-        Func<Individual, Individual, List<Individual>> operation)
-    {
-        if (Random.NextDouble() < rate)
-            return operation(individualPair.Individual1, individualPair.Individual2);
-        return new List<Individual> { individualPair.Individual1, individualPair.Individual2 };
-    }
-
 }

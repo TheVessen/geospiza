@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
@@ -10,11 +10,13 @@ using Grasshopper.Kernel.Types;
 
 namespace GeospizaPlugin.Components.Analysis;
 
+/// <summary>
+///     Clusters individuals by their gene vectors using K-Means.
+///     Each gene dimension is normalised to [0, 1) by its tick count so genes
+///     with different ranges contribute equally to the distance metric.
+/// </summary>
 public class GH_KMeans : GH_Component
 {
-    /// <summary>
-    ///     Initializes a new instance of the GH_KMeans class.
-    /// </summary>
     public GH_KMeans()
         : base("K-Means", "K-Means",
             "Clusters individuals using the K-Means algorithm",
@@ -22,102 +24,67 @@ public class GH_KMeans : GH_Component
     {
     }
 
-    /// <summary>
-    ///     Provides an Icon for the component.
-    /// </summary>
-    protected override Bitmap Icon =>
-        //You can add image files to your project resources and access them like this:
-        // return Resources.IconForThisComponent;
-        null;
+    protected override Bitmap Icon => null;
 
-    /// <summary>
-    ///     Gets the unique ID for this component. Do not change this ID after release.
-    /// </summary>
     public override Guid ComponentGuid => new("C736282F-693C-4B81-838A-4DF5A7A15FCE");
 
-    /// <summary>
-    ///     Registers all the input parameters for this component.
-    /// </summary>
     protected override void RegisterInputParams(GH_InputParamManager pManager)
     {
         pManager.AddGenericParameter("Individuals", "I", "Individuals to cluster", GH_ParamAccess.list);
-        pManager.AddNumberParameter("Clusters", "C", "Number of clusters to generate", GH_ParamAccess.item);
+        pManager.AddIntegerParameter("Clusters", "C", "Number of clusters to generate", GH_ParamAccess.item, 2);
         pManager.AddBooleanParameter("Activate", "A", "Run the clustering", GH_ParamAccess.item, false);
     }
 
-    /// <summary>
-    ///     Registers all the output parameters for this component.
-    /// </summary>
     protected override void RegisterOutputParams(GH_OutputParamManager pManager)
     {
         pManager.AddGenericParameter("Clusters", "C", "Clustered individuals", GH_ParamAccess.tree);
     }
 
-    /// <summary>
-    ///     This is the method that actually does the work.
-    /// </summary>
-    /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
     protected override void SolveInstance(IGH_DataAccess DA)
     {
-        var individualWrapper = new List<GH_ObjectWrapper>();
-        var numberOfClusters = 0.0;
+        var wrappers = new List<GH_ObjectWrapper>();
+        var k = 2;
         var activate = false;
 
-        if (!DA.GetDataList(0, individualWrapper)) return;
-        if (!DA.GetData(1, ref numberOfClusters)) return;
+        if (!DA.GetDataList(0, wrappers)) return;
+        if (!DA.GetData(1, ref k)) return;
         if (!DA.GetData(2, ref activate)) return;
 
-        if (activate)
+        if (!activate) return;
+
+        var individuals = wrappers.Select(w => w.Value).OfType<Individual>().ToList();
+
+        if (individuals.Count == 0)
         {
-            var individuals = individualWrapper.Select(wrapper => wrapper.Value).OfType<Individual>().ToList();
-
-            if (individuals.Count == 0)
-            {
-                AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "No individuals found");
-                return;
-            }
-
-            var vectors = IndividualToVector(individuals);
-            var means = new KMeans((int)numberOfClusters);
-
-            var clusters = means.Learn(vectors);
-
-            // Use the clusters to predict group memberships:
-            var labels = clusters.Decide(vectors);
-
-
-            // Create a new DataTree
-            var tree = new GH_Structure<GH_ObjectWrapper>();
-
-            for (var i = 0; i < labels.Length; i++)
-            {
-                // Create a new path for each label
-                var path = new GH_Path(labels[i]);
-
-                // Add each individual to the corresponding path
-                tree.Append(new GH_ObjectWrapper(individuals[i]), path);
-            }
-
-            // Set the DataTree as output
-            DA.SetDataTree(0, tree);
+            AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "No individuals found.");
+            return;
         }
+
+        if (k <= 0 || k > individuals.Count)
+        {
+            AddRuntimeMessage(GH_RuntimeMessageLevel.Error,
+                $"Cluster count must be between 1 and the number of individuals ({individuals.Count}).");
+            return;
+        }
+
+        var vectors = individuals.Select(ToNormalisedVector).ToArray();
+        var labels = new KMeans(k).Learn(vectors).Decide(vectors);
+
+        var tree = new GH_Structure<GH_ObjectWrapper>();
+        for (var i = 0; i < labels.Length; i++)
+            tree.Append(new GH_ObjectWrapper(individuals[i]), new GH_Path(labels[i]));
+
+        DA.SetDataTree(0, tree);
     }
 
-    private static double[][] IndividualToVector(List<Individual> individuals)
+    /// <summary>
+    ///     Returns each gene's tick value normalised by its tick count, giving a value in [0, 1) per dimension.
+    ///     Normalisation ensures genes with larger tick ranges don't dominate the Euclidean distance.
+    /// </summary>
+    private static double[] ToNormalisedVector(Individual individual)
     {
-        var vectors = new List<List<double>>();
-        foreach (var individual in individuals)
-        {
-            var vector = new List<double>();
-            foreach (var gene in individual.GenePool)
-            {
-                double value = gene.TickValue;
-                vector.Add(value);
-            }
-
-            vectors.Add(vector);
-        }
-
-        return vectors.Select(a => a.ToArray()).ToArray();
+        return individual.GenePool
+            .Select(g => g.TickCount > 0 ? (double)g.TickValue / g.TickCount : 0.0)
+            .ToArray();
     }
 }
