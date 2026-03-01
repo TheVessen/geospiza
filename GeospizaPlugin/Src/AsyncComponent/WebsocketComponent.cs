@@ -188,6 +188,10 @@ namespace GeospizaPlugin.AsyncComponent
                 _wsService?.Stop();
                 _globalCancellationTokenSource.Cancel();
                 BaseWorker = null;
+
+                // Clean up cached singleton instances to free memory
+                GeospizaCore.Core.EvolutionObserver.RemoveInstance(this);
+                GeospizaCore.Core.StateManager.RemoveInstance(this);
             }
             catch (Exception ex)
             {

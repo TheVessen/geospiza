@@ -47,6 +47,39 @@ public class EvolutionObserver
     }
 
     /// <summary>
+    ///     Marks this observer as disposed and removes it from the instance cache.
+    /// </summary>
+    public void Dispose()
+    {
+        lock (_listLock)
+        {
+            if (_isDisposed) return;
+            _isDisposed = true;
+
+            _averageFitness.Clear();
+            _bestFitness.Clear();
+            _worstFitness.Clear();
+            _totalFitness.Clear();
+            _numberOfUniqueIndividuals.Clear();
+            _diversity.Clear();
+            _bestIndividuals.Clear();
+            _fitnessStandardDeviation.Clear();
+            _paretoFronts.Clear();
+            CurrentPopulation = null;
+            CurrentGenerationIndex = 0;
+        }
+    }
+
+    /// <summary>
+    ///     Removes the observer instance associated with the given solver component from the cache.
+    /// </summary>
+    public static void RemoveInstance(GH_Component solver)
+    {
+        if (_instances.TryRemove(solver, out var observer))
+            observer.Dispose();
+    }
+
+    /// <summary>
     ///     Gets the current generation number being observed
     /// </summary>
     public int CurrentGenerationIndex { get; private set; }

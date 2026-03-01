@@ -89,34 +89,38 @@ public class StateManager
     /// </summary>
     public static StateManager GetInstance(GH_Component solver, GH_Document document)
     {
-        var foundComponent = document.Objects
-            .OfType<GH_Component>()
-            .FirstOrDefault(comp =>
-                comp.GetType().Name == "GH_Fitness" ||
-                comp.GetType().Name == "GH_MultiObjectiveFitness");
-
-        var webIndividualComponents = document.Objects
-            .OfType<GH_Component>()
-            .Where(comp => comp.GetType().Name == "GH_WebIndividual")
-            .ToList();
-
-        if (foundComponent == null)
-        {
-            solver.AddRuntimeMessage(GH_RuntimeMessageLevel.Error,
-                "Fitness component not found. Add a Fitness or Multi-Objective Fitness component to the canvas.");
-            return null;
-        }
-
-        // Lock the Instances dictionary to ensure thread safety.
         lock (Padlock)
         {
-            if (!Instances.TryGetValue(solver, out var instance))
+            if (Instances.TryGetValue(solver, out var instance))
+                return instance;
+
+            var foundComponent = document.Objects
+                .OfType<GH_Component>()
+                .FirstOrDefault(comp =>
+                    comp.GetType().Name == "GH_Fitness" ||
+                    comp.GetType().Name == "GH_MultiObjectiveFitness");
+
+            if (foundComponent == null)
             {
-                instance = new StateManager(solver, document, foundComponent);
-                Instances[solver] = instance;
+                solver.AddRuntimeMessage(GH_RuntimeMessageLevel.Error,
+                    "Fitness component not found. Add a Fitness or Multi-Objective Fitness component to the canvas.");
+                return null;
             }
 
+            instance = new StateManager(solver, document, foundComponent);
+            Instances[solver] = instance;
             return instance;
+        }
+    }
+
+    /// <summary>
+    ///     Removes the cached StateManager instance for the given solver component.
+    /// </summary>
+    public static void RemoveInstance(GH_Component solver)
+    {
+        lock (Padlock)
+        {
+            Instances.Remove(solver);
         }
     }
 

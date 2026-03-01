@@ -22,7 +22,8 @@ public class Individual : IEquatable<Individual>
     /// <exception cref="ArgumentNullException"></exception>
     public Individual(IEnumerable<Gene> genePool)
     {
-        _genePool = new List<Gene>(genePool ?? throw new ArgumentNullException(nameof(genePool)));
+        _genePool = (genePool ?? throw new ArgumentNullException(nameof(genePool)))
+            .Select(g => new Gene(g)).ToList();
         GenePool = _genePool.AsReadOnly();
     }
 
@@ -35,7 +36,7 @@ public class Individual : IEquatable<Individual>
     {
         if (individual == null) throw new ArgumentNullException(nameof(individual));
 
-        _genePool = new List<Gene>(individual.GenePool);
+        _genePool = individual.GenePool.Select(g => new Gene(g)).ToList();
         GenePool = _genePool.AsReadOnly();
         Fitness = individual.Fitness;
         Probability = 0;
