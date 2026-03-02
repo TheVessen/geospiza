@@ -107,7 +107,11 @@ public abstract class EvolutionBlueprint : IEvolutionarySolver
             else if (currentFitness > fistGenBestFitness)
             {
                 fistGenBestFitness = currentFitness;
-                if (stateManager.PreviewLevel == 2) stateManager.GetDocument().ExpirePreview(true);
+                if (stateManager.PreviewLevel == 2)
+                {
+                    stateManager.GetDocument().ExpirePreview(true);
+                    Rhino.RhinoApp.Wait();
+                }
             }
 
             individual.SetFitness(currentFitness);
@@ -117,6 +121,10 @@ public abstract class EvolutionBlueprint : IEvolutionarySolver
 
         evolutionObserver.Snapshot(newPopulation);
         Population = newPopulation;
-        if (stateManager.PreviewLevel == 1) stateManager.GetDocument().ExpirePreview(true);
+        if (stateManager.PreviewLevel == 1)
+        {
+            stateManager.GetDocument().ExpirePreview(true);
+            Rhino.RhinoApp.Wait();
+        }
     }
 }

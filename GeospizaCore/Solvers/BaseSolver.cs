@@ -72,7 +72,10 @@ public class BaseSolver : EvolutionBlueprint
                     break;
 
                 if (StateManager.PreviewLevel == 1)
+                {
                     StateManager.GetDocument().ExpirePreview(true);
+                    Rhino.RhinoApp.Wait();
+                }
             }
 
             completed = !cancellationToken.IsCancellationRequested;

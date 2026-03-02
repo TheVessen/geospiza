@@ -139,6 +139,7 @@ public class GH_BasicSolver : GH_Component
         {
             Message = $"Gen {e.GenerationIndex}/{maxGenerations}";
             OnDisplayExpired(true);
+            Rhino.RhinoApp.Wait();
         }
 
         try
@@ -151,6 +152,7 @@ public class GH_BasicSolver : GH_Component
 
             Message = "Running...";
             OnDisplayExpired(true);
+            Rhino.RhinoApp.Wait();
 
             var solver = new BaseSolver(_privateSettings, StateManager, EvolutionObserver);
             solver.RunAlgorithm(cts.Token);

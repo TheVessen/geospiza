@@ -120,6 +120,7 @@ public class Population
             if (!(max < individual.Fitness)) continue;
 
             doc.ExpirePreview(true);
+            Rhino.RhinoApp.Wait();
             max = individual.Fitness;
         }
     }

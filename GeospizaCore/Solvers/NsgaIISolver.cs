@@ -63,7 +63,11 @@ public class NsgaIISolver : EvolutionBlueprint
                         break;
 
                 Population = nextPopulation;
-                if (StateManager.PreviewLevel == 1) StateManager.GetDocument().ExpirePreview(true);
+                if (StateManager.PreviewLevel == 1)
+                {
+                    StateManager.GetDocument().ExpirePreview(true);
+                    Rhino.RhinoApp.Wait();
+                }
             }
 
             completed = !cancellationToken.IsCancellationRequested;
@@ -133,7 +137,11 @@ public class NsgaIISolver : EvolutionBlueprint
 
         evolutionObserver.Snapshot(newPopulation);
         Population = newPopulation;
-        if (stateManager.PreviewLevel == 1) stateManager.GetDocument().ExpirePreview(true);
+        if (stateManager.PreviewLevel == 1)
+        {
+            stateManager.GetDocument().ExpirePreview(true);
+            Rhino.RhinoApp.Wait();
+        }
 
         return objectiveCount;
     }
