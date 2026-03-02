@@ -15,9 +15,6 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Grasshopper" Version="8.0.23304.9001" IncludeAssets="compile;build"/>
-        <PackageReference Include="Microsoft.Extensions.Logging" Version="7.0.0"/>
-        <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="7.0.0"/>
         <PackageReference Include="Newtonsoft.Json" Version="13.0.3"/>
         <PackageReference Include="System.Resources.Extensions" Version="5.0.0"/>
     </ItemGroup>
@@ -30,12 +27,14 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Reference Include="Microsoft.CSharp"/>
-        <Reference Include="System.Net.Http"/>
+        <EmbeddedResource Include="Resources\charthopper-viewer.html" />
+        <EmbeddedResource Include="Resources\charthopper.js" />
     </ItemGroup>
 
-    <ItemGroup>
-        <Folder Include="Compute\"/>
-    </ItemGroup>
+    <!-- Auto-build the TypeScript/web package before embedding the JS resource -->
+    <Target Name="BuildWebPackage" BeforeTargets="BeforeBuild">
+        <Message Text="Building ChartHopper web package..." Importance="high" />
+        <Exec Command="npm run build" WorkingDirectory="$(MSBuildThisFileDirectory)web" />
+    </Target>
 
 </Project>

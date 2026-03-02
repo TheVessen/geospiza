@@ -140,12 +140,14 @@ public class StateManager
     /// </summary>
     public void SetGenes(List<string> geneIds)
     {
+        // Always rebuild the gene pool so that slider/gene-pool renames are reflected
+        // immediately. Only perform a full Reset (which also clears the Fitness singleton)
+        // when the number of genes changes; a rename keeps the same count.
         if (NumberOfGeneIds != geneIds.Count)
-        {
             Reset();
-            NumberOfGeneIds = geneIds.Count;
-            SetGenePool(geneIds);
-        }
+
+        NumberOfGeneIds = geneIds.Count;
+        SetGenePool(geneIds);
     }
 
     public double GetFitness()
@@ -184,31 +186,31 @@ public class StateManager
             switch (currentType)
             {
                 case "GalapagosComponents.GalapagosGeneListObject":
-                {
-                    var genePool = (dynamic)currentParam;
-                    genePools[guid] = genePool;
-                    if (genePool.Count != 0)
-                        for (var i = 0; i < genePool.Count; i++)
+                    {
+                        var genePool = (dynamic)currentParam;
+                        genePools[guid] = genePool;
+                        if (genePool.Count != 0)
+                            for (var i = 0; i < genePool.Count; i++)
+                            {
+                                var gene = new GeneTemplate(genePool, i);
+                                genes[gene.GeneGuid] = gene;
+                            }
+
+                        break;
+                    }
+                case "Grasshopper.Kernel.Special.GH_NumberSlider":
+                    {
+                        var sliderGene = currentParam as GH_NumberSlider;
+                        if (sliderGene != null) numberSliders[guid] = sliderGene;
+
+                        if (sliderGene != null)
                         {
-                            var gene = new GeneTemplate(genePool, i);
+                            var gene = new GeneTemplate(sliderGene);
                             genes[gene.GeneGuid] = gene;
                         }
 
-                    break;
-                }
-                case "Grasshopper.Kernel.Special.GH_NumberSlider":
-                {
-                    var sliderGene = currentParam as GH_NumberSlider;
-                    if (sliderGene != null) numberSliders[guid] = sliderGene;
-
-                    if (sliderGene != null)
-                    {
-                        var gene = new GeneTemplate(sliderGene);
-                        genes[gene.GeneGuid] = gene;
+                        break;
                     }
-
-                    break;
-                }
             }
         }
 

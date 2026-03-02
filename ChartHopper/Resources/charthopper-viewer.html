@@ -1,0 +1,353 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ChartHopper Viewer</title>
+    <script src="plotly.min.js"></script>
+    <script>
+      if (typeof Plotly === "undefined") {
+        document.write(
+          '<script src="https://cdn.plot.ly/plotly-2.35.0.min.js"><\/script>',
+        );
+      }
+    </script>
+    <script src="charthopper.js"></script>
+    <style>
+      :root {
+        --bg-primary: #0f1117;
+        --bg-secondary: #1a1d28;
+        --bg-tertiary: #252836;
+        --border-color: #2d3040;
+        --border-hover: #3d4055;
+        --text-primary: #e0e0e0;
+        --text-secondary: #8b8fa3;
+        --text-heading: #ffffff;
+        --plot-bg: #1a1d28;
+        --grid-color: #2d3040;
+        --grid-zero: #3d4055;
+        --color-1: #60a5fa;
+        --color-2: #f87171;
+        --color-3: #34d399;
+        --color-4: #fbbf24;
+        --color-5: #a78bfa;
+        --color-6: #fb923c;
+        --color-7: #2dd4bf;
+        --color-8: #f472b6;
+      }
+
+      html.light {
+        --bg-primary: #ffffff;
+        --bg-secondary: #f9fafb;
+        --bg-tertiary: #f3f4f6;
+        --border-color: #e5e7eb;
+        --border-hover: #d1d5db;
+        --text-primary: #1f2937;
+        --text-secondary: #6b7280;
+        --text-heading: #111827;
+        --plot-bg: #ffffff;
+        --grid-color: #e5e7eb;
+        --grid-zero: #d1d5db;
+        --color-1: #3b82f6;
+        --color-2: #ef4444;
+        --color-3: #10b981;
+        --color-4: #f59e0b;
+        --color-5: #8b5cf6;
+        --color-6: #f97316;
+        --color-7: #14b8a6;
+        --color-8: #ec4899;
+      }
+
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      html,
+      body {
+        transition:
+          background-color 0.2s,
+          color 0.2s;
+      }
+
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        background: var(--bg-primary);
+        color: var(--text-primary);
+        min-height: 100vh;
+      }
+
+      header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem 1.5rem;
+        background: var(--bg-secondary);
+        border-bottom: 1px solid var(--border-color);
+        flex-wrap: wrap;
+        justify-content: space-between;
+      }
+
+      header h1 {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--text-heading);
+      }
+
+      .header-controls {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+      }
+
+      #json-input {
+        padding: 0.4rem 0.8rem;
+        border-radius: 6px;
+        border: 1px solid var(--border-color);
+        background: var(--bg-tertiary);
+        color: var(--text-primary);
+        cursor: pointer;
+        transition: all 0.2s;
+        font-size: 0.875rem;
+      }
+
+      #json-input:hover {
+        border-color: var(--border-hover);
+        background: var(--bg-secondary);
+      }
+
+      #theme-toggle {
+        padding: 0.4rem 0.8rem;
+        border-radius: 6px;
+        border: 1px solid var(--border-color);
+        background: var(--bg-tertiary);
+        color: var(--text-primary);
+        cursor: pointer;
+        transition: all 0.2s;
+        font-size: 0.875rem;
+        font-weight: 500;
+        white-space: nowrap;
+      }
+
+      #theme-toggle:hover {
+        border-color: var(--border-hover);
+        background: var(--bg-secondary);
+      }
+
+      #info {
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+      }
+
+      main {
+        padding: 1.5rem;
+      }
+
+      .chart-panel {
+        background: var(--bg-secondary);
+        border-radius: 8px;
+        padding: 0.5rem;
+        border: 1px solid var(--border-color);
+        margin-bottom: 1rem;
+        transition: all 0.2s;
+      }
+
+      .chart-panel:hover {
+        border-color: var(--border-hover);
+      }
+
+      .empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 60vh;
+        color: var(--text-secondary);
+        gap: 1rem;
+      }
+
+      h2 {
+        color: var(--text-heading);
+        margin: 1rem 0 0.5rem;
+        font-size: 1.1rem;
+      }
+
+      .js-plotly-plot .plotly .main-svg {
+        background: transparent !important;
+      }
+
+      @media (max-width: 768px) {
+        header {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+        .header-controls {
+          width: 100%;
+          flex-wrap: wrap;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>ChartHopper Viewer</h1>
+      <div class="header-controls">
+        <input type="file" id="json-input" accept=".json" />
+        <button id="theme-toggle">🌙 Dark</button>
+        <span id="info"></span>
+      </div>
+    </header>
+    <main id="content">
+      <div class="empty-state">
+        <p>Load a chart JSON file to view it</p>
+      </div>
+    </main>
+    <script>
+      // Theme Management
+      const html = document.documentElement;
+      const themeToggle = document.getElementById("theme-toggle");
+
+      function updatePlotlyDefaults() {
+        const isDark = !html.classList.contains("light");
+        const bgPrimary = getComputedStyle(html)
+          .getPropertyValue("--bg-primary")
+          .trim();
+        const textPrimary = getComputedStyle(html)
+          .getPropertyValue("--text-primary")
+          .trim();
+        const plotBg = getComputedStyle(html)
+          .getPropertyValue("--plot-bg")
+          .trim();
+        const gridColor = getComputedStyle(html)
+          .getPropertyValue("--grid-color")
+          .trim();
+        const gridZero = getComputedStyle(html)
+          .getPropertyValue("--grid-zero")
+          .trim();
+        const colorway = [
+          getComputedStyle(html).getPropertyValue("--color-1").trim(),
+          getComputedStyle(html).getPropertyValue("--color-2").trim(),
+          getComputedStyle(html).getPropertyValue("--color-3").trim(),
+          getComputedStyle(html).getPropertyValue("--color-4").trim(),
+          getComputedStyle(html).getPropertyValue("--color-5").trim(),
+          getComputedStyle(html).getPropertyValue("--color-6").trim(),
+          getComputedStyle(html).getPropertyValue("--color-7").trim(),
+          getComputedStyle(html).getPropertyValue("--color-8").trim(),
+        ];
+
+        if (typeof Plotly !== "undefined") {
+          Plotly.defaults = Plotly.defaults || {};
+          Plotly.defaults.layout = {
+            paper_bgcolor: "transparent",
+            plot_bgcolor: plotBg,
+            font: { color: textPrimary },
+            xaxis: { gridcolor: gridColor, zerolinecolor: gridZero },
+            yaxis: { gridcolor: gridColor, zerolinecolor: gridZero },
+            colorway: colorway,
+          };
+        }
+      }
+
+      function setTheme(lightMode) {
+        if (lightMode) {
+          html.classList.add("light");
+          themeToggle.textContent = "☀️ Light";
+          localStorage.setItem("charthopper-theme", "light");
+        } else {
+          html.classList.remove("light");
+          themeToggle.textContent = "🌙 Dark";
+          localStorage.setItem("charthopper-theme", "dark");
+        }
+        updatePlotlyDefaults();
+        // Redraw any existing charts
+        if (typeof Plotly !== "undefined") {
+          document.querySelectorAll(".js-plotly-plot").forEach((el) => {
+            Plotly.relayout(el, {});
+          });
+        }
+      }
+
+      // Initialize theme from localStorage or system preference
+      const savedTheme = localStorage.getItem("charthopper-theme");
+      if (savedTheme === "light") {
+        setTheme(true);
+      } else if (
+        !savedTheme &&
+        window.matchMedia &&
+        window.matchMedia("(prefers-color-scheme: light)").matches
+      ) {
+        setTheme(true);
+      } else {
+        setTheme(false);
+      }
+
+      // Theme toggle button
+      themeToggle.addEventListener("click", () => {
+        setTheme(!html.classList.contains("light"));
+      });
+
+      // Update defaults when Plotly loads
+      if (typeof Plotly !== "undefined") {
+        updatePlotlyDefaults();
+      } else {
+        window.addEventListener("load", updatePlotlyDefaults);
+      }
+      document
+        .getElementById("json-input")
+        .addEventListener("change", function (e) {
+          var file = e.target.files[0];
+          if (!file) return;
+          var reader = new FileReader();
+          reader.onload = function (ev) {
+            try {
+              var data = JSON.parse(ev.target.result);
+              renderFromJson(data);
+            } catch (err) {
+              alert("Failed to parse JSON: " + err.message);
+            }
+          };
+          reader.readAsText(file);
+        });
+
+      function renderFromJson(data) {
+        var main = document.getElementById("content");
+        main.innerHTML = "";
+
+        if (data.type && data.containerId && data.config) {
+          // Single chart config
+          var div = document.createElement("div");
+          div.className = "chart-panel";
+          var inner = document.createElement("div");
+          inner.id = data.containerId;
+          div.appendChild(inner);
+          main.appendChild(div);
+          ChartHopper.renderChart(data);
+        } else if (data.tabs) {
+          // Dashboard config
+          for (var t = 0; t < data.tabs.length; t++) {
+            var tab = data.tabs[t];
+            var heading = document.createElement("h2");
+            heading.textContent = tab.name;
+            main.appendChild(heading);
+            for (var c = 0; c < tab.charts.length; c++) {
+              var chart = tab.charts[c];
+              var panel = document.createElement("div");
+              panel.className = "chart-panel";
+              var container = document.createElement("div");
+              container.id = chart.containerId;
+              panel.appendChild(container);
+              main.appendChild(panel);
+              ChartHopper.renderChart(chart);
+            }
+          }
+        }
+        document.getElementById("info").textContent =
+          "Loaded: " + (data.type || "dashboard");
+      }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,13 @@
+{
+  "name": "charthopper",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "esbuild src/index.ts --bundle --format=iife --global-name=ChartHopper --outfile=../Resources/charthopper.js",
+    "watch": "esbuild src/index.ts --bundle --format=iife --global-name=ChartHopper --outfile=../Resources/charthopper.js --watch"
+  },
+  "devDependencies": {
+    "esbuild": "^0.24.0",
+    "@types/plotly.js": "^2.33.0"
+  }
+}

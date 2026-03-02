@@ -61,7 +61,7 @@ public class GH_BasicSolver : GH_Component
         updateParam.AddNamedValue("Every Generation", 1);
         updateParam.AddNamedValue("If Better", 2);
         updateParam.AddNamedValue("None", 3);
-        updateParam.PersistentData.Append(new GH_Integer(0));
+        updateParam.PersistentData.Append(new GH_Integer(3));
         pManager.AddParameter(
             updateParam,
             "PreviewLevel",
