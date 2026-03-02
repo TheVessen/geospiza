@@ -31,6 +31,7 @@ public class NsgaIIISolver : EvolutionBlueprint
         StateManager = stateManager;
         EvolutionObserver = evolutionObserver;
         _referencePointDivisions = referencePointDivisions;
+        evolutionObserver.SetAlgorithmType(EvolutionObserver.AlgorithmType.NsgaIII);
     }
 
     private StateManager StateManager { get; }

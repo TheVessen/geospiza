@@ -26,6 +26,7 @@ public class NsgaIISolver : EvolutionBlueprint
     {
         StateManager = stateManager;
         EvolutionObserver = evolutionObserver;
+        evolutionObserver.SetAlgorithmType(EvolutionObserver.AlgorithmType.NsgaII);
     }
 
     private StateManager StateManager { get; }

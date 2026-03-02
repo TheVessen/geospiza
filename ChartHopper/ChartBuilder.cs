@@ -145,6 +145,16 @@ public class ChartBuilder
         return this;
     }
 
+    /// <summary>
+    ///     Attach arbitrary per-point data that is passed to click event handlers.
+    ///     In the dashboard popup, each entry is a pre-rendered HTML string shown in the sidebar.
+    /// </summary>
+    public ChartBuilder CustomData(IEnumerable<string> data)
+    {
+        _config["customdata"] = data.ToArray();
+        return this;
+    }
+
     public ChartBuilder Mode(string mode)
     {
         _config["mode"] = mode;
@@ -270,14 +280,14 @@ public class ChartBuilder
     }
 
     /// <summary>
-    ///     Inject a per-individual highlight control panel below the parcoords chart.
-    ///     Users can type an individual index; all lines fade except the selected one (vivid orange).
-    ///     <paramref name="hoverLabels" /> are shown in the info bar when an individual is highlighted.
+    ///     Render a scrollable filtered list below the parcoords chart that shows only
+    ///     individuals whose dimension values satisfy all active axis brush constraints.
+    ///     <paramref name="hoverLabels" /> are shown as the row text for each individual.
     /// </summary>
-    public ChartBuilder EnableHighlight(IEnumerable<string>? hoverLabels = null)
+    public ChartBuilder FilterList(IEnumerable<string> hoverLabels)
     {
-        _config["enableHighlight"] = true;
-        if (hoverLabels != null) _config["hoverLabels"] = hoverLabels.ToArray();
+        _config["filterList"] = true;
+        _config["hoverLabels"] = hoverLabels.ToArray();
         return this;
     }
 
@@ -327,7 +337,7 @@ public class ChartBuilder
     }
 
     /// <summary>
-    ///     Builds a complete standalone HTML string that renders this chart.
+    ///     Builds a complete standalone HTML string that renders this chart (legacy path).
     /// </summary>
     public string Build()
     {
@@ -337,5 +347,18 @@ public class ChartBuilder
 
         return HtmlTemplates.SingleChart(chartId, chartType, configJson,
             _config.TryGetValue("title", out var t) ? t?.ToString() : null);
+    }
+
+    /// <summary>
+    ///     Registers this chart with the singleton ChartHopperServer and opens it in the browser.
+    ///     The chart is wrapped in a single-tab dashboard automatically.
+    /// </summary>
+    /// <returns>The URL of the session.</returns>
+    public string Open()
+    {
+        var tabName = _config.TryGetValue("title", out var t) ? t?.ToString() ?? "Chart" : "Chart";
+        return new DashboardBuilder()
+            .AddTab(tabName, this)
+            .Open();
     }
 }

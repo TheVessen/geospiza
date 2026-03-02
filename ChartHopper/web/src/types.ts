@@ -86,7 +86,7 @@ export interface FillBand {
  * @property traces - Array of line traces (required, at least one)
  * @property fill - Optional fill band for shaded areas
  * @property hoverXLabel - Short prefix for the x-value in the hover tooltip (e.g. "G" → "G=5")
- * @property hoverYLabel - Short prefix for the y-value in the hover tooltip (e.g. "F" → "F=9803.3")
+ * @property hoverYLabel - Short prefix for the y-value in the hover tooltip (e.g. "F" → "F=1")
  */
 export interface LineConfig extends ChartOptions {
   traces: LineTrace[];
@@ -132,17 +132,17 @@ export interface ParcoordsConfig extends ChartOptions {
   /** Reverse the colorscale direction (e.g. so high values are red, low values are blue). */
   reverseScale?: boolean;
   /**
-   * When true, injects a small "Highlight individual #N" control panel below the chart.
-   * Typing an index and pressing Highlight fades all lines to near-transparent and makes
-   * the selected line vivid orange — similar to Wallacei's individual inspector.
-   */
-  enableHighlight?: boolean;
-  /**
-   * Optional per-individual label shown in the highlight panel info bar.
+   * Per-individual labels used as row text in the filter list.
    * Typically the same hover string used on scatter plots
    * (e.g. "Gen: 5 | #Ind 12/100 | Fitness: 0.1234").
    */
   hoverLabels?: string[];
+  /**
+   * When true, renders a scrollable filtered list below the chart that shows
+   * only the individuals whose values satisfy all active axis constraints.
+   * Requires hoverLabels to be set.
+   */
+  filterList?: boolean;
 }
 
 /**

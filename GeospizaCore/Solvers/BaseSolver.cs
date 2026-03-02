@@ -23,6 +23,7 @@ public class BaseSolver : EvolutionBlueprint
     {
         StateManager = stateManager;
         EvolutionObserver = evolutionObserver;
+        evolutionObserver.SetAlgorithmType(EvolutionObserver.AlgorithmType.SingleObjective);
     }
 
     private StateManager StateManager { get; }

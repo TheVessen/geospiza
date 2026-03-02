@@ -54,15 +54,18 @@ public class GH_MultiObjectiveFitness : GH_Component, IGH_VariableParameterCompo
     {
         for (var i = 0; i < Params.Input.Count; i++)
         {
-            // Only auto-name if the parameter still has a default name — preserve user renames.
-            if (string.IsNullOrEmpty(Params.Input[i].Name) || Params.Input[i].Name.StartsWith("Fitness "))
-            {
-                Params.Input[i].Name = $"Fitness {i}";
-                Params.Input[i].NickName = $"F{i}";
-            }
+            var p = Params.Input[i];
 
-            Params.Input[i].Description = $"Fitness objective {i} for multi-objective optimization.";
-            Params.Input[i].Optional = i >= 1;
+            // Auto-name only when the param still carries a default generated name.
+            // A default name matches "Fitness N" exactly — anything else is a user rename.
+            var hasDefaultName = string.IsNullOrEmpty(p.Name) || p.Name == $"Fitness {i}";
+            var hasDefaultNick = string.IsNullOrEmpty(p.NickName) || p.NickName == $"F{i}";
+
+            if (hasDefaultName) p.Name = $"Fitness {i}";
+            if (hasDefaultNick) p.NickName = $"F{i}";
+
+            p.Description = $"Fitness objective {i} for multi-objective optimization.";
+            p.Optional = i >= 1;
         }
     }
 
@@ -90,7 +93,11 @@ public class GH_MultiObjectiveFitness : GH_Component, IGH_VariableParameterCompo
             double val = 0;
             DA.GetData(i, ref val);
             objectives[i] = val;
-            names[i] = Params.Input[i].Name;
+            // Use NickName as the label — it's what users rename in the GH canvas.
+            // Fall back to Name if NickName is empty.
+            names[i] = string.IsNullOrWhiteSpace(Params.Input[i].NickName)
+                ? Params.Input[i].Name
+                : Params.Input[i].NickName;
         }
 
         GeospizaCore.Core.Fitness.Instance.SetObjectives(objectives);

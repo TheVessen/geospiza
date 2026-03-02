@@ -14,6 +14,13 @@ namespace GeospizaCore.Core;
 /// </remarks>
 public class EvolutionObserver
 {
+    public enum AlgorithmType
+    {
+        SingleObjective,
+        NsgaII,
+        NsgaIII
+    }
+
     public delegate void GenerationCompletedEventHandler(object sender, GenerationCompletedEventArgs e);
 
     private static readonly ConcurrentDictionary<GH_Component, EvolutionObserver> _instances = new();
@@ -70,6 +77,19 @@ public class EvolutionObserver
 
     public int CurrentGenerationIndex { get; private set; }
     public Population CurrentPopulation { get; private set; }
+
+    /// <summary>
+    ///     The algorithm type that produced this observation run.
+    ///     Set by the solver before it starts running.
+    /// </summary>
+    public AlgorithmType Algorithm { get; private set; } = AlgorithmType.SingleObjective;
+
+
+    /// <summary>
+    ///     Records which algorithm is driving this observer.
+    ///     Should be called once before <see cref="Snapshot" /> is first invoked.
+    /// </summary>
+    public void SetAlgorithmType(AlgorithmType type) => Algorithm = type;
 
     public IReadOnlyList<double> AverageFitness => _averageFitness;
     public IReadOnlyList<double> BestFitness => _bestFitness;
@@ -161,6 +181,7 @@ public class EvolutionObserver
             _hvReferencePoint = null;
             CurrentPopulation = null;
             CurrentGenerationIndex = 0;
+            Algorithm = AlgorithmType.SingleObjective;
         }
     }
 
@@ -254,8 +275,9 @@ public class EvolutionObserver
 
             CurrentPopulation = currentPopulation;
 
-            // Capture objective names once from the Fitness singleton.
-            if (isMultiObjective && ObjectiveNames == null)
+            // Capture objective names from the Fitness singleton each generation so
+            // that user renames on GH_MultiObjectiveFitness are always reflected.
+            if (isMultiObjective)
             {
                 var names = Fitness.Instance.GetObjectiveNames();
                 ObjectiveNames = names.Length > 0 ? (string[])names.Clone() : null;
@@ -358,6 +380,7 @@ public class EvolutionObserver
             _hvReferencePoint = null;
             CurrentPopulation = null;
             CurrentGenerationIndex = 0;
+            Algorithm = AlgorithmType.SingleObjective;
         }
     }
 
@@ -372,6 +395,7 @@ public class EvolutionObserver
             var dto = new
             {
                 CurrentGenerationIndex,
+                Algorithm,
                 GeneSchema = GeneSchema ?? Array.Empty<GeneSchema>(),
                 ObjectiveNames = ObjectiveNames ?? [],
                 BestFitness = _bestFitness,
@@ -430,6 +454,7 @@ public class EvolutionObserver
         }
 
         obs.CurrentGenerationIndex = dto.CurrentGenerationIndex;
+        obs.Algorithm = dto.Algorithm;
         return obs;
     }
 
@@ -441,6 +466,7 @@ public class EvolutionObserver
     private class ObserverDto
     {
         public int CurrentGenerationIndex { get; set; }
+        public AlgorithmType Algorithm { get; set; } = AlgorithmType.SingleObjective;
         public GeneSchema[]? GeneSchema { get; set; }
         public string[]? ObjectiveNames { get; set; }
         public List<double> BestFitness { get; } = new();

@@ -7,7 +7,7 @@ namespace ChartHopper;
 /// </summary>
 internal static class HtmlTemplates
 {
-    private const string PlotlyCdn = "https://cdn.plot.ly/plotly-2.35.0.min.js";
+    private const string PlotlyCdn = "https://cdn.plot.ly/plotly-3.3.0.min.js";
 
     // Shared CSS variables for both themes — identical to charthopper-viewer.html
     private const string ThemeCss = @"
@@ -57,6 +57,14 @@ internal static class HtmlTemplates
       border: 1px solid var(--border-color); margin-bottom: 1rem; transition: border-color 0.2s;
     }
     .chart-panel:hover { border-color: var(--border-hover); }
+    .note-panel {
+      border-left: 3px solid var(--accent); border-radius: 0 4px 4px 0;
+      padding: 0.65rem 1rem; margin-bottom: 0.75rem;
+      font-size: 0.8125rem; color: var(--text-secondary); line-height: 1.55;
+      background: var(--bg-tertiary);
+    }
+    .note-panel strong { color: var(--text-primary); font-weight: 600; }
+    .note-panel em { font-style: italic; }
     #theme-toggle {
       padding: 0.35rem 0.75rem; border-radius: 6px;
       border: 1px solid var(--border-color); background: var(--bg-tertiary);
@@ -64,6 +72,68 @@ internal static class HtmlTemplates
       font-weight: 500; transition: all 0.2s; white-space: nowrap;
     }
     #theme-toggle:hover { border-color: var(--border-hover); }
+    /* ── Individual popup sidebar ── */
+    #ch-popup {
+      position: fixed; top: 0; right: -400px; width: 370px; height: 100vh;
+      background: var(--bg-secondary); border-left: 1px solid var(--border-color);
+      box-shadow: -4px 0 20px rgba(0,0,0,0.35); overflow-y: auto; z-index: 9999;
+      transition: right 0.25s cubic-bezier(.4,0,.2,1); padding-bottom: 2rem;
+    }
+    #ch-popup.open { right: 0; }
+    #ch-popup-header {
+      position: sticky; top: 0; display: flex; align-items: center;
+      justify-content: space-between; padding: 0.75rem 1rem;
+      background: var(--bg-tertiary); border-bottom: 1px solid var(--border-color); z-index: 1;
+    }
+    #ch-popup-header span { font-size: 0.9rem; font-weight: 600; color: var(--text-heading); }
+    #ch-popup-close {
+      background: none; border: none; color: var(--text-secondary); cursor: pointer;
+      font-size: 1.1rem; line-height: 1; padding: 0.2rem 0.4rem; border-radius: 4px;
+      transition: color 0.15s;
+    }
+    #ch-popup-close:hover { color: var(--text-primary); }
+    #ch-popup-body { padding: 0.75rem 1rem; }
+    .pop-section { margin-bottom: 0.85rem; }
+    .pop-label {
+      font-size: 0.7rem; font-weight: 600; letter-spacing: 0.06em;
+      text-transform: uppercase; color: var(--text-secondary); margin-bottom: 0.2rem;
+    }
+    .pop-value { font-size: 0.875rem; color: var(--text-primary); }
+    .pop-table { width: 100%; border-collapse: collapse; margin-top: 0.35rem; }
+    .pop-table td { font-size: 0.8rem; padding: 0.2rem 0.3rem; vertical-align: top; }
+    .pop-table td:first-child { color: var(--text-secondary); width: 55%; word-break: break-all; }
+    .pop-table td:last-child { color: var(--text-primary); font-variant-numeric: tabular-nums; text-align: right; }
+    .pop-table tr:nth-child(even) td { background: var(--bg-tertiary); border-radius: 3px; }
+    .pop-divider { border: none; border-top: 1px solid var(--border-color); margin: 0.75rem 0; }
+    /* ── Parcoords filtered individual list ── */
+    .pc-filter-wrapper {
+      border: 1px solid var(--border-color); border-radius: 0 0 6px 6px;
+      border-top: none; margin-bottom: 1rem; background: var(--bg-secondary);
+    }
+    .pc-filter-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0.4rem 0.75rem; border-bottom: 1px solid var(--border-color);
+      font-size: 0.8rem;
+    }
+    .pc-filter-count { color: var(--text-secondary); }
+    .pc-filter-clear {
+      padding: 2px 10px; border-radius: 4px; border: 1px solid var(--border-color);
+      background: var(--bg-tertiary); color: var(--text-secondary); cursor: pointer;
+      font-size: 0.75rem; transition: color 0.15s, border-color 0.15s;
+    }
+    .pc-filter-clear:hover { color: var(--text-primary); border-color: var(--border-hover); }
+    .pc-filter-list {
+      max-height: 220px; overflow-y: auto; padding: 0.25rem 0;
+    }
+    .pc-filter-row {
+      padding: 0.25rem 0.75rem; font-size: 0.78rem; color: var(--text-secondary);
+      border-bottom: 1px solid var(--border-color); font-variant-numeric: tabular-nums;
+    }
+    .pc-filter-row:last-child { border-bottom: none; }
+    .pc-filter-empty {
+      padding: 0.6rem 0.75rem; font-size: 0.8rem;
+      color: var(--text-secondary); font-style: italic;
+    }
 ";
 
     // Shared JS: theme management + Plotly defaults wired to CSS variables
@@ -185,10 +255,12 @@ header h1 {{ font-size: 1.1rem; font-weight: 600; color: var(--text-heading); }}
             tabButtons += $@"<button class=""tab-btn{activeClass}"" data-tab=""tab-{i}"">{EscapeHtml(tab.Name)}</button>";
 
             var chartsHtml = "";
-            for (var j = 0; j < tab.Charts.Count; j++)
+            foreach (var item in tab.Items)
             {
-                var chart = tab.Charts[j];
-                chartsHtml += $@"<div class=""chart-panel""><div id=""{chart.ContainerId}""></div></div>";
+                if (item is DashboardChart chart)
+                    chartsHtml += $@"<div class=""chart-panel""><div id=""{chart.ContainerId}""></div></div>";
+                else if (item is DashboardNote note)
+                    chartsHtml += $@"<div class=""note-panel"">{note.Html}</div>";
             }
 
             tabContents += $@"<section id=""tab-{i}"" class=""tab-content{activeClass}"">{chartsHtml}</section>";
@@ -241,37 +313,88 @@ nav {{
 </header>
 <nav>{tabButtons}</nav>
 <main>{tabContents}</main>
+<aside id=""ch-popup"">
+  <div id=""ch-popup-header"">
+    <span>Individual Details</span>
+    <button id=""ch-popup-close"" title=""Close"">&#x2715;</button>
+  </div>
+  <div id=""ch-popup-body""></div>
+</aside>
 <script src=""{PlotlyCdn}""></script>
 <script>{ChartHopperJsInline()}</script>
 <script>
 {tabChartsJs}
 var activeTab = 0;
 
-// Render all charts in a tab (called once per tab, on first visit)
-function renderTab(idx) {{
-  (tabCharts[idx] || []).forEach(function(c) {{
-    ChartHopper[c.type](c.id, c.cfg);
+// ── Popup sidebar ────────────────────────────────────────────────────────────
+var chPopup     = document.getElementById('ch-popup');
+var chPopupBody = document.getElementById('ch-popup-body');
+document.getElementById('ch-popup-close').addEventListener('click', function() {{
+  chPopup.classList.remove('open');
+}});
+document.addEventListener('keydown', function(e) {{
+  if (e.key === 'Escape') chPopup.classList.remove('open');
+}});
+window._chPopupShow = function(html) {{
+  chPopupBody.innerHTML = html;
+  chPopup.classList.add('open');
+}};
+
+// Attach plotly_click handlers after a chart is rendered
+function attachPopupHandler(containerId) {{
+  var el = document.getElementById(containerId);
+  if (!el) return;
+  el.on('plotly_click', function(data) {{
+    if (!data || !data.points || !data.points.length) return;
+    var pt = data.points[0];
+    var cd = pt.customdata;
+    if (cd && typeof cd === 'string') {{ window._chPopupShow(cd); return; }}
+    // Fallback: show basic info when no customdata is attached
+    var info = '<div class=""pop-section""><div class=""pop-label"">Point</div>' +
+      '<div class=""pop-value"">x: ' + pt.x + '<br>y: ' + (pt.y !== undefined ? Number(pt.y).toFixed(4) : '—') + '</div></div>';
+    window._chPopupShow(info);
   }});
 }}
 
-// Purge all Plotly charts in a tab so WebGL contexts are freed
+var rendered = {{}};
+
+// Returns true if any chart in the tab uses WebGL (scattergl / scatter3d)
+function tabHasWebGL(idx) {{
+  return (tabCharts[idx] || []).some(function(c) {{
+    return c.type === 'scatter' && c.cfg && c.cfg.useWebGL;
+  }});
+}}
+
+// Render all charts in a tab; popup handlers are attached only on first render
+function renderTab(idx) {{
+  var firstTime = !rendered[idx];
+  rendered[idx] = true;
+  (tabCharts[idx] || []).forEach(function(c) {{
+    ChartHopper[c.type](c.id, c.cfg);
+    if (firstTime) attachPopupHandler(c.id);
+  }});
+}}
+
+// Purge Plotly charts in a tab to free WebGL contexts
 function purgeTab(idx) {{
   (tabCharts[idx] || []).forEach(function(c) {{
     var el = document.getElementById(c.id);
     if (el && el.data) Plotly.purge(el);
   }});
+  // Mark as un-rendered so renderTab re-draws after a purge
+  delete rendered[idx];
 }}
 
-// Tab switching — lazy render + purge previous tab to stay within WebGL limits
-var rendered = {{}};
+// Tab switching — purge WebGL tabs on leave, lazy-render on enter
 document.querySelectorAll('.tab-btn').forEach(function(btn) {{
   btn.addEventListener('click', function() {{
     var nextId = btn.getAttribute('data-tab');
     var nextIdx = parseInt(nextId.split('-')[1], 10);
     if (nextIdx === activeTab) return;
 
-    // Hide old tab and free its WebGL contexts
-    purgeTab(activeTab);
+    // Free WebGL contexts of the outgoing tab; leave SVG tabs intact
+    if (tabHasWebGL(activeTab)) purgeTab(activeTab);
+    chPopup.classList.remove('open');
     document.querySelectorAll('.tab-btn').forEach(function(b) {{ b.classList.remove('active'); }});
     document.querySelectorAll('.tab-content').forEach(function(c) {{ c.classList.remove('active'); }});
 
@@ -280,7 +403,6 @@ document.querySelectorAll('.tab-btn').forEach(function(btn) {{
     document.getElementById(nextId).classList.add('active');
     activeTab = nextIdx;
 
-    // Render charts for this tab (only first time; subsequent visits re-render after purge)
     renderTab(activeTab);
     window.dispatchEvent(new Event('resize'));
   }});
@@ -305,33 +427,3 @@ renderTab(0);
     }
 }
 
-/// <summary>
-///     Represents a tab in a dashboard with its chart configurations.
-/// </summary>
-public class DashboardTab
-{
-    public string Name { get; }
-    public List<DashboardChart> Charts { get; } = new();
-
-    public DashboardTab(string name)
-    {
-        Name = name;
-    }
-}
-
-/// <summary>
-///     A chart configuration ready to be rendered in a dashboard.
-/// </summary>
-public class DashboardChart
-{
-    public string ContainerId { get; }
-    public string ChartType { get; }
-    public string ConfigJson { get; }
-
-    public DashboardChart(string containerId, string chartType, string configJson)
-    {
-        ContainerId = containerId;
-        ChartType = chartType;
-        ConfigJson = configJson;
-    }
-}

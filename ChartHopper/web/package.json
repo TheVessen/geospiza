@@ -7,7 +7,7 @@
     "watch": "esbuild src/index.ts --bundle --format=iife --global-name=ChartHopper --outfile=../Resources/charthopper.js --watch"
   },
   "devDependencies": {
-    "esbuild": "^0.24.0",
-    "@types/plotly.js": "^2.33.0"
+    "@types/plotly.js": "^3.0.6",
+    "esbuild": "^0.27.3"
   }
 }

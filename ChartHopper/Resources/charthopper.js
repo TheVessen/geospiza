@@ -401,56 +401,91 @@ var ChartHopper = (() => {
         margin
       };
       P.newPlot(containerId, [trace], layout, defaultPlotlyConfig(cfg));
-      if (cfg.enableHighlight && cfg.color && cfg.color.length > 0) {
-        const originalColor = [...cfg.color];
-        const originalScale = cfg.colorScale ?? "Viridis";
-        const originalReverse = cfg.reverseScale ?? false;
-        const HIGHLIGHT_SCALE = [
-          [0, "rgba(150,150,150,0.10)"],
-          [1, "#ff6b35"]
-        ];
-        const panel = document.createElement("div");
-        panel.style.cssText = "display:flex;align-items:center;gap:0.5rem;padding:0.4rem 0.75rem;font-size:0.8rem;color:var(--text-secondary);flex-wrap:wrap;";
-        const btnStyle = "padding:3px 10px;border-radius:4px;border:1px solid var(--border-color);background:var(--bg-tertiary);color:var(--text-primary);cursor:pointer;font-size:0.8rem;transition:border-color 0.15s;";
-        const maxIdx = originalColor.length - 1;
-        panel.innerHTML = `<span>Highlight individual #</span><input type="number" id="${containerId}-hi-idx" min="0" max="${maxIdx}"  style="width:70px;padding:2px 6px;border-radius:4px;border:1px solid var(--border-color); background:var(--bg-tertiary);color:var(--text-primary);font-size:0.8rem" /><button id="${containerId}-hi-apply" style="${btnStyle}">Highlight</button><button id="${containerId}-hi-clear" style="${btnStyle}">Clear</button><span id="${containerId}-hi-label" style="color:var(--text-secondary);font-style:italic"></span>`;
+      if (cfg.filterList && cfg.hoverLabels && cfg.hoverLabels.length > 0) {
+        const labels = cfg.hoverLabels;
+        const dimValues = cfg.dimensions.map((d) => d.values);
+        const n = labels.length;
+        const wrapper = document.createElement("div");
+        wrapper.className = "pc-filter-wrapper";
+        const header = document.createElement("div");
+        header.className = "pc-filter-header";
+        const countEl = document.createElement("span");
+        countEl.className = "pc-filter-count";
+        countEl.textContent = `${n} of ${n} individuals`;
+        const clearBtn = document.createElement("button");
+        clearBtn.className = "pc-filter-clear";
+        clearBtn.textContent = "Clear filters";
+        clearBtn.style.display = "none";
+        header.appendChild(countEl);
+        header.appendChild(clearBtn);
+        const listEl = document.createElement("div");
+        listEl.className = "pc-filter-list";
+        wrapper.appendChild(header);
+        wrapper.appendChild(listEl);
         const el = document.getElementById(containerId);
         if (el && el.parentElement) {
-          el.parentElement.insertBefore(panel, el);
+          el.parentElement.insertBefore(wrapper, el.nextSibling);
         }
-        const applyHighlight = () => {
-          const input = document.getElementById(`${containerId}-hi-idx`);
-          const idx = input ? parseInt(input.value, 10) : NaN;
-          if (isNaN(idx) || idx < 0 || idx > maxIdx) return;
-          const newColor = originalColor.map((_, i) => i === idx ? 1 : 0);
-          P["restyle"](
-            containerId,
-            { "line.color": [newColor], "line.colorscale": [HIGHLIGHT_SCALE], "line.reversescale": [false] },
-            [0]
-          );
-          const labelEl = document.getElementById(`${containerId}-hi-label`);
-          if (labelEl) {
-            const info = cfg.hoverLabels?.[idx] ?? `Individual ${idx}`;
-            labelEl.textContent = `\u2192 ${info}`;
+        const renderList = (indices) => {
+          listEl.innerHTML = "";
+          if (indices.length === 0) {
+            const empty = document.createElement("div");
+            empty.className = "pc-filter-empty";
+            empty.textContent = "No individuals match the current filters.";
+            listEl.appendChild(empty);
+            return;
           }
+          const frag = document.createDocumentFragment();
+          for (const i of indices) {
+            const row = document.createElement("div");
+            row.className = "pc-filter-row";
+            row.textContent = labels[i];
+            frag.appendChild(row);
+          }
+          listEl.appendChild(frag);
         };
-        const clearHighlight = () => {
-          P["restyle"](
-            containerId,
-            {
-              "line.color": [originalColor],
-              "line.colorscale": [originalScale],
-              "line.reversescale": [originalReverse]
-            },
-            [0]
-          );
-          const labelEl = document.getElementById(`${containerId}-hi-label`);
-          if (labelEl) labelEl.textContent = "";
+        const computeActive = (constraints) => {
+          const active = [];
+          outer: for (let i = 0; i < n; i++) {
+            for (let d = 0; d < dimValues.length; d++) {
+              const c = constraints[d];
+              if (!c) continue;
+              const v = dimValues[d][i];
+              if (v < c[0] || v > c[1]) continue outer;
+            }
+            active.push(i);
+          }
+          return active;
         };
-        document.getElementById(`${containerId}-hi-apply`)?.addEventListener("click", applyHighlight);
-        document.getElementById(`${containerId}-hi-clear`)?.addEventListener("click", clearHighlight);
-        document.getElementById(`${containerId}-hi-idx`)?.addEventListener("keydown", (e) => {
-          if (e.key === "Enter") applyHighlight();
+        let activeConstraints = dimValues.map(() => null);
+        renderList(Array.from({ length: n }, (_, i) => i));
+        el?.on("plotly_restyle", () => {
+          const plotEl = document.getElementById(containerId);
+          if (!plotEl?.data?.[0]?.dimensions) return;
+          const liveDims = plotEl.data[0].dimensions;
+          let hasAnyFilter = false;
+          for (let d = 0; d < dimValues.length; d++) {
+            const cr = liveDims[d]?.constraintrange;
+            if (cr != null) {
+              const first = Array.isArray(cr[0]) ? cr[0] : cr;
+              activeConstraints[d] = [first[0], first[1]];
+              hasAnyFilter = true;
+            } else {
+              activeConstraints[d] = null;
+            }
+          }
+          clearBtn.style.display = hasAnyFilter ? "" : "none";
+          const active = computeActive(activeConstraints);
+          countEl.textContent = `${active.length} of ${n} individuals`;
+          renderList(active);
+        });
+        clearBtn.addEventListener("click", () => {
+          const cleanDims = dimensions.map((d) => ({ ...d, constraintrange: void 0 }));
+          P.restyle(containerId, { dimensions: [cleanDims] }, [0]);
+          activeConstraints = dimValues.map(() => null);
+          clearBtn.style.display = "none";
+          countEl.textContent = `${n} of ${n} individuals`;
+          renderList(Array.from({ length: n }, (_, i) => i));
         });
       }
     } catch (error) {

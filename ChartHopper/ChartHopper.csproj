@@ -7,6 +7,7 @@
         <LangVersion>latest</LangVersion>
         <NoWarn>NU1701;NETSDK1086</NoWarn>
         <EnableWindowsTargeting>true</EnableWindowsTargeting>
+        <WebAssetRoot>$(MSBuildThisFileDirectory)EmbeddedAssets\web\</WebAssetRoot>
     </PropertyGroup>
 
     <!-- Windows-specific configuration -->
@@ -26,15 +27,44 @@
         <PackageReference Include="System.Drawing.Common" Version="7.0.0" ExcludeAssets="runtime"/>
     </ItemGroup>
 
+    <!-- Legacy resources for Build() / HtmlTemplates (standalone HTML snippet path) -->
     <ItemGroup>
         <EmbeddedResource Include="Resources\charthopper-viewer.html" />
         <EmbeddedResource Include="Resources\charthopper.js" />
     </ItemGroup>
 
-    <!-- Auto-build the TypeScript/web package before embedding the JS resource -->
-    <Target Name="BuildWebPackage" BeforeTargets="BeforeBuild">
-        <Message Text="Building ChartHopper web package..." Importance="high" />
+    <!--
+        Build both web pipelines, then embed the SvelteKit output.
+
+        1. web/ (esbuild) → Resources/charthopper.js  — used by Build() / HtmlTemplates
+        2. app/ (SvelteKit) → EmbeddedAssets/web/     — used by Open() / ChartHopperServer
+
+        The SvelteKit ItemGroup is inside the Target so it evaluates AFTER npm runs,
+        capturing fresh content-hashed filenames on every build.
+    -->
+    <!--
+        Only run the npm builds once — gated on net48 — to avoid the multi-target
+        parallel build racing to delete and write the same output directory at the
+        same time (EBUSY). Both targets embed the same files; building once is enough.
+    -->
+    <Target Name="BuildWebPipelines" BeforeTargets="BeforeBuild"
+            Condition="'$(TargetFramework)' == 'net48'">
+        <Message Text="Building ChartHopper legacy web package..." Importance="high" />
         <Exec Command="npm run build" WorkingDirectory="$(MSBuildThisFileDirectory)web" />
+        <!-- RemoveDir here — before MSBuild opens any embedded files in either target -->
+        <RemoveDir Directories="$(WebAssetRoot)" />
+        <Message Text="Building ChartHopper SvelteKit app..." Importance="high" />
+        <Exec Command="npm run build" WorkingDirectory="$(MSBuildThisFileDirectory)app" />
+    </Target>
+
+    <!-- Embed SvelteKit output — runs for every target after the files exist -->
+    <Target Name="EmbedWebApp" BeforeTargets="BeforeBuild" AfterTargets="BuildWebPipelines">
+        <ItemGroup>
+            <_WebFile Include="$(WebAssetRoot)**\*.*" />
+            <EmbeddedResource Include="@(_WebFile)">
+                <LogicalName>ChartHopper.EmbeddedAssets.web.$([System.String]::Copy('%(_WebFile.RecursiveDir)').Replace('\','/').Replace('/','.'))%(_WebFile.Filename)%(_WebFile.Extension)</LogicalName>
+            </EmbeddedResource>
+        </ItemGroup>
     </Target>
 
 </Project>
