@@ -136,7 +136,8 @@ public class EvoSettingsConverter : JsonConverter
                 GetStrategy<ICrossoverStrategy>(jObject, nameof(SolverSettings.CrossoverStrategy), serializer),
             MutationStrategy =
                 GetStrategy<IMutationStrategy>(jObject, nameof(SolverSettings.MutationStrategy), serializer),
-            PairingStrategy = GetStrategy<IPairingStrategy>(jObject, nameof(SolverSettings.PairingStrategy), serializer),
+            PairingStrategy =
+                GetStrategy<IPairingStrategy>(jObject, nameof(SolverSettings.PairingStrategy), serializer),
             TerminationStrategy =
                 GetStrategy<ITerminationStrategy>(jObject, nameof(SolverSettings.TerminationStrategy), serializer),
             PopulationSize = jObject[nameof(SolverSettings.PopulationSize)]!.Value<int>(),

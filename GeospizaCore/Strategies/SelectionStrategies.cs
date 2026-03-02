@@ -148,7 +148,7 @@ public class RouletteWheelSelection : SelectionStrategy
         {
             var randomFitness = Random.NextDouble() * totalFitness;
             double runningSum = 0;
-            Individual selected = inhabitants[inhabitants.Count - 1];
+            var selected = inhabitants[inhabitants.Count - 1];
 
             foreach (var individual in inhabitants)
             {
@@ -411,7 +411,7 @@ public class StochasticUniversalSampling : SelectionStrategy
         {
             var selectionPoint = start + i * distance;
             double runningSum = 0;
-            Individual selected = inhabitants[inhabitants.Count - 1];
+            var selected = inhabitants[inhabitants.Count - 1];
 
             foreach (var individual in inhabitants)
             {

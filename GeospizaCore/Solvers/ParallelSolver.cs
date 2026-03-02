@@ -65,7 +65,6 @@ public class ParallelSolver : EvolutionBlueprint
                         // Add the children to the new population
                         newPopulation.AddIndividuals(children);
                     }
-
                 }
 
                 // If the new population is larger than the specified size, remove the least fit individuals
@@ -134,5 +133,4 @@ public class ParallelSolver : EvolutionBlueprint
             return operation(individualPair.Individual1, individualPair.Individual2);
         return new List<Individual> { individualPair.Individual1, individualPair.Individual2 };
     }
-
 }

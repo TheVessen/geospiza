@@ -14,9 +14,6 @@ namespace GeospizaPlugin.Components.Webcomponents;
 
 public class GH_WebIndividual : GH_Component
 {
-    /// <summary>
-    ///     Initializes a new instance of the GH_DisplayObject class.
-    /// </summary>
     public GH_WebIndividual()
         : base("Web Individual", "WI",
             "Collects data to be displayed in the web output",
@@ -26,37 +23,21 @@ public class GH_WebIndividual : GH_Component
 
     public override GH_Exposure Exposure => GH_Exposure.secondary;
 
-    /// <summary>
-    ///     Provides an Icon for the component.
-    /// </summary>
     protected override Bitmap Icon => Resources.WebGeo;
 
-    /// <summary>
-    ///     Gets the unique ID for this component. Do not change this ID after release.
-    /// </summary>
     public override Guid ComponentGuid => new("DD37E066-9E47-4C3C-82A0-0C64141F22B4");
 
-    /// <summary>
-    ///     Registers all the input parameters for this component.
-    /// </summary>
     protected override void RegisterInputParams(GH_InputParamManager pManager)
     {
         pManager.AddGenericParameter("Geo", "G", "Geo to display", GH_ParamAccess.tree);
         pManager.AddGenericParameter("Three Material", "TM", "ThreeMaterial", GH_ParamAccess.tree);
     }
 
-    /// <summary>
-    ///     Registers all the output parameters for this component.
-    /// </summary>
     protected override void RegisterOutputParams(GH_OutputParamManager pManager)
     {
         pManager.AddGenericParameter("Web Individual", "WI", "The display object", GH_ParamAccess.list);
     }
 
-    /// <summary>
-    ///     This is the method that actually does the work.
-    /// </summary>
-    /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
     protected override void SolveInstance(IGH_DataAccess DA)
     {
         var GHBaseGeo = new GH_Structure<IGH_Goo>();

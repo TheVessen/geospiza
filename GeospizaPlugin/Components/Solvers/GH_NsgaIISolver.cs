@@ -10,6 +10,7 @@ using Grasshopper.Kernel;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Parameters;
 using Grasshopper.Kernel.Types;
+using Rhino;
 
 namespace GeospizaPlugin.Components.Solvers;
 
@@ -134,12 +135,10 @@ public class GH_NsgaIISolver : GH_Component
 
             // Check for incompatible pairing strategy
             if (settings.PairingStrategy is ReferencePointPairingStrategy)
-            {
                 AddRuntimeMessage(GH_RuntimeMessageLevel.Warning,
                     "Reference Point Pairing is optimized for NSGA-III, which assigns reference point indices. " +
                     "NSGA-II does not assign reference point indices, so pairing will always fall back to random. " +
                     "Use Rank Aware Pairing or Inbreeding Pairing with NSGA-II, or switch to the NSGA-III solver.");
-            }
         }
 
         if (_lastSolutionId != Guid.Empty && _solutionId != _lastSolutionId)
@@ -167,7 +166,7 @@ public class GH_NsgaIISolver : GH_Component
         {
             Message = $"Gen {e.GenerationIndex}/{maxGenerations}";
             OnDisplayExpired(true);
-            Rhino.RhinoApp.Wait();
+            RhinoApp.Wait();
         }
 
         try
@@ -180,7 +179,7 @@ public class GH_NsgaIISolver : GH_Component
 
             Message = "Running...";
             OnDisplayExpired(true);
-            Rhino.RhinoApp.Wait();
+            RhinoApp.Wait();
 
             var solver = new NsgaIISolver(_privateSettings, StateManager, EvolutionObserver);
             solver.RunAlgorithm(cts.Token);

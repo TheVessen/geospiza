@@ -10,9 +10,6 @@ namespace GeospizaPlugin.Components.Configuration;
 
 public class GH_Settings : GH_Component
 {
-    /// <summary>
-    ///     Initializes a new instance of the Settings class.
-    /// </summary>
     public GH_Settings()
         : base("Settings", "Settings",
             "Configure parameters and strategies for the evolutionary algorithm including population size, generations, selection, crossover, and mutation settings.",
@@ -22,19 +19,10 @@ public class GH_Settings : GH_Component
 
     public override GH_Exposure Exposure => GH_Exposure.primary;
 
-    /// <summary>
-    ///     Provides an Icon for the component.
-    /// </summary>
     protected override Bitmap Icon => Resources.Settings;
 
-    /// <summary>
-    ///     Gets the unique ID for this component. Do not change this ID after release.
-    /// </summary>
     public override Guid ComponentGuid => new("7D078EE7-895C-4A27-8EBB-B61A5DC514DF");
 
-    /// <summary>
-    ///     Registers all the input parameters for this component.
-    /// </summary>
     protected override void RegisterInputParams(GH_InputParamManager pManager)
     {
         pManager.AddNumberParameter("Population Size", "PS", "The size of the population", GH_ParamAccess.item, 50);
@@ -64,19 +52,12 @@ public class GH_Settings : GH_Component
         pManager[7].Optional = true;
     }
 
-    /// <summary>
-    ///     Registers all the output parameters for this component.
-    /// </summary>
     protected override void RegisterOutputParams(GH_OutputParamManager pManager)
     {
         pManager.AddGenericParameter("Settings", "S", "The settings for the evolutionary algorithm",
             GH_ParamAccess.item);
     }
 
-    /// <summary>
-    ///     This is the method that actually does the work.
-    /// </summary>
-    /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
     protected override void SolveInstance(IGH_DataAccess DA)
     {
         double populationSize = 0;

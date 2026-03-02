@@ -13,9 +13,6 @@ namespace GeospizaPlugin.Components.Webcomponents;
 
 public class GH_ThreeMaterial : GH_Component
 {
-    /// <summary>
-    ///     Initializes a new instance of the GH_ThreeMaterial class.
-    /// </summary>
     public GH_ThreeMaterial()
         : base("Three Material", "TM",
             "Builds an object for the three.js material",
@@ -25,19 +22,10 @@ public class GH_ThreeMaterial : GH_Component
 
     public override GH_Exposure Exposure => GH_Exposure.secondary;
 
-    /// <summary>
-    ///     Provides an Icon for the component.
-    /// </summary>
     protected override Bitmap Icon => Resources.ThreeMaterial;
 
-    /// <summary>
-    ///     Gets the unique ID for this component. Do not change this ID after release.
-    /// </summary>
     public override Guid ComponentGuid => new("C9409BAC-5DD4-4054-BE4C-FCCBD53B7BD3");
 
-    /// <summary>
-    ///     Registers all the input parameters for this component.
-    /// </summary>
     protected override void RegisterInputParams(GH_InputParamManager pManager)
     {
         pManager.AddColourParameter("Color", "C", "Color to display", GH_ParamAccess.tree);
@@ -46,18 +34,11 @@ public class GH_ThreeMaterial : GH_Component
         pManager.AddNumberParameter("Opacity", "O", "Opacity value between 0 and 1", GH_ParamAccess.tree, 1.0);
     }
 
-    /// <summary>
-    ///     Registers all the output parameters for this component.
-    /// </summary>
     protected override void RegisterOutputParams(GH_OutputParamManager pManager)
     {
         pManager.AddGenericParameter("Material", "M", "The material", GH_ParamAccess.tree);
     }
 
-    /// <summary>
-    ///     This is the method that actually does the work.
-    /// </summary>
-    /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
     protected override void SolveInstance(IGH_DataAccess DA)
     {
         GH_Structure<GH_Colour> colorWrapper = null;

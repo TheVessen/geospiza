@@ -13105,7 +13105,7 @@ public class GrasshopperPath
     public static int[] FromString(string path)
     {
         var primer = path.Replace(" ", "").Replace("{", "").Replace("}", "");
-        string[] stringValues = primer.Split(';');
+        var stringValues = primer.Split(';');
         var ints = new List<int>();
         foreach (var s in stringValues)
             if (s != string.Empty)

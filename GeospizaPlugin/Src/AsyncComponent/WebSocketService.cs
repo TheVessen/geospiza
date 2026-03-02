@@ -5,107 +5,110 @@ using Rhino;
 namespace GeospizaPlugin.AsyncComponent;
 
 /// <summary>
-    /// A helper class that encapsulates the WebSocket server functionality.
-    /// </summary>
-    public class WebSocketService : IDisposable
+///     A helper class that encapsulates the WebSocket server functionality.
+/// </summary>
+public class WebSocketService : IDisposable
+{
+    private readonly string _endpoint;
+    private readonly object _lock = new();
+    private IWebSocketConnection _currentSocket;
+    private WebSocketServer _server;
+
+    public WebSocketService(string endpoint)
     {
-        private readonly string _endpoint;
-        private WebSocketServer _server;
-        private IWebSocketConnection _currentSocket;
-        private readonly object _lock = new object();
+        _endpoint = endpoint;
+    }
 
-        public bool IsRunning { get; private set; }
+    public bool IsRunning { get; private set; }
 
-        public event Action<string> OnMessageReceived;
-        public event Action OnClientConnected;
-        public event Action OnClientDisconnected;
+    public void Dispose()
+    {
+        Stop();
+    }
 
-        public WebSocketService(string endpoint)
+    public event Action<string> OnMessageReceived;
+    public event Action OnClientConnected;
+    public event Action OnClientDisconnected;
+
+    public void Start()
+    {
+        lock (_lock)
         {
-            _endpoint = endpoint;
-        }
+            if (IsRunning)
+                return;
 
-        public void Start()
-        {
-            lock (_lock)
+            _server = new WebSocketServer(_endpoint)
             {
-                if (IsRunning)
-                    return;
+                RestartAfterListenError = true
+            };
 
-                _server = new WebSocketServer(_endpoint)
+            _server.Start(socket =>
+            {
+                socket.OnOpen = () =>
                 {
-                    RestartAfterListenError = true
+                    lock (_lock)
+                    {
+                        _currentSocket = socket;
+                    }
+
+                    OnClientConnected?.Invoke();
+                    socket.Send("Connected to server");
                 };
 
-                _server.Start(socket =>
+                socket.OnClose = () =>
                 {
-                    socket.OnOpen = () =>
+                    lock (_lock)
                     {
-                        lock (_lock)
-                        {
-                            _currentSocket = socket;
-                        }
+                        if (_currentSocket == socket)
+                            _currentSocket = null;
+                    }
 
-                        OnClientConnected?.Invoke();
-                        socket.Send("Connected to server");
-                    };
+                    OnClientDisconnected?.Invoke();
+                };
 
-                    socket.OnClose = () =>
-                    {
-                        lock (_lock)
-                        {
-                            if (_currentSocket == socket)
-                                _currentSocket = null;
-                        }
+                socket.OnError = exception => { RhinoApp.WriteLine($"WebSocket error: {exception.Message}"); };
 
-                        OnClientDisconnected?.Invoke();
-                    };
+                socket.OnMessage = message => { OnMessageReceived?.Invoke(message); };
+            });
 
-                    socket.OnError = exception => { RhinoApp.WriteLine($"WebSocket error: {exception.Message}"); };
-
-                    socket.OnMessage = message => { OnMessageReceived?.Invoke(message); };
-                });
-
-                IsRunning = true;
-            }
+            IsRunning = true;
         }
-
-        public void SendMessage(string message)
-        {
-            lock (_lock)
-            {
-                if (_currentSocket != null && _currentSocket.IsAvailable)
-                    _currentSocket.Send(message);
-            }
-        }
-
-        public void Stop()
-        {
-            lock (_lock)
-            {
-                try
-                {
-                    _currentSocket?.Close();
-                }
-                catch (Exception ex)
-                {
-                    RhinoApp.WriteLine($"Error closing socket: {ex.Message}");
-                }
-
-                try
-                {
-                    _server?.Dispose();
-                }
-                catch (Exception ex)
-                {
-                    RhinoApp.WriteLine($"Error disposing server: {ex.Message}");
-                }
-
-                _currentSocket = null;
-                _server = null;
-                IsRunning = false;
-            }
-        }
-
-        public void Dispose() => Stop();
     }
+
+    public void SendMessage(string message)
+    {
+        lock (_lock)
+        {
+            if (_currentSocket != null && _currentSocket.IsAvailable)
+                _currentSocket.Send(message);
+        }
+    }
+
+    public void Stop()
+    {
+        lock (_lock)
+        {
+            try
+            {
+                _currentSocket?.Close();
+            }
+            catch (Exception ex)
+            {
+                RhinoApp.WriteLine($"Error closing socket: {ex.Message}");
+            }
+
+            try
+            {
+                _server?.Dispose();
+            }
+            catch (Exception ex)
+            {
+                RhinoApp.WriteLine($"Error disposing server: {ex.Message}");
+            }
+
+            _currentSocket = null;
+            _server = null;
+            IsRunning = false;
+        }
+    }
+}

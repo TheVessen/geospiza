@@ -32,7 +32,11 @@ public static class HypervolumeUtils
             // Keep only if the individual dominates the reference point on all objectives.
             var valid = true;
             for (var k = 0; k < m; k++)
-                if (obj[k] <= referencePoint[k]) { valid = false; break; }
+                if (obj[k] <= referencePoint[k])
+                {
+                    valid = false;
+                    break;
+                }
 
             if (valid) points.Add(obj);
         }
@@ -78,7 +82,9 @@ public static class HypervolumeUtils
         if (m == 1)
         {
             var best = double.MinValue;
-            foreach (var p in points) if (p[0] > best) best = p[0];
+            foreach (var p in points)
+                if (p[0] > best)
+                    best = p[0];
             return Math.Max(0.0, best - refPoint[0]);
         }
 
@@ -132,7 +138,11 @@ public static class HypervolumeUtils
             for (var j = 0; j < points.Count; j++)
             {
                 if (i == j) continue;
-                if (Dominates(points[j], points[i], m)) { dominated = true; break; }
+                if (Dominates(points[j], points[i], m))
+                {
+                    dominated = true;
+                    break;
+                }
             }
 
             if (!dominated) result.Add(points[i]);

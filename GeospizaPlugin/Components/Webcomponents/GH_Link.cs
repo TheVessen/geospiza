@@ -47,9 +47,6 @@ public class GeoLink : GH_Component
     /// </summary>
     public override Guid ComponentGuid => new("819d7e1b-ee19-49e1-9116-43156f5e0ce9");
 
-    /// <summary>
-    ///     Registers all the input parameters for this component.
-    /// </summary>
     protected override void RegisterInputParams(GH_InputParamManager pManager)
     {
         pManager.AddGenericParameter("WebGeo", "WG", "Geo to display", GH_ParamAccess.tree);
@@ -61,9 +58,6 @@ public class GeoLink : GH_Component
         pManager[3].Optional = true;
     }
 
-    /// <summary>
-    ///     Registers all the output parameters for this component.
-    /// </summary>
     protected override void RegisterOutputParams(GH_OutputParamManager pManager)
     {
     }

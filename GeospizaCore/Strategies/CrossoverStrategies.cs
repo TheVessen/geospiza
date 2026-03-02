@@ -77,7 +77,7 @@ public class SinglePointCrossover : CrossoverStrategy
 
         var genomeLength = genePoolP1.Count;
         if (genomeLength <= 1)
-            return new List<Individual> { new Individual(parent1), new Individual(parent2) };
+            return new List<Individual> { new(parent1), new(parent2) };
 
         var crossoverPoint = Random.Next(1, genomeLength);
 
@@ -131,7 +131,7 @@ public class TwoPointCrossover : CrossoverStrategy
 
         var genomeLength = parent1.GenePool.Count;
         if (genomeLength < 2)
-            return new List<Individual> { new Individual(parent1), new Individual(parent2) };
+            return new List<Individual> { new(parent1), new(parent2) };
 
         // Pick two distinct points, then ensure point1 < point2
         var crossoverPoint1 = Random.Next(0, genomeLength);
@@ -143,7 +143,6 @@ public class TwoPointCrossover : CrossoverStrategy
         var child2Genome = new List<Gene>();
 
         for (var i = 0; i < genomeLength; i++)
-        {
             if (i >= crossoverPoint1 && i <= crossoverPoint2)
             {
                 child1Genome.Add(parent2.GenePool[i]);
@@ -154,7 +153,6 @@ public class TwoPointCrossover : CrossoverStrategy
                 child1Genome.Add(parent1.GenePool[i]);
                 child2Genome.Add(parent2.GenePool[i]);
             }
-        }
 
         var child1 = new Individual(child1Genome);
         var child2 = new Individual(child2Genome);

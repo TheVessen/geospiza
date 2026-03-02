@@ -1,6 +1,7 @@
 ﻿using GeospizaCore.Utils;
 using Grasshopper.Kernel;
 using Newtonsoft.Json;
+using Rhino;
 
 namespace GeospizaCore.Core;
 
@@ -61,10 +62,8 @@ public class Population
     /// <exception cref="System.Exception">Thrown if the document or fitness component is null.</exception>
     public void TestPopulation(StateManager stateManager, EvolutionObserver evolutionObserver)
     {
-        EvaluateIndividuals(stateManager, evolutionObserver, individual =>
-        {
-            individual.SetFitness(Fitness.Instance.GetFitness());
-        });
+        EvaluateIndividuals(stateManager, evolutionObserver,
+            individual => { individual.SetFitness(Fitness.Instance.GetFitness()); });
     }
 
     /// <summary>
@@ -120,7 +119,7 @@ public class Population
             if (!(max < individual.Fitness)) continue;
 
             doc.ExpirePreview(true);
-            Rhino.RhinoApp.Wait();
+            RhinoApp.Wait();
             max = individual.Fitness;
         }
     }

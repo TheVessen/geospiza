@@ -10,7 +10,7 @@ namespace GeospizaCore.Core;
 /// </summary>
 public class Gene
 {
-    private static readonly JsonSerializerSettings _toJsonSettings = new JsonSerializerSettings
+    private static readonly JsonSerializerSettings _toJsonSettings = new()
     {
         ContractResolver = new DefaultContractResolver
         {
@@ -20,13 +20,14 @@ public class Gene
         NullValueHandling = NullValueHandling.Ignore
     };
 
-    private static readonly JsonSerializerSettings _fromJsonSettings = new JsonSerializerSettings
+    private static readonly JsonSerializerSettings _fromJsonSettings = new()
     {
         ContractResolver = new PrivateSetterContractResolver()
     };
 
     // Used by GeneConverter.ReadJson to avoid an intermediate string round-trip.
     private static readonly JsonSerializer _geneDeserializer = JsonSerializer.Create();
+
     /// <summary>
     ///     Initializes a new instance of the <see cref="Gene" /> class with specified values.
     /// </summary>
@@ -179,12 +180,18 @@ public class Gene
             }
 
             writer.WriteStartObject();
-            writer.WritePropertyName("TickValue");    writer.WriteValue(value.TickValue);
-            writer.WritePropertyName("GeneGuid");     writer.WriteValue(value.GeneGuid);
-            writer.WritePropertyName("TickCount");    writer.WriteValue(value.TickCount);
-            writer.WritePropertyName("GeneName");     writer.WriteValue(value.GeneName);
-            writer.WritePropertyName("GhInstanceGuid"); writer.WriteValue(value.GhInstanceGuid);
-            writer.WritePropertyName("GenePoolIndex"); writer.WriteValue(value.GenePoolIndex);
+            writer.WritePropertyName("TickValue");
+            writer.WriteValue(value.TickValue);
+            writer.WritePropertyName("GeneGuid");
+            writer.WriteValue(value.GeneGuid);
+            writer.WritePropertyName("TickCount");
+            writer.WriteValue(value.TickCount);
+            writer.WritePropertyName("GeneName");
+            writer.WriteValue(value.GeneName);
+            writer.WritePropertyName("GhInstanceGuid");
+            writer.WriteValue(value.GhInstanceGuid);
+            writer.WritePropertyName("GenePoolIndex");
+            writer.WriteValue(value.GenePoolIndex);
             writer.WriteEndObject();
         }
 

@@ -124,6 +124,7 @@ public class GH_NsgaResults : GH_Component
             foreach (var snap in obs.AllGenerations[g])
                 tree.Append(new GH_ObjectWrapper(snap), path);
         }
+
         DA.SetDataTree(2, tree);
 
         var paretoFront = obs.CurrentPopulation.Inhabitants

@@ -14,9 +14,6 @@ public class GH_ReinstateIndividual : GH_Component
     private Individual individual;
     private StateManager stateManager;
 
-    /// <summary>
-    ///     Initializes a new instance of the ReinstateIndividual class.
-    /// </summary>
     public GH_ReinstateIndividual()
         : base("Reinstate Individual", "Reinstate Individual",
             "Reactivates a previously archived individual in the current population",
@@ -26,19 +23,10 @@ public class GH_ReinstateIndividual : GH_Component
 
     public override GH_Exposure Exposure => GH_Exposure.tertiary;
 
-    /// <summary>
-    ///     Provides an Icon for the component.
-    /// </summary>
     protected override Bitmap Icon => Resources.ReinstateIndividuum;
 
-    /// <summary>
-    ///     Gets the unique ID for this component. Do not change this ID after release.
-    /// </summary>
     public override Guid ComponentGuid => new("6692F05D-9C4F-4B99-B4C5-CF1D91C7B639");
 
-    /// <summary>
-    ///     Registers all the input parameters for this component.
-    /// </summary>
     protected override void RegisterInputParams(GH_InputParamManager pManager)
     {
         pManager.AddGenericParameter("State Manager", "SM", "The state managers", GH_ParamAccess.item);
@@ -46,17 +34,10 @@ public class GH_ReinstateIndividual : GH_Component
         pManager.AddBooleanParameter("Reinstate", "R", "Reinstate the individual", GH_ParamAccess.item, false);
     }
 
-    /// <summary>
-    ///     Registers all the output parameters for this component.
-    /// </summary>
     protected override void RegisterOutputParams(GH_OutputParamManager pManager)
     {
     }
 
-    /// <summary>
-    ///     This is the method that actually does the work.
-    /// </summary>
-    /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
     protected override void SolveInstance(IGH_DataAccess DA)
     {
         GH_ObjectWrapper stateManagerWrapper = null;

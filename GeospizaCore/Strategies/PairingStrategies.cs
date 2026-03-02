@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using GeospizaCore.Core;
 
 namespace GeospizaCore.Strategies;
@@ -92,7 +91,6 @@ public class PairingStrategy : IPairingStrategy
 ///     Reference-point-based pairing for NSGA-III: pairs individuals within the same
 ///     reference-point niche to promote exploitation within niches while preserving
 ///     front diversity. Falls back to any partner when no niche-mate is available.
-///     
 ///     Reference: K. Deb and H. Jain, "An evolutionary many-objective optimization
 ///     algorithm using reference-point-based nondominated sorting approach, Part I:
 ///     Solving problems with box constraints," IEEE Transactions on Evolutionary
@@ -132,7 +130,6 @@ public class ReferencePointPairingStrategy : IPairingStrategy
 ///     Rank-aware pairing for NSGA-II: pairs individuals within the same Pareto front
 ///     (rank) to keep crossover within quality-equivalent solutions and avoid rank dilution.
 ///     Falls back to any partner when no same-rank mate is available.
-///     
 ///     Reference: K. Deb, A. Pratap, S. Agarwal, and T. Meyarivan, "A fast and elitist
 ///     multiobjective genetic algorithm: NSGA-II," IEEE Transactions on Evolutionary
 ///     Computation, vol. 6, no. 2, pp. 182–197, Apr. 2002,

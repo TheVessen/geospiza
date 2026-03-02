@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Drawing;
-using GeospizaCore.Core;
 using GeospizaPlugin.Properties;
 using Grasshopper.Kernel;
 
@@ -8,7 +7,6 @@ namespace GeospizaPlugin.Components.Fitness;
 
 public class GH_Fitness : GH_Component
 {
-
     public GH_Fitness()
         : base("Fitness", "F",
             "Assigns a numerical fitness score that guides the evolutionary optimization process. " +

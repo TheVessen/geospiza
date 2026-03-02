@@ -10,6 +10,7 @@ using Grasshopper.Kernel;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Parameters;
 using Grasshopper.Kernel.Types;
+using Rhino;
 
 namespace GeospizaPlugin.Components.Solvers;
 
@@ -117,7 +118,6 @@ public class GH_BasicSolver : GH_Component
 
         // Validate only when user attempts to run
         if (runButton)
-        {
             // Check for incompatible pairing strategy
             if (settings.PairingStrategy is ReferencePointPairingStrategy or RankAwarePairingStrategy)
             {
@@ -127,7 +127,6 @@ public class GH_BasicSolver : GH_Component
                     "Use Inbreeding Pairing instead, or switch to the appropriate NSGA solver.");
                 return;
             }
-        }
 
         if (_lastSolutionId != Guid.Empty && _solutionId != _lastSolutionId)
             return;
@@ -154,7 +153,7 @@ public class GH_BasicSolver : GH_Component
         {
             Message = $"Gen {e.GenerationIndex}/{maxGenerations}";
             OnDisplayExpired(true);
-            Rhino.RhinoApp.Wait();
+            RhinoApp.Wait();
         }
 
         try
@@ -167,7 +166,7 @@ public class GH_BasicSolver : GH_Component
 
             Message = "Running...";
             OnDisplayExpired(true);
-            Rhino.RhinoApp.Wait();
+            RhinoApp.Wait();
 
             var solver = new BaseSolver(_privateSettings, StateManager, EvolutionObserver);
             solver.RunAlgorithm(cts.Token);

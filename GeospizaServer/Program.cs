@@ -1,5 +1,7 @@
 ﻿using GeospizaCore.ParallelSpiza;
 
+namespace GeospizaServer;
+
 /// <summary>
 ///     !ATENTION! This is still very much in the works.
 ///     Idea is to have a server managing multiple instances of Geospiza and have a coordinator manage those instances.

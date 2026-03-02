@@ -27,6 +27,7 @@ public class HttpServer : IDisposable
             _cancellationTokenSource?.Cancel();
             _listener.Stop();
         }
+
         _cancellationTokenSource?.Dispose();
         _listener.Close();
     }

@@ -11,8 +11,8 @@ public class Fitness
     private static readonly Lazy<Fitness> _instance = new(() => new Fitness());
 
     private double _fitness;
-    private double[] _objectives = Array.Empty<double>();
     private string[] _objectiveNames = Array.Empty<string>();
+    private double[] _objectives = Array.Empty<double>();
 
     private Fitness()
     {

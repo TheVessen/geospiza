@@ -8,9 +8,6 @@ namespace GeospizaPlugin.Components.Pairing;
 
 public class GH_InbreedingPairing : GH_Component
 {
-    /// <summary>
-    ///     Initializes a new instance of the InbreedingPairing class.
-    /// </summary>
     public GH_InbreedingPairing()
         : base("Inbreeding Pairing", "IP",
             "This code is a part of a genetic algorithm that pairs individuals based on their genetic similarity or dissimilarity. " +
@@ -19,19 +16,10 @@ public class GH_InbreedingPairing : GH_Component
     {
     }
 
-    /// <summary>
-    ///     Provides an Icon for the component.
-    /// </summary>
     protected override Bitmap Icon => Resources.InBreedingStrategy;
 
-    /// <summary>
-    ///     Gets the unique ID for this component. Do not change this ID after release.
-    /// </summary>
     public override Guid ComponentGuid => new("86B5A4E3-080A-4419-A0AD-FD42CB4890F5");
 
-    /// <summary>
-    ///     Registers all the input parameters for this component.
-    /// </summary>
     protected override void RegisterInputParams(GH_InputParamManager pManager)
     {
         pManager.AddNumberParameter("In Breeding Factor", "IBF",
@@ -43,18 +31,11 @@ public class GH_InbreedingPairing : GH_Component
             "The distance function to use. 0 for euclidean, 1 for manhattan", GH_ParamAccess.item, 1);
     }
 
-    /// <summary>
-    ///     Registers all the output parameters for this component.
-    /// </summary>
     protected override void RegisterOutputParams(GH_OutputParamManager pManager)
     {
         pManager.AddGenericParameter("Pairing Strategy", "PS", "The pairing strategy", GH_ParamAccess.item);
     }
 
-    /// <summary>
-    ///     This is the method that actually does the work.
-    /// </summary>
-    /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
     protected override void SolveInstance(IGH_DataAccess DA)
     {
         double inBreedingFactor = 0;

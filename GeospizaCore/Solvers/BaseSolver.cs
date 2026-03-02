@@ -1,14 +1,14 @@
 ﻿using GeospizaCore.Core;
 using GeospizaCore.Strategies;
+using Rhino;
 
 namespace GeospizaCore.Solvers;
 
 /// <summary>
 ///     Single-objective generational evolutionary algorithm with elitism and pluggable strategies
 ///     (selection, pairing, crossover, mutation, termination).
-///     
 ///     Reference: D. E. Goldberg, \"Genetic Algorithms in Search, Optimization, and
-///     Machine Learning,\" Addison-Wesley, 1989.\n///     
+///     Machine Learning,\" Addison-Wesley, 1989.\n///
 ///     Uses a generational model where the entire population is replaced each iteration,
 ///     with elite individuals preserved to prevent fitness loss.
 /// </summary>
@@ -82,7 +82,7 @@ public class BaseSolver : EvolutionBlueprint
                 if (StateManager.PreviewLevel == 1)
                 {
                     StateManager.GetDocument().ExpirePreview(true);
-                    Rhino.RhinoApp.Wait();
+                    RhinoApp.Wait();
                 }
             }
 

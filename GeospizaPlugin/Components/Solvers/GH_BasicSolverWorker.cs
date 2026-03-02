@@ -4,20 +4,20 @@ using System.Threading;
 using System.Threading.Tasks;
 using GeospizaCore.Core;
 using GeospizaCore.Solvers;
-using GrasshopperAsyncComponent;
+using GeospizaPlugin.AsyncComponent;
 using Grasshopper.Kernel;
 
 namespace GeospizaPlugin.Components.Solvers;
 
 public class GH_BasicSolverWorker : WorkerInstance<GH_BasicSolver>
 {
+    private EvolutionObserver _evolutionObserver;
     private List<string> _geneIds;
-    private SolverSettings _settings;
     private int _previewLevel;
     private bool _run;
+    private SolverSettings _settings;
 
     private StateManager _stateManager;
-    private EvolutionObserver _evolutionObserver;
 
     public GH_BasicSolverWorker(GH_BasicSolver parent, string id, CancellationToken cancellationToken)
         : base(parent, id, cancellationToken)

@@ -1,22 +1,20 @@
 using GeospizaCore.Core;
 using GeospizaCore.Strategies;
 using Grasshopper.Kernel;
+using Rhino;
 
 namespace GeospizaCore.Solvers;
 
 /// <summary>
 ///     NSGA-III: many-objective evolutionary algorithm using reference-point-based
 ///     nondominated sorting approach (Deb &amp; Jain, 2014).
-///     
 ///     Reference: K. Deb and H. Jain, "An evolutionary many-objective optimization algorithm
 ///     using reference-point-based nondominated sorting approach, Part I: Solving problems with
 ///     box constraints," IEEE Transactions on Evolutionary Computation, vol. 18, no. 4,
 ///     pp. 577–601, Aug. 2014, doi: 10.1109/TEVC.2013.2281534.
-///     
 ///     Extends NSGA-II by replacing crowding-distance survivor selection with
 ///     structured reference-point-based niche preservation, which maintains better
 ///     diversity when there are four or more objectives.
-///     
 ///     Requires a <c>GH_MultiObjectiveFitness</c> component on the Grasshopper canvas.
 /// </summary>
 public class NsgaIIISolver : EvolutionBlueprint
@@ -84,7 +82,7 @@ public class NsgaIIISolver : EvolutionBlueprint
                 if (StateManager.PreviewLevel == 1)
                 {
                     StateManager.GetDocument().ExpirePreview(true);
-                    Rhino.RhinoApp.Wait();
+                    RhinoApp.Wait();
                 }
             }
 
@@ -118,7 +116,6 @@ public class NsgaIIISolver : EvolutionBlueprint
 
         // 1. Fill complete fronts in rank order.
         foreach (var front in fronts)
-        {
             if (nextPopulation.Count + front.Count <= PopulationSize)
             {
                 nextPopulation.AddIndividuals(front);
@@ -129,7 +126,6 @@ public class NsgaIIISolver : EvolutionBlueprint
                 criticalFront = front;
                 break;
             }
-        }
 
         if (criticalFront == null || nextPopulation.Count >= PopulationSize)
             return nextPopulation;
@@ -190,7 +186,11 @@ public class NsgaIIISolver : EvolutionBlueprint
                 for (var k = 1; k < targetCandidates.Count; k++)
                 {
                     var d = distances[targetCandidates[k]];
-                    if (d < minDist) { minDist = d; chosen = targetCandidates[k]; }
+                    if (d < minDist)
+                    {
+                        minDist = d;
+                        chosen = targetCandidates[k];
+                    }
                 }
             }
             else
@@ -264,7 +264,7 @@ public class NsgaIIISolver : EvolutionBlueprint
         if (stateManager.PreviewLevel == 1)
         {
             stateManager.GetDocument().ExpirePreview(true);
-            Rhino.RhinoApp.Wait();
+            RhinoApp.Wait();
         }
 
         return objectiveCount;

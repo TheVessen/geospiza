@@ -1,6 +1,5 @@
 using System;
 using System.Drawing;
-using GeospizaCore.Core;
 using GeospizaPlugin.Properties;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Parameters;
@@ -32,15 +31,24 @@ public class GH_MultiObjectiveFitness : GH_Component, IGH_VariableParameterCompo
     // ── IGH_VariableParameterComponent ──────────────────────────────────────
 
     public bool CanInsertParameter(GH_ParameterSide side, int index)
-        => side == GH_ParameterSide.Input;
+    {
+        return side == GH_ParameterSide.Input;
+    }
 
     public bool CanRemoveParameter(GH_ParameterSide side, int index)
-        => side == GH_ParameterSide.Input && Params.Input.Count > 2;
+    {
+        return side == GH_ParameterSide.Input && Params.Input.Count > 2;
+    }
 
     public IGH_Param CreateParameter(GH_ParameterSide side, int index)
-        => new Param_Number { Access = GH_ParamAccess.item };
+    {
+        return new Param_Number { Access = GH_ParamAccess.item };
+    }
 
-    public bool DestroyParameter(GH_ParameterSide side, int index) => true;
+    public bool DestroyParameter(GH_ParameterSide side, int index)
+    {
+        return true;
+    }
 
     public void VariableParameterMaintenance()
     {
@@ -52,6 +60,7 @@ public class GH_MultiObjectiveFitness : GH_Component, IGH_VariableParameterCompo
                 Params.Input[i].Name = $"Fitness {i}";
                 Params.Input[i].NickName = $"F{i}";
             }
+
             Params.Input[i].Description = $"Fitness objective {i} for multi-objective optimization.";
             Params.Input[i].Optional = i >= 1;
         }

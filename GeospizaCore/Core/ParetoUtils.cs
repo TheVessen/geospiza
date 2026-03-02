@@ -63,15 +63,15 @@ public static class ParetoUtils
         {
             var nextFront = new List<int>();
             foreach (var i in frontIndices[currentFront])
-                foreach (var j in dominatedSets[i])
+            foreach (var j in dominatedSets[i])
+            {
+                dominationCount[j]--;
+                if (dominationCount[j] == 0)
                 {
-                    dominationCount[j]--;
-                    if (dominationCount[j] == 0)
-                    {
-                        population[j].SetParetoRank(currentFront + 1);
-                        nextFront.Add(j);
-                    }
+                    population[j].SetParetoRank(currentFront + 1);
+                    nextFront.Add(j);
                 }
+            }
 
             currentFront++;
             frontIndices.Add(nextFront);
@@ -97,7 +97,6 @@ public static class ParetoUtils
     ///     Generates uniformly distributed reference points on the unit simplex
     ///     using the Das &amp; Dennis systematic lattice.
     ///     Produces C(<paramref name="divisions" /> + M − 1, M − 1) points, where M = <paramref name="objectiveCount" />.
-    ///     
     ///     Reference: I. Das and J. E. Dennis, "Normal-boundary intersection: A new method for
     ///     generating the Pareto surface in nonlinear multicriteria optimization problems,"
     ///     SIAM Journal on Optimization, vol. 8, no. 3, pp. 631–657, Aug. 1998,
@@ -139,7 +138,11 @@ public static class ParetoUtils
 
         var ideal = new double[objectiveCount];
         var nadir = new double[objectiveCount];
-        for (var m = 0; m < objectiveCount; m++) { ideal[m] = double.MaxValue; nadir[m] = double.MinValue; }
+        for (var m = 0; m < objectiveCount; m++)
+        {
+            ideal[m] = double.MaxValue;
+            nadir[m] = double.MinValue;
+        }
 
         foreach (var ind in population)
         {
@@ -191,7 +194,11 @@ public static class ParetoUtils
             for (var r = 0; r < referencePoints.Count; r++)
             {
                 var d = PerpendicularDistance(norm, referencePoints[r]);
-                if (d < minDist) { minDist = d; minRef = r; }
+                if (d < minDist)
+                {
+                    minDist = d;
+                    minRef = r;
+                }
             }
 
             refIndices[i] = minRef;

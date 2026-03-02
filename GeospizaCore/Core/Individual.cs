@@ -6,13 +6,13 @@ namespace GeospizaCore.Core;
 
 public class Individual : IEquatable<Individual>
 {
-    private static readonly JsonSerializerSettings _toJsonSettings = new JsonSerializerSettings
+    private static readonly JsonSerializerSettings _toJsonSettings = new()
     {
         FloatFormatHandling = FloatFormatHandling.String,
         Converters = { new Gene.GeneConverter() }
     };
 
-    private static readonly JsonSerializerSettings _fromJsonSettings = new JsonSerializerSettings
+    private static readonly JsonSerializerSettings _fromJsonSettings = new()
     {
         ContractResolver = new PrivateSetterContractResolver(),
         Converters = { new Gene.GeneConverter() }

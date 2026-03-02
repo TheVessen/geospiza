@@ -4,12 +4,12 @@ using System.Drawing;
 using System.Threading;
 using GeospizaCore.Core;
 using GeospizaCore.Solvers;
-using GeospizaCore.Strategies;
 using GeospizaPlugin.Properties;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Parameters;
 using Grasshopper.Kernel.Types;
+using Rhino;
 
 namespace GeospizaPlugin.Components.Solvers;
 
@@ -24,8 +24,8 @@ public class GH_NsgaIIISolver : GH_Component
     private bool _isLocked;
     private bool _isRunning;
     private Guid _lastSolutionId;
-    private SolverSettings _privateSettings;
     private int _privateDivisions = 12;
+    private SolverSettings _privateSettings;
     private Guid _solutionId = Guid.NewGuid();
 
     public GH_NsgaIIISolver()
@@ -146,7 +146,6 @@ public class GH_NsgaIIISolver : GH_Component
 
         // Validate only when user attempts to run
         if (runButton)
-        {
             // Check for Multi-Objective Fitness
             if (GeospizaCore.Core.Fitness.Instance.GetObjectives().Length == 0)
             {
@@ -156,7 +155,6 @@ public class GH_NsgaIIISolver : GH_Component
                     "The single-objective Fitness component does not work with NSGA-III.");
                 return;
             }
-        }
 
         if (_lastSolutionId != Guid.Empty && _solutionId != _lastSolutionId)
             return;
@@ -183,7 +181,7 @@ public class GH_NsgaIIISolver : GH_Component
         {
             Message = $"Gen {e.GenerationIndex}/{maxGenerations}";
             OnDisplayExpired(true);
-            Rhino.RhinoApp.Wait();
+            RhinoApp.Wait();
         }
 
         try
@@ -196,7 +194,7 @@ public class GH_NsgaIIISolver : GH_Component
 
             Message = "Running...";
             OnDisplayExpired(true);
-            Rhino.RhinoApp.Wait();
+            RhinoApp.Wait();
 
             var solver = new NsgaIIISolver(_privateSettings, StateManager, EvolutionObserver, _privateDivisions);
             solver.RunAlgorithm(cts.Token);

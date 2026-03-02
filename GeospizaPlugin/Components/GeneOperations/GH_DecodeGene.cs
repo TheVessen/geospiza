@@ -9,7 +9,6 @@ namespace GeospizaPlugin.Components.GeneOperations;
 
 public class GH_DecodeGene : GH_Component
 {
-
     public GH_DecodeGene()
         : base("Decode Gene", "DG",
             "Decodes a gene into its name, value and unique identifier",

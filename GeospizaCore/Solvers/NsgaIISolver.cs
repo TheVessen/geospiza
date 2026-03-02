@@ -1,18 +1,17 @@
 using GeospizaCore.Core;
 using GeospizaCore.Strategies;
 using Grasshopper.Kernel;
+using Rhino;
 
 namespace GeospizaCore.Solvers;
 
 /// <summary>
 ///     NSGA-II: nondominated sorting genetic algorithm II, a fast and elitist
 ///     multi-objective evolutionary algorithm (Deb et al., 2002).
-///     
 ///     Reference: K. Deb, A. Pratap, S. Agarwal, and T. Meyarivan, "A fast and elitist
 ///     multiobjective genetic algorithm: NSGA-II," IEEE Transactions on Evolutionary
 ///     Computation, vol. 6, no. 2, pp. 182–197, Apr. 2002,
 ///     doi: 10.1109/4235.996017.
-///     
 ///     Runs alongside <see cref="BaseSolver" /> without modifying it.
 ///     Requires a <c>GH_MultiObjectiveFitness</c> component on the Grasshopper canvas.
 /// </summary>
@@ -78,7 +77,7 @@ public class NsgaIISolver : EvolutionBlueprint
                 if (StateManager.PreviewLevel == 1)
                 {
                     StateManager.GetDocument().ExpirePreview(true);
-                    Rhino.RhinoApp.Wait();
+                    RhinoApp.Wait();
                 }
             }
 
@@ -152,7 +151,7 @@ public class NsgaIISolver : EvolutionBlueprint
         if (stateManager.PreviewLevel == 1)
         {
             stateManager.GetDocument().ExpirePreview(true);
-            Rhino.RhinoApp.Wait();
+            RhinoApp.Wait();
         }
 
         return objectiveCount;
