@@ -12,7 +12,7 @@ public class GH_SinglePointCrossover : GH_Component
         : base("Single Point Crossover", "SPC",
             "Combines two parents by cutting their gene sequence at one random position and swapping the tails, " +
             "producing two offspring. When crossover is skipped (controlled by the rate), both parents pass through unchanged.",
-            "Geospiza", "CrossoverStrategies")
+            "Geospiza", "Crossover Strategies")
     {
     }
 

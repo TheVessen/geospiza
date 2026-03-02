@@ -16,8 +16,8 @@ public abstract class MutationStrategy : IMutationStrategy
 }
 
 /// <summary>
-///     The FixedValueMutation class represents a mutation strategy that applies a fixed value mutation to each gene in an
-///     individual's gene pool. Meaning that a fixed value is added or subtracted from the gene value.
+///     Fixed-value mutation: adds or subtracts a fixed value from each gene independently
+///     with given mutation probability. Useful for continuous or ordered domains.
 /// </summary>
 public class FixedValueMutation : MutationStrategy
 {
@@ -47,9 +47,8 @@ public class FixedValueMutation : MutationStrategy
 }
 
 /// <summary>
-///     The PercentageMutation class represents a mutation strategy that applies a percentage-based mutation to each gene
-///     in an individual's gene pool. Meaning that a percentage of the gene value is added or subtracted from the gene
-///     value.
+///     Percentage-based mutation: mutates each gene by adding/subtracting a percentage of its current value.
+///     Maintains relative gene scaling across different ranges.
 /// </summary>
 public class PercentageMutation : MutationStrategy
 {
@@ -84,9 +83,8 @@ public class PercentageMutation : MutationStrategy
 }
 
 /// <summary>
-///     The RandomMutation class represents a mutation strategy that applies a random mutation to each gene in an
-///     individual's gene pool. Meaning that a random value is assigned to the gene value. The amount of individuals
-///     effected by the mutation is determined by the mutation rate.
+///     Random mutation: replaces each gene with a uniformly random value from its valid range.
+///     Provides maximum exploration and is useful for breaking out of local optima.
 /// </summary>
 public class RandomMutation : MutationStrategy
 {

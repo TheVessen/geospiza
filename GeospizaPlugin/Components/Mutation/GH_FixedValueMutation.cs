@@ -16,7 +16,7 @@ public class GH_FixedValueMutation : GH_Component
             "Applies a fixed value mutation strategy in a genetic algorithm. This strategy alters genes of the " +
             "individuals in the population by a fixed value, aiding in the exploration " +
             "of the solution space. The mutation rate and value are adjustable parameters.",
-            "Geospiza", "MutationStrategies")
+            "Geospiza", "Mutation Strategies")
     {
     }
 

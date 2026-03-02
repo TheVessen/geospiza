@@ -14,7 +14,7 @@ public class GH_SettingToJson : GH_Component
     public GH_SettingToJson()
         : base("Setting To Json", "SToJ",
             "Converts a setting to a JSON string",
-            "Geospiza", "Converter")
+            "Geospiza", "Converters")
     {
     }
 

@@ -13,7 +13,7 @@ public class GH_SettingFromJson : GH_Component
     public GH_SettingFromJson()
         : base("Setting From Json", "SFJ",
             "Converts a JSON string to a setting",
-            "Geospiza", "Converter")
+            "Geospiza", "Converters")
     {
     }
 

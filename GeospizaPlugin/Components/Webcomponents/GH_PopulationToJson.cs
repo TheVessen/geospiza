@@ -58,7 +58,7 @@ public class GH_PopulationToJSON : GH_Component
         var populationWrapper = new GH_ObjectWrapper();
         if (!DA.GetData(0, ref populationWrapper)) return;
 
-        if (populationWrapper.Value is Population population)
+        if (populationWrapper.Value is GeospizaCore.Core.Population population)
         {
             var json = population.ToJson();
 

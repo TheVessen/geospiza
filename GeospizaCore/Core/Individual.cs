@@ -6,6 +6,18 @@ namespace GeospizaCore.Core;
 
 public class Individual : IEquatable<Individual>
 {
+    private static readonly JsonSerializerSettings _toJsonSettings = new JsonSerializerSettings
+    {
+        FloatFormatHandling = FloatFormatHandling.String,
+        Converters = { new Gene.GeneConverter() }
+    };
+
+    private static readonly JsonSerializerSettings _fromJsonSettings = new JsonSerializerSettings
+    {
+        ContractResolver = new PrivateSetterContractResolver(),
+        Converters = { new Gene.GeneConverter() }
+    };
+
     // Keep private list for internal modifications
     private readonly List<Gene> _genePool;
 
@@ -44,6 +56,7 @@ public class Individual : IEquatable<Individual>
         Objectives = individual.Objectives != null ? (double[])individual.Objectives.Clone() : null;
         ParetoRank = individual.ParetoRank;
         CrowdingDistance = individual.CrowdingDistance;
+        ReferencePointIndex = individual.ReferencePointIndex;
     }
 
     /// <summary>
@@ -89,7 +102,12 @@ public class Individual : IEquatable<Individual>
     /// </summary>
     public double CrowdingDistance { get; private set; }
 
-    private int Generation { get; set; }
+    /// <summary>
+    ///     Index of the nearest NSGA-III reference point. Transient — recomputed each generation, not serialized.
+    /// </summary>
+    public int ReferencePointIndex { get; private set; } = -1;
+
+    public int Generation { get; private set; }
 
     public bool Equals(Individual? other)
     {
@@ -152,6 +170,11 @@ public class Individual : IEquatable<Individual>
         CrowdingDistance = distance;
     }
 
+    public void SetReferencePointIndex(int index)
+    {
+        ReferencePointIndex = index;
+    }
+
     /// <summary>
     ///     Sets the generation of the individual that its living in.
     /// </summary>
@@ -207,13 +230,7 @@ public class Individual : IEquatable<Individual>
     /// <returns></returns>
     public string ToJson()
     {
-        var settings = new JsonSerializerSettings
-        {
-            Formatting = Formatting.Indented,
-            Converters = new List<JsonConverter> { new Gene.GeneConverter() }
-        };
-
-        return JsonConvert.SerializeObject(this, settings);
+        return JsonConvert.SerializeObject(this, _toJsonSettings);
     }
 
     /// <summary>
@@ -228,13 +245,7 @@ public class Individual : IEquatable<Individual>
         if (string.IsNullOrEmpty(json))
             throw new ArgumentException("JSON string cannot be null or empty", nameof(json));
 
-        var settings = new JsonSerializerSettings
-        {
-            ContractResolver = new PrivateSetterContractResolver(),
-            Converters = new List<JsonConverter> { new Gene.GeneConverter() }
-        };
-
-        return JsonConvert.DeserializeObject<Individual>(json, settings)
+        return JsonConvert.DeserializeObject<Individual>(json, _fromJsonSettings)
                ?? throw new JsonSerializationException("Failed to deserialize Individual from JSON");
     }
 
@@ -243,12 +254,46 @@ public class Individual : IEquatable<Individual>
     /// </summary>
     public class IndividualConverter : JsonConverter<Individual>
     {
+        // No IndividualConverter here to avoid infinite recursion when deserializing.
+        private static readonly JsonSerializer _deserializer = JsonSerializer.Create(new JsonSerializerSettings
+        {
+            ContractResolver = new PrivateSetterContractResolver(),
+            Converters = { new Gene.GeneConverter() }
+        });
+
         public override void WriteJson(JsonWriter writer, Individual value, JsonSerializer serializer)
         {
             if (writer == null) throw new ArgumentNullException(nameof(writer));
             if (value == null) throw new ArgumentNullException(nameof(value));
 
-            writer.WriteRawValue(value.ToJson());
+            // Write properties directly using the existing writer/serializer — no nested serializer.
+            writer.WriteStartObject();
+
+            writer.WritePropertyName("GenePool");
+            serializer.Serialize(writer, value.GenePool);
+
+            writer.WritePropertyName("Fitness");
+            writer.WriteValue(value.Fitness);
+
+            writer.WritePropertyName("Probability");
+            writer.WriteValue(value.Probability);
+
+            writer.WritePropertyName("Generation");
+            writer.WriteValue(value.Generation);
+
+            if (value.Objectives != null)
+            {
+                writer.WritePropertyName("Objectives");
+                serializer.Serialize(writer, value.Objectives);
+            }
+
+            writer.WritePropertyName("ParetoRank");
+            writer.WriteValue(value.ParetoRank);
+
+            writer.WritePropertyName("CrowdingDistance");
+            writer.WriteValue(value.CrowdingDistance);
+
+            writer.WriteEndObject();
         }
 
         public override Individual ReadJson(JsonReader reader, Type objectType, Individual existingValue,
@@ -256,8 +301,10 @@ public class Individual : IEquatable<Individual>
         {
             if (reader == null) throw new ArgumentNullException(nameof(reader));
 
-            var jsonObject = JObject.Load(reader);
-            return FromJson(jsonObject.ToString());
+            // Load once into JObject and deserialize directly — no intermediate string round-trip.
+            var obj = JObject.Load(reader);
+            return obj.ToObject<Individual>(_deserializer)
+                   ?? throw new JsonSerializationException("Failed to deserialize Individual");
         }
     }
 }

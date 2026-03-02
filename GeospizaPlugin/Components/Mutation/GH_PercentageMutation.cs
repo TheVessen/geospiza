@@ -16,7 +16,7 @@ public class GH_PercentageMutation : GH_Component
             "The PercentageMutation applies a mutation to each gene in an individual's gene pool. " +
             "It calculates a mutation amount based on the gene's current value and a predefined mutation percentage, " +
             "then adjusts the gene's value within a valid range, introducing variability in the gene pool.",
-            "Geospiza", "MutationStrategies")
+            "Geospiza", "Mutation Strategies")
     {
     }
 

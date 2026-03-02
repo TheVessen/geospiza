@@ -38,10 +38,13 @@ public abstract class CrossoverStrategy : ICrossoverStrategy
 }
 
 /// <summary>
-///     Represents a single point crossover strategy.
+///     Single-point crossover: selects a random position in the gene sequence and
+///     swaps the tails of two parents to produce two offspring.
 /// </summary>
 /// <remarks>
-///     Source: https://en.wikipedia.org/wiki/Crossover_(genetic_algorithm)
+///     Reference: D. E. Goldberg, "Genetic Algorithms in Search, Optimization, and
+///     Machine Learning," Addison-Wesley, 1989. ISBN 0-201-15767-5.
+///     Also: https://en.wikipedia.org/wiki/Crossover_(genetic_algorithm)
 /// </remarks>
 public class SinglePointCrossover : CrossoverStrategy
 {
@@ -95,8 +98,14 @@ public class SinglePointCrossover : CrossoverStrategy
 }
 
 /// <summary>
-///     Represents a two point crossover strategy.
+///     Two-point crossover: selects two random positions in the gene sequence and
+///     swaps the middle segment of two parents to produce two offspring.
+///     Preserves more gene linkage structure than single-point crossover.
 /// </summary>
+/// <remarks>
+///     Reference: D. E. Goldberg, "Genetic Algorithms in Search, Optimization, and
+///     Machine Learning," Addison-Wesley, 1989. ISBN 0-201-15767-5.
+/// </remarks>
 public class TwoPointCrossover : CrossoverStrategy
 {
     /// <summary>

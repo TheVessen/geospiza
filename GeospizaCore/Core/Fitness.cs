@@ -12,6 +12,7 @@ public class Fitness
 
     private double _fitness;
     private double[] _objectives = Array.Empty<double>();
+    private string[] _objectiveNames = Array.Empty<string>();
 
     private Fitness()
     {
@@ -46,6 +47,16 @@ public class Fitness
         return _objectives;
     }
 
+    public void SetObjectiveNames(string[] names)
+    {
+        _objectiveNames = names;
+    }
+
+    public string[] GetObjectiveNames()
+    {
+        return _objectiveNames;
+    }
+
     /// <summary>
     ///     Reset the fitness value to 0.
     /// </summary>
@@ -53,5 +64,6 @@ public class Fitness
     {
         _fitness = 0;
         _objectives = Array.Empty<double>();
+        _objectiveNames = Array.Empty<string>();
     }
 }

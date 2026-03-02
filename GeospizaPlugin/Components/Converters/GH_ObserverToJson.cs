@@ -14,7 +14,7 @@ public class GH_ObserverToJson : GH_Component
     public GH_ObserverToJson()
         : base("Observer To Json", "OToJ",
             "Converts an observer to a JSON string",
-            "Geospiza", "Converter")
+            "Geospiza", "Converters")
     {
     }
 

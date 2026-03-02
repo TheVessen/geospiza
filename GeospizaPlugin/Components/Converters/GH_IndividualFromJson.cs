@@ -13,7 +13,7 @@ public class GH_IndividualFromJson : GH_Component
     public GH_IndividualFromJson()
         : base("Individual From Json", "IFJ",
             "Converts a JSON string to an individual",
-            "Geospiza", "Converter")
+            "Geospiza", "Converters")
     {
     }
 

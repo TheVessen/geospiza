@@ -1,5 +1,7 @@
-﻿using System;
+using System;
+using System.Collections.Generic;
 using System.Drawing;
+using System.Linq;
 using GeospizaCore.Core;
 using GeospizaPlugin.Properties;
 using Grasshopper.Kernel;
@@ -9,56 +11,39 @@ namespace GeospizaPlugin.Components.Converters;
 
 public class IndividualToJson : GH_Component
 {
-    /// <summary>
-    ///     Initializes a new instance of the IndividualToJson class.
-    /// </summary>
     public IndividualToJson()
         : base("Individual To Json", "IToJ",
-            "Converts an individual to a JSON string",
-            "Geospiza", "Converter")
+            "Converts individuals to JSON strings",
+            "Geospiza", "Converters")
     {
     }
 
-    /// <summary>
-    ///     Provides an Icon for the component.
-    /// </summary>
     protected override Bitmap Icon => Resources.IndividualToJSON;
 
-    /// <summary>
-    ///     Gets the unique ID for this component. Do not change this ID after release.
-    /// </summary>
     public override Guid ComponentGuid => new("FDB78846-7982-42E4-B8ED-EF37AC136612");
 
-    /// <summary>
-    ///     Registers all the input parameters for this component.
-    /// </summary>
     protected override void RegisterInputParams(GH_InputParamManager pManager)
     {
-        pManager.AddGenericParameter("Individual", "I", "The individual to convert to JSON", GH_ParamAccess.item);
+        pManager.AddGenericParameter("Individuals", "I", "The individuals to convert to JSON",
+            GH_ParamAccess.list);
     }
 
-    /// <summary>
-    ///     Registers all the output parameters for this component.
-    /// </summary>
     protected override void RegisterOutputParams(GH_OutputParamManager pManager)
     {
-        pManager.AddTextParameter("JSON", "J", "The JSON string", GH_ParamAccess.item);
+        pManager.AddTextParameter("JSON", "J", "The JSON strings", GH_ParamAccess.list);
     }
 
-    /// <summary>
-    ///     This is the method that actually does the work.
-    /// </summary>
-    /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
     protected override void SolveInstance(IGH_DataAccess DA)
     {
-        var individualWrapper = new GH_ObjectWrapper();
-        if (!DA.GetData(0, ref individualWrapper)) return;
+        var wrappers = new List<GH_ObjectWrapper>();
+        if (!DA.GetDataList(0, wrappers)) return;
 
-        if (individualWrapper.Value is Individual individual)
-        {
-            var json = individual.ToJson();
+        var results = wrappers
+            .Select(w => w.Value)
+            .OfType<Individual>()
+            .Select(ind => ind.ToJson())
+            .ToList();
 
-            DA.SetData(0, json);
-        }
+        DA.SetDataList(0, results);
     }
 }

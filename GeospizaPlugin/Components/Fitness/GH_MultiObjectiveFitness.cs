@@ -84,7 +84,7 @@ public class GH_MultiObjectiveFitness : GH_Component, IGH_VariableParameterCompo
             names[i] = Params.Input[i].Name;
         }
 
-        Fitness.Instance.SetObjectives(objectives);
-        Fitness.Instance.SetObjectiveNames(names);
+        GeospizaCore.Core.Fitness.Instance.SetObjectives(objectives);
+        GeospizaCore.Core.Fitness.Instance.SetObjectiveNames(names);
     }
 }

@@ -15,7 +15,7 @@ public class GH_RouletteWheelSelection : GH_Component
         : base("Roulette Wheel Selection", "RWS",
             "Performs a roulette wheel selection. In Roulette Wheel Selection, the fitness of an individual is used to assign a probability of selection." +
             "Think of it as a Roulette Wheel where each individual takes up a slice of the wheel, but the size of the slice is proportional to the individual's fitness.",
-            "Geospiza", "Selection Strategy")
+            "Geospiza", "Selection Strategies")
     {
     }
 

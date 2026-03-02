@@ -14,20 +14,15 @@ public abstract class SelectionStrategy : ISelectionStrategy
 }
 
 /// <summary>
-///     Implements the Tournament Selection strategy for selecting individuals in a genetic algorithm.
+///     Tournament selection: competes a randomly selected subset of individuals and picks the fittest.
+///     Provides a balance between selection pressure and diversity.
 /// </summary>
 /// <remarks>
-///     Tournament Selection is a method used in genetic algorithms for selecting potentially useful solutions for
-///     recombination.
-///     In Tournament Selection, a subset of individuals is chosen from the population, and the individual with the highest
-///     fitness in this group is selected.
-///     The process is repeated until the desired number of individuals is selected.
-///     This class requires the size of the tournament and the number of selections to be made as parameters.
-///     The Select method randomly selects individuals for each tournament and chooses the best individual from each
-///     tournament to be part of the next generation.
-///     Note: This selection method maintains diversity in the population as it gives all individuals,
-///     regardless of their fitness, a chance to be selected. However,
-///     it also ensures that fitter individuals have a higher chance of being selected.
+///     Reference: J. Miller and W. M. Spears, "Automated assembly design synthesis with
+///     a genetic algorithm," in Proceedings of the Evolutionary Programming Conference,
+///     pp. 87–98, 1993.
+///     Also: D. E. Goldberg, "Genetic Algorithms in Search, Optimization, and Machine Learning,"
+///     Addison-Wesley, 1989.
 /// </remarks>
 public class TournamentSelection : SelectionStrategy
 {
@@ -104,21 +99,13 @@ public class TournamentSelection : SelectionStrategy
 }
 
 /// <summary>
-///     Implements the Roulette Wheel Selection strategy for selecting individuals in a genetic algorithm.
+///     Roulette Wheel Selection (fitness-proportionate selection): each individual is selected
+///     with probability proportional to its fitness relative to the total population fitness.
 /// </summary>
 /// <remarks>
-///     Roulette Wheel Selection, also known as fitness proportionate selection, is a method used
-///     in genetic algorithms for selecting potentially useful solutions for recombination.
-///     In Roulette Wheel Selection, the fitness of an individual is used to assign a probability of selection.
-///     Think of it as a Roulette Wheel where each individual takes up a slice of the wheel, but the size of the slice is
-///     proportional to the individual's fitness.
-///     Those with the highest fitness have larger slices and therefore a higher chance of being selected.
-///     This class requires the number of selections to be made as a parameter.
-///     The Select method calculates the total fitness of the population and then iterates over the population, selecting
-///     individuals based on their proportional fitness.
-///     Note: This selection method can lead to premature convergence
-///     as the fittest individuals are more likely to be selected, potentially reducing the genetic diversity in the
-///     population.
+///     Reference: D. E. Goldberg, "Genetic Algorithms in Search, Optimization, and
+///     Machine Learning," Addison-Wesley, 1989.
+///     Also known as Fitness-Proportionate Selection or Stochastic Acceptance.
 /// </remarks>
 public class RouletteWheelSelection : SelectionStrategy
 {
@@ -376,28 +363,14 @@ public class ExclusiveSelection : SelectionStrategy
 }
 
 /// <summary>
-///     Implements the Stochastic Universal Sampling (SUS) strategy for selecting individuals in a genetic algorithm.
+///     Stochastic Universal Sampling (SUS): distributes selection pointers evenly across the
+///     fitness landscape to ensure spread-out selection while maintaining fitness-proportionality.
+///     Reduces genetic drift and maintains diversity better than roulette wheel.
 /// </summary>
 /// <remarks>
-///     Stochastic Universal Sampling is a method used in genetic algorithms for selecting potentially useful solutions for
-///     recombination.
-///     It is a type of fitness proportionate selection. The main advantage of SUS over simple roulette wheel selection is
-///     that it ensures a spread of selection points, which promotes preservation of diversity.
-///     In SUS, the fitness of each individual is used to assign a probability of selection. However, instead of selecting
-///     individuals one at a time, SUS selects all individuals at once by spreading out evenly spaced pointers over the
-///     population's
-///     fitness values sorted in ascending order. This ensures a more even spread of selection points and helps maintain
-///     diversity in the population.
-///     This class requires the number of selections to be made as a parameter.
-///     The Select method calculates the total fitness of the population, generates a random starting point, and then
-///     selects
-///     individuals based on their proportional fitness.
-///     The starting point is incremented by a fixed distance for each selection, ensuring a spread of selection points
-///     across the population.
-///     Note: This selection method maintains diversity in the population as it gives all individuals,
-///     regardless of their fitness, a chance to be selected. However, it also ensures that fitter individuals have a
-///     higher
-///     chance of being selected.
+///     Reference: J. E. Baker, "Reducing bias and inefficiency in the selection algorithm,"
+///     in Proceedings of the Second International Conference on Genetic Algorithms and their
+///     Application, pp. 14–21, July 1987.
 /// </remarks>
 public class StochasticUniversalSampling : SelectionStrategy
 {

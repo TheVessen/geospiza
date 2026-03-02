@@ -17,7 +17,7 @@ public class GH_RandomMutation : GH_Component
             "random number within the range of the gene's valid values. This strategy " +
             "introduces variability in the gene pool, aiding in the " +
             "exploration of the solution space.",
-            "Geospiza", "MutationStrategies")
+            "Geospiza", "Mutation Strategies")
     {
     }
 

@@ -15,7 +15,7 @@ public class GH_InbreedingPairing : GH_Component
         : base("Inbreeding Pairing", "IP",
             "This code is a part of a genetic algorithm that pairs individuals based on their genetic similarity or dissimilarity. " +
             "It uses an in-breeding factor to determine the preference for selecting mates.",
-            "Geospiza", "PairingStrategies")
+            "Geospiza", "Pairing Strategies")
     {
     }
 

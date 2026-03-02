@@ -4,7 +4,13 @@ using GeospizaCore.Strategies;
 namespace GeospizaCore.Solvers;
 
 /// <summary>
-///     Single-objective generational evolutionary solver with elitism and pluggable strategies.
+///     Single-objective generational evolutionary algorithm with elitism and pluggable strategies
+///     (selection, pairing, crossover, mutation, termination).
+///     
+///     Reference: D. E. Goldberg, \"Genetic Algorithms in Search, Optimization, and
+///     Machine Learning,\" Addison-Wesley, 1989.\n///     
+///     Uses a generational model where the entire population is replaced each iteration,
+///     with elite individuals preserved to prevent fitness loss.
 /// </summary>
 public class BaseSolver : EvolutionBlueprint
 {
@@ -25,6 +31,7 @@ public class BaseSolver : EvolutionBlueprint
     public override void RunAlgorithm(CancellationToken cancellationToken)
     {
         InitializePopulation(StateManager, EvolutionObserver);
+        CaptureBaseRates();
         var completed = false;
         try
         {
@@ -62,6 +69,7 @@ public class BaseSolver : EvolutionBlueprint
 
                 StateManager.GetDocument().ExpirePreview(false);
                 EvolutionObserver.Snapshot(newPopulation);
+                AdaptStrategies(EvolutionObserver);
 
                 //TODO: For multi processing here would be the point to send the observer to the main thread
 

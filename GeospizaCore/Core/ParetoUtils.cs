@@ -63,15 +63,15 @@ public static class ParetoUtils
         {
             var nextFront = new List<int>();
             foreach (var i in frontIndices[currentFront])
-            foreach (var j in dominatedSets[i])
-            {
-                dominationCount[j]--;
-                if (dominationCount[j] == 0)
+                foreach (var j in dominatedSets[i])
                 {
-                    population[j].SetParetoRank(currentFront + 1);
-                    nextFront.Add(j);
+                    dominationCount[j]--;
+                    if (dominationCount[j] == 0)
+                    {
+                        population[j].SetParetoRank(currentFront + 1);
+                        nextFront.Add(j);
+                    }
                 }
-            }
 
             currentFront++;
             frontIndices.Add(nextFront);
@@ -88,6 +88,141 @@ public static class ParetoUtils
 
         return fronts;
     }
+
+    // =========================================================================
+    // NSGA-III reference-point utilities (Deb & Jain 2014)
+    // =========================================================================
+
+    /// <summary>
+    ///     Generates uniformly distributed reference points on the unit simplex
+    ///     using the Das &amp; Dennis systematic lattice.
+    ///     Produces C(<paramref name="divisions" /> + M − 1, M − 1) points, where M = <paramref name="objectiveCount" />.
+    ///     
+    ///     Reference: I. Das and J. E. Dennis, "Normal-boundary intersection: A new method for
+    ///     generating the Pareto surface in nonlinear multicriteria optimization problems,"
+    ///     SIAM Journal on Optimization, vol. 8, no. 3, pp. 631–657, Aug. 1998,
+    ///     doi: 10.1137/S1052623496307510.
+    /// </summary>
+    public static List<double[]> GenerateReferencePoints(int objectiveCount, int divisions)
+    {
+        var points = new List<double[]>();
+        GenerateRefPointsRecursive(new double[objectiveCount], 0, divisions, divisions, points);
+        return points;
+    }
+
+    private static void GenerateRefPointsRecursive(
+        double[] point, int depth, int remaining, int total, List<double[]> result)
+    {
+        if (depth == point.Length - 1)
+        {
+            point[depth] = (double)remaining / total;
+            result.Add((double[])point.Clone());
+            return;
+        }
+
+        for (var i = 0; i <= remaining; i++)
+        {
+            point[depth] = (double)i / total;
+            GenerateRefPointsRecursive(point, depth + 1, remaining - i, total, result);
+        }
+    }
+
+    /// <summary>
+    ///     Normalizes each individual's objectives using the ideal point (per-objective minimum)
+    ///     and the objective range across <paramref name="population" />.
+    ///     Returns a jagged array <c>normalized[individualIndex][objectiveIndex]</c>.
+    /// </summary>
+    public static double[][] NormalizeObjectives(List<Individual> population, int objectiveCount)
+    {
+        var n = population.Count;
+        const double epsilon = 1e-10;
+
+        var ideal = new double[objectiveCount];
+        var nadir = new double[objectiveCount];
+        for (var m = 0; m < objectiveCount; m++) { ideal[m] = double.MaxValue; nadir[m] = double.MinValue; }
+
+        foreach (var ind in population)
+        {
+            var obj = ind.Objectives!;
+            for (var m = 0; m < objectiveCount; m++)
+            {
+                if (obj[m] < ideal[m]) ideal[m] = obj[m];
+                if (obj[m] > nadir[m]) nadir[m] = obj[m];
+            }
+        }
+
+        var range = new double[objectiveCount];
+        for (var m = 0; m < objectiveCount; m++)
+            range[m] = Math.Max(nadir[m] - ideal[m], epsilon);
+
+        var normalized = new double[n][];
+        for (var i = 0; i < n; i++)
+        {
+            var obj = population[i].Objectives!;
+            normalized[i] = new double[objectiveCount];
+            for (var m = 0; m < objectiveCount; m++)
+                normalized[i][m] = (obj[m] - ideal[m]) / range[m];
+        }
+
+        return normalized;
+    }
+
+    /// <summary>
+    ///     Associates each individual (by normalized objectives) to the nearest reference point
+    ///     using perpendicular distance from the origin-to-reference-point line.
+    ///     Sets <see cref="Individual.ReferencePointIndex" /> on every individual in <paramref name="population" />.
+    /// </summary>
+    /// <returns>
+    ///     Tuple of (<c>refIndices</c>, <c>distances</c>) parallel arrays indexed by population position.
+    /// </returns>
+    public static (int[] refIndices, double[] distances) AssociateToReferencePoints(
+        List<Individual> population, double[][] normalizedObjectives, List<double[]> referencePoints)
+    {
+        var n = population.Count;
+        var refIndices = new int[n];
+        var distances = new double[n];
+
+        for (var i = 0; i < n; i++)
+        {
+            var norm = normalizedObjectives[i];
+            var minDist = double.MaxValue;
+            var minRef = 0;
+
+            for (var r = 0; r < referencePoints.Count; r++)
+            {
+                var d = PerpendicularDistance(norm, referencePoints[r]);
+                if (d < minDist) { minDist = d; minRef = r; }
+            }
+
+            refIndices[i] = minRef;
+            distances[i] = minDist;
+            population[i].SetReferencePointIndex(minRef);
+        }
+
+        return (refIndices, distances);
+    }
+
+    private static double PerpendicularDistance(double[] point, double[] refPoint)
+    {
+        // d = sqrt( |p|² - (p·r / |r|)² )
+        var dotPR = 0.0;
+        var magR2 = 0.0;
+        var magP2 = 0.0;
+
+        for (var k = 0; k < point.Length; k++)
+        {
+            dotPR += point[k] * refPoint[k];
+            magR2 += refPoint[k] * refPoint[k];
+            magP2 += point[k] * point[k];
+        }
+
+        if (magR2 < 1e-12) return Math.Sqrt(magP2);
+
+        var proj2 = dotPR * dotPR / magR2;
+        return Math.Sqrt(Math.Max(0.0, magP2 - proj2));
+    }
+
+    // =========================================================================
 
     /// <summary>
     ///     Assigns crowding distance to every individual in a front in-place.

@@ -10,6 +10,23 @@ namespace GeospizaCore.Core;
 /// </summary>
 public class Gene
 {
+    private static readonly JsonSerializerSettings _toJsonSettings = new JsonSerializerSettings
+    {
+        ContractResolver = new DefaultContractResolver
+        {
+            IgnoreSerializableInterface = true,
+            IgnoreSerializableAttribute = true
+        },
+        NullValueHandling = NullValueHandling.Ignore
+    };
+
+    private static readonly JsonSerializerSettings _fromJsonSettings = new JsonSerializerSettings
+    {
+        ContractResolver = new PrivateSetterContractResolver()
+    };
+
+    // Used by GeneConverter.ReadJson to avoid an intermediate string round-trip.
+    private static readonly JsonSerializer _geneDeserializer = JsonSerializer.Create();
     /// <summary>
     ///     Initializes a new instance of the <see cref="Gene" /> class with specified values.
     /// </summary>
@@ -98,17 +115,7 @@ public class Gene
     /// <returns>The JSON string representation of the gene.</returns>
     public string ToJson()
     {
-        var settings = new JsonSerializerSettings
-        {
-            ContractResolver = new DefaultContractResolver
-            {
-                IgnoreSerializableInterface = true,
-                IgnoreSerializableAttribute = true
-            },
-            NullValueHandling = NullValueHandling.Ignore
-        };
-
-        return JsonConvert.SerializeObject(this, settings);
+        return JsonConvert.SerializeObject(this, _toJsonSettings);
     }
 
 
@@ -128,14 +135,9 @@ public class Gene
         if (string.IsNullOrEmpty(json))
             throw new ArgumentException("JSON string cannot be null or empty", nameof(json));
 
-        var settings = new JsonSerializerSettings
-        {
-            ContractResolver = new PrivateSetterContractResolver()
-        };
-
         try
         {
-            return JsonConvert.DeserializeObject<Gene>(json, settings);
+            return JsonConvert.DeserializeObject<Gene>(json, _fromJsonSettings);
         }
         catch (JsonException ex)
         {
@@ -176,7 +178,14 @@ public class Gene
                 return;
             }
 
-            writer.WriteRawValue(value.ToJson());
+            writer.WriteStartObject();
+            writer.WritePropertyName("TickValue");    writer.WriteValue(value.TickValue);
+            writer.WritePropertyName("GeneGuid");     writer.WriteValue(value.GeneGuid);
+            writer.WritePropertyName("TickCount");    writer.WriteValue(value.TickCount);
+            writer.WritePropertyName("GeneName");     writer.WriteValue(value.GeneName);
+            writer.WritePropertyName("GhInstanceGuid"); writer.WriteValue(value.GhInstanceGuid);
+            writer.WritePropertyName("GenePoolIndex"); writer.WriteValue(value.GenePoolIndex);
+            writer.WriteEndObject();
         }
 
         /// <summary>
@@ -191,8 +200,9 @@ public class Gene
         public override Gene? ReadJson(JsonReader reader, Type objectType, Gene? existingValue, bool hasExistingValue,
             JsonSerializer serializer)
         {
-            var jsonObject = JObject.Load(reader);
-            return FromJson(jsonObject.ToString());
+            // Load once into a JObject and deserialize via [JsonConstructor] — no intermediate string.
+            var obj = JObject.Load(reader);
+            return obj.ToObject<Gene>(_geneDeserializer);
         }
     }
 }

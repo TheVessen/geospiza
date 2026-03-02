@@ -13,7 +13,7 @@ public class GH_TwoPointCrossover : GH_Component
             "Combines two parents by cutting their gene sequence at two random positions and swapping the middle segment, " +
             "producing two offspring. Preserves more structure from each parent than single-point crossover. " +
             "When crossover is skipped (controlled by the rate), both parents pass through unchanged.",
-            "Geospiza", "CrossoverStrategies")
+            "Geospiza", "Crossover Strategies")
     {
     }
 

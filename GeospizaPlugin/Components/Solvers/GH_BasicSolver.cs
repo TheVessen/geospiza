@@ -4,6 +4,7 @@ using System.Drawing;
 using System.Threading;
 using GeospizaCore.Core;
 using GeospizaCore.Solvers;
+using GeospizaCore.Strategies;
 using GeospizaPlugin.Properties;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Data;
@@ -113,6 +114,20 @@ public class GH_BasicSolver : GH_Component
 
         var runButton = false;
         if (!DA.GetData(3, ref runButton)) return;
+
+        // Validate only when user attempts to run
+        if (runButton)
+        {
+            // Check for incompatible pairing strategy
+            if (settings.PairingStrategy is ReferencePointPairingStrategy or RankAwarePairingStrategy)
+            {
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Error,
+                    "Invalid pairing strategy for Basic Solver. " +
+                    "Reference Point Pairing requires NSGA-III; Rank Aware Pairing requires NSGA-II or NSGA-III. " +
+                    "Use Inbreeding Pairing instead, or switch to the appropriate NSGA solver.");
+                return;
+            }
+        }
 
         if (_lastSolutionId != Guid.Empty && _solutionId != _lastSolutionId)
             return;

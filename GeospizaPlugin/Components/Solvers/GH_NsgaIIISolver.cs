@@ -14,21 +14,24 @@ using Grasshopper.Kernel.Types;
 namespace GeospizaPlugin.Components.Solvers;
 
 /// <summary>
-///     Grasshopper component that runs the NSGA-II multi-objective evolutionary algorithm.
-///     Mirrors <see cref="GH_BasicSolver" /> but instantiates <see cref="NsgaIISolver" />.
+///     Grasshopper component that runs the NSGA-III many-objective evolutionary algorithm.
+///     Uses structured reference points for diversity preservation — superior to NSGA-II
+///     when there are four or more objectives.
 ///     Requires a <c>GH_MultiObjectiveFitness</c> component on the canvas.
 /// </summary>
-public class GH_NsgaIISolver : GH_Component
+public class GH_NsgaIIISolver : GH_Component
 {
     private bool _isLocked;
     private bool _isRunning;
     private Guid _lastSolutionId;
     private SolverSettings _privateSettings;
+    private int _privateDivisions = 12;
     private Guid _solutionId = Guid.NewGuid();
 
-    public GH_NsgaIISolver()
-        : base("NSGA-II Solver", "NSGA2",
-            "Runs an NSGA-II multi-objective evolutionary algorithm. " +
+    public GH_NsgaIIISolver()
+        : base("NSGA-III Solver", "NSGA3",
+            "Runs an NSGA-III many-objective evolutionary algorithm. " +
+            "Uses reference-point-based diversity preservation, which outperforms NSGA-II on 4+ objectives. " +
             "Connect a Multi-Objective Fitness (MOF) component to supply objectives.",
             "Geospiza", "Solvers")
     {
@@ -39,7 +42,7 @@ public class GH_NsgaIISolver : GH_Component
 
     protected override Bitmap Icon => Resources.Solver;
 
-    public override Guid ComponentGuid => new("B2C3D4E5-F6A7-8901-BCDE-F12345678901");
+    public override Guid ComponentGuid => new("C3D4E5F6-A7B8-9012-CDEF-012345678902");
 
     protected override void RegisterInputParams(GH_InputParamManager pManager)
     {
@@ -76,6 +79,24 @@ public class GH_NsgaIISolver : GH_Component
             GH_ParamAccess.item
         );
 
+        var divisionsParam = new Param_Integer();
+        divisionsParam.AddNamedValue("Few (4)", 4);
+        divisionsParam.AddNamedValue("Moderate (8)", 8);
+        divisionsParam.AddNamedValue("Default (12)", 12);
+        divisionsParam.AddNamedValue("Dense (20)", 20);
+        divisionsParam.PersistentData.Append(new GH_Integer(12));
+        pManager.AddParameter(
+            divisionsParam,
+            "Divisions",
+            "D",
+            "Reference point density on the objective hyperplane.\n" +
+            "Higher values give more uniform diversity coverage but increase computation.\n" +
+            "• 4  → few reference points (fast, low objective count)\n" +
+            "• 12 → default (recommended for 3–5 objectives)\n" +
+            "• 20 → dense (for 2–3 objectives with large populations)",
+            GH_ParamAccess.item
+        );
+
         pManager.AddBooleanParameter(
             "Run",
             "R",
@@ -88,7 +109,7 @@ public class GH_NsgaIISolver : GH_Component
     protected override void RegisterOutputParams(GH_OutputParamManager pManager)
     {
         pManager.AddGenericParameter("Observer", "LP",
-            "The EvolutionObserver containing Pareto fronts and per-generation statistics",
+            "The EvolutionObserver containing Pareto fronts, per-generation statistics, and hypervolume",
             GH_ParamAccess.item);
         pManager.AddGenericParameter("State Manager", "SM", "The StateManager handling gene states",
             GH_ParamAccess.item);
@@ -116,8 +137,12 @@ public class GH_NsgaIISolver : GH_Component
         var previewLevel = 0;
         if (!DA.GetData(2, ref previewLevel)) return;
 
+        var divisions = 12;
+        if (!DA.GetData(3, ref divisions)) return;
+        _privateDivisions = divisions;
+
         var runButton = false;
-        if (!DA.GetData(3, ref runButton)) return;
+        if (!DA.GetData(4, ref runButton)) return;
 
         // Validate only when user attempts to run
         if (runButton)
@@ -128,17 +153,8 @@ public class GH_NsgaIISolver : GH_Component
                 AddRuntimeMessage(GH_RuntimeMessageLevel.Error,
                     "No multi-objective fitness found. " +
                     "Connect a Multi-Objective Fitness (MOF) component with at least one objective. " +
-                    "The single-objective Fitness component does not work with NSGA-II.");
+                    "The single-objective Fitness component does not work with NSGA-III.");
                 return;
-            }
-
-            // Check for incompatible pairing strategy
-            if (settings.PairingStrategy is ReferencePointPairingStrategy)
-            {
-                AddRuntimeMessage(GH_RuntimeMessageLevel.Warning,
-                    "Reference Point Pairing is optimized for NSGA-III, which assigns reference point indices. " +
-                    "NSGA-II does not assign reference point indices, so pairing will always fall back to random. " +
-                    "Use Rank Aware Pairing or Inbreeding Pairing with NSGA-II, or switch to the NSGA-III solver.");
             }
         }
 
@@ -182,7 +198,7 @@ public class GH_NsgaIISolver : GH_Component
             OnDisplayExpired(true);
             Rhino.RhinoApp.Wait();
 
-            var solver = new NsgaIISolver(_privateSettings, StateManager, EvolutionObserver);
+            var solver = new NsgaIIISolver(_privateSettings, StateManager, EvolutionObserver, _privateDivisions);
             solver.RunAlgorithm(cts.Token);
 
             Message = "Done";

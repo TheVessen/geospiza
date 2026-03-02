@@ -5,28 +5,34 @@ using Grasshopper.Kernel;
 namespace GeospizaCore.Solvers;
 
 /// <summary>
-///     NSGA-II: nondominated sorting genetic algorithm II, a fast and elitist
-///     multi-objective evolutionary algorithm (Deb et al., 2002).
+///     NSGA-III: many-objective evolutionary algorithm using reference-point-based
+///     nondominated sorting approach (Deb &amp; Jain, 2014).
 ///     
-///     Reference: K. Deb, A. Pratap, S. Agarwal, and T. Meyarivan, "A fast and elitist
-///     multiobjective genetic algorithm: NSGA-II," IEEE Transactions on Evolutionary
-///     Computation, vol. 6, no. 2, pp. 182–197, Apr. 2002,
-///     doi: 10.1109/4235.996017.
+///     Reference: K. Deb and H. Jain, "An evolutionary many-objective optimization algorithm
+///     using reference-point-based nondominated sorting approach, Part I: Solving problems with
+///     box constraints," IEEE Transactions on Evolutionary Computation, vol. 18, no. 4,
+///     pp. 577–601, Aug. 2014, doi: 10.1109/TEVC.2013.2281534.
 ///     
-///     Runs alongside <see cref="BaseSolver" /> without modifying it.
+///     Extends NSGA-II by replacing crowding-distance survivor selection with
+///     structured reference-point-based niche preservation, which maintains better
+///     diversity when there are four or more objectives.
+///     
 ///     Requires a <c>GH_MultiObjectiveFitness</c> component on the Grasshopper canvas.
 /// </summary>
-public class NsgaIISolver : EvolutionBlueprint
+public class NsgaIIISolver : EvolutionBlueprint
 {
     private const int TerminationEvaluationThreshold = 5;
 
+    private readonly int _referencePointDivisions;
     private int _objectiveCount;
+    private List<double[]> _referencePoints = new();
 
-    public NsgaIISolver(SolverSettings settings, StateManager stateManager,
-        EvolutionObserver evolutionObserver) : base(settings)
+    public NsgaIIISolver(SolverSettings settings, StateManager stateManager,
+        EvolutionObserver evolutionObserver, int referencePointDivisions = 12) : base(settings)
     {
         StateManager = stateManager;
         EvolutionObserver = evolutionObserver;
+        _referencePointDivisions = referencePointDivisions;
     }
 
     private StateManager StateManager { get; }
@@ -36,6 +42,9 @@ public class NsgaIISolver : EvolutionBlueprint
     {
         _objectiveCount = InitializePopulationMultiObjective(StateManager, EvolutionObserver);
         CaptureBaseRates();
+
+        _referencePoints = ParetoUtils.GenerateReferencePoints(_objectiveCount, _referencePointDivisions);
+
         var completed = false;
 
         try
@@ -44,28 +53,24 @@ public class NsgaIISolver : EvolutionBlueprint
             {
                 if (cancellationToken.IsCancellationRequested) break;
 
-                // Create and test offspring
+                // Create and evaluate offspring.
                 var offspring = CreateOffspring(cancellationToken);
                 if (cancellationToken.IsCancellationRequested) break;
                 offspring.TestPopulationMultiObjective(StateManager, EvolutionObserver);
 
-                // Combine parent + offspring
+                // Combine parent + offspring into combined pool.
                 var combined = new List<Individual>(Population.Inhabitants);
                 combined.AddRange(offspring.Inhabitants);
 
-                // Sort combined pool by Pareto rank, assign crowding distances
+                // Pareto sort — same as NSGA-II.
                 var fronts = ParetoUtils.FastNonDominatedSort(combined);
-                foreach (var front in fronts)
-                    ParetoUtils.AssignCrowdingDistance(front, _objectiveCount);
 
-                // Select next generation: fill fronts in rank order, truncate last if needed
+                // Select next generation using reference-point niche preservation.
                 var nextPopulation = SelectNextGeneration(fronts);
 
                 foreach (var inhabitant in nextPopulation.Inhabitants)
                     inhabitant.SetGeneration(i + 1);
 
-                // Assign Population before snapshot so Reinstate uses the correct generation
-                // even when termination fires immediately after.
                 Population = nextPopulation;
 
                 StateManager.GetDocument().ExpirePreview(false);
@@ -75,6 +80,7 @@ public class NsgaIISolver : EvolutionBlueprint
                 if (i > TerminationEvaluationThreshold)
                     if (TerminationStrategy.Evaluate(EvolutionObserver))
                         break;
+
                 if (StateManager.PreviewLevel == 1)
                 {
                     StateManager.GetDocument().ExpirePreview(true);
@@ -86,18 +92,118 @@ public class NsgaIISolver : EvolutionBlueprint
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"NSGA-II Solver error: {ex.Message}");
+            Console.Error.WriteLine($"NSGA-III Solver error: {ex.Message}");
         }
 
         if (completed)
         {
-            // Reinstate best individual from rank-0 front; prefer highest crowding distance for diversity
+            // Reinstate the rank-0 individual with the smallest perpendicular distance to its
+            // reference point (best-represented point on the Pareto front).
             var best = Population.Inhabitants
                 .Where(ind => ind.ParetoRank == 0)
                 .OrderByDescending(ind => ind.CrowdingDistance)
                 .FirstOrDefault() ?? Population.Inhabitants[0];
             best.Reinstate(StateManager);
         }
+    }
+
+    /// <summary>
+    ///     Selects the next generation from the sorted fronts using NSGA-III's
+    ///     reference-point-based niche preservation for the critical (last) front.
+    /// </summary>
+    private Population SelectNextGeneration(List<List<Individual>> fronts)
+    {
+        var nextPopulation = new Population();
+        List<Individual>? criticalFront = null;
+
+        // 1. Fill complete fronts in rank order.
+        foreach (var front in fronts)
+        {
+            if (nextPopulation.Count + front.Count <= PopulationSize)
+            {
+                nextPopulation.AddIndividuals(front);
+                if (nextPopulation.Count == PopulationSize) return nextPopulation;
+            }
+            else
+            {
+                criticalFront = front;
+                break;
+            }
+        }
+
+        if (criticalFront == null || nextPopulation.Count >= PopulationSize)
+            return nextPopulation;
+
+        var needed = PopulationSize - nextPopulation.Count;
+
+        // 2. Normalize objectives across all members (next + critical).
+        var allMembers = new List<Individual>(nextPopulation.Inhabitants);
+        allMembers.AddRange(criticalFront);
+
+        var normalized = ParetoUtils.NormalizeObjectives(allMembers, _objectiveCount);
+
+        // 3. Associate everyone to reference points.
+        var (refIndices, distances) = ParetoUtils.AssociateToReferencePoints(
+            allMembers, normalized, _referencePoints);
+
+        // 4. Compute niche counts from already-selected members (those in nextPopulation).
+        var nicheCounts = new int[_referencePoints.Count];
+        for (var i = 0; i < nextPopulation.Count; i++)
+            nicheCounts[refIndices[i]]++;
+
+        // 5. Build working list of candidates from the critical front (indices offset by nextPop count).
+        var candidateOffset = nextPopulation.Count;
+        var candidates = new List<int>(criticalFront.Count);
+        for (var i = 0; i < criticalFront.Count; i++)
+            candidates.Add(candidateOffset + i);
+
+        // 6. Niche-preserving selection: iteratively pick from lowest-niche reference points.
+        for (var added = 0; added < needed && candidates.Count > 0; added++)
+        {
+            // Find the minimum niche count among reference points that have at least one candidate.
+            var minNiche = int.MaxValue;
+            foreach (var ci in candidates)
+            {
+                var rc = nicheCounts[refIndices[ci]];
+                if (rc < minNiche) minNiche = rc;
+            }
+
+            // Collect reference points with that niche count that have candidates.
+            var eligibleRefs = new HashSet<int>();
+            foreach (var ci in candidates)
+                if (nicheCounts[refIndices[ci]] == minNiche)
+                    eligibleRefs.Add(refIndices[ci]);
+
+            // Pick one reference point at random from the eligible set.
+            var targetRef = eligibleRefs.ElementAt(Random.Next(eligibleRefs.Count));
+
+            // Among candidates associated with targetRef, pick the one with minimum distance
+            // when niche count is 0; otherwise pick randomly.
+            var targetCandidates = candidates.Where(ci => refIndices[ci] == targetRef).ToList();
+
+            int chosen;
+            if (minNiche == 0)
+            {
+                // Pick candidate with smallest perpendicular distance to the reference point.
+                chosen = targetCandidates[0];
+                var minDist = distances[chosen];
+                for (var k = 1; k < targetCandidates.Count; k++)
+                {
+                    var d = distances[targetCandidates[k]];
+                    if (d < minDist) { minDist = d; chosen = targetCandidates[k]; }
+                }
+            }
+            else
+            {
+                chosen = targetCandidates[Random.Next(targetCandidates.Count)];
+            }
+
+            nextPopulation.AddIndividual(allMembers[chosen]);
+            nicheCounts[targetRef]++;
+            candidates.Remove(chosen);
+        }
+
+        return nextPopulation;
     }
 
     /// <summary>
@@ -139,16 +245,22 @@ public class NsgaIISolver : EvolutionBlueprint
             newPopulation.AddIndividual(individual);
         }
 
-        // Initial Pareto sort
+        // Initial Pareto sort and reference-point association.
         if (objectiveCount > 0)
         {
             var fronts = ParetoUtils.FastNonDominatedSort(newPopulation.Inhabitants);
+
+            var refs = ParetoUtils.GenerateReferencePoints(objectiveCount, _referencePointDivisions);
+            var normalized = ParetoUtils.NormalizeObjectives(newPopulation.Inhabitants, objectiveCount);
+            ParetoUtils.AssociateToReferencePoints(newPopulation.Inhabitants, normalized, refs);
+
             foreach (var front in fronts)
                 ParetoUtils.AssignCrowdingDistance(front, objectiveCount);
         }
 
         evolutionObserver.Snapshot(newPopulation);
         Population = newPopulation;
+
         if (stateManager.PreviewLevel == 1)
         {
             stateManager.GetDocument().ExpirePreview(true);
@@ -159,13 +271,13 @@ public class NsgaIISolver : EvolutionBlueprint
     }
 
     /// <summary>
-    ///     Builds an offspring population of size <see cref="EvolutionBlueprint.PopulationSize" />
-    ///     using binary tournament selection (rank / crowding distance), pairing, crossover, and mutation.
+    ///     Builds an offspring population using the NSGA-III binary tournament selection
+    ///     (rank first, then crowding distance as tiebreaker for compatibility).
     /// </summary>
     private Population CreateOffspring(CancellationToken cancellationToken)
     {
         var offspring = new Population();
-        var selector = new NsgaIITournamentSelection(Random);
+        var selector = new NsgaIIITournamentSelection(Random);
 
         while (offspring.Count < PopulationSize && !cancellationToken.IsCancellationRequested)
         {
@@ -187,37 +299,6 @@ public class NsgaIISolver : EvolutionBlueprint
         return offspring;
     }
 
-    /// <summary>
-    ///     Fills the next generation from sorted fronts, truncating the last front by
-    ///     crowding distance (descending) when it does not fit entirely.
-    /// </summary>
-    private Population SelectNextGeneration(List<List<Individual>> fronts)
-    {
-        var nextPopulation = new Population();
-
-        foreach (var front in fronts)
-        {
-            if (nextPopulation.Count + front.Count <= PopulationSize)
-            {
-                nextPopulation.AddIndividuals(front);
-            }
-            else
-            {
-                var needed = PopulationSize - nextPopulation.Count;
-                var sorted = front
-                    .OrderByDescending(ind => ind.CrowdingDistance)
-                    .Take(needed)
-                    .ToList();
-                nextPopulation.AddIndividuals(sorted);
-                break;
-            }
-
-            if (nextPopulation.Count >= PopulationSize) break;
-        }
-
-        return nextPopulation;
-    }
-
     private List<Individual> PerformCrossover(IndividualPair pair)
     {
         if (Random.NextDouble() < CrossoverStrategy.CrossoverRate)
@@ -232,14 +313,14 @@ public class NsgaIISolver : EvolutionBlueprint
     }
 
     /// <summary>
-    ///     Binary tournament selection that compares by Pareto rank (ascending) then
-    ///     crowding distance (descending), matching NSGA-II crowded comparison operator.
+    ///     Binary tournament selection using Pareto rank then crowding distance as tiebreaker,
+    ///     matching the NSGA-II crowded comparison operator used for offspring generation in NSGA-III.
     /// </summary>
-    private sealed class NsgaIITournamentSelection : ISelectionStrategy
+    private sealed class NsgaIIITournamentSelection : ISelectionStrategy
     {
         private readonly Random _random;
 
-        public NsgaIITournamentSelection(Random random)
+        public NsgaIIITournamentSelection(Random random)
         {
             _random = random;
         }

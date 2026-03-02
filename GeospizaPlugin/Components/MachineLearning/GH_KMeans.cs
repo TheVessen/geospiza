@@ -8,12 +8,16 @@ using Grasshopper.Kernel;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
 
-namespace GeospizaPlugin.Components.Analysis;
+namespace GeospizaPlugin.Components.MachineLearning;
 
 /// <summary>
-///     Clusters individuals by their gene vectors using K-Means.
+///     K-Means clustering for partitioning individuals by their gene vectors.
 ///     Each gene dimension is normalised to [0, 1) by its tick count so genes
 ///     with different ranges contribute equally to the distance metric.
+///     
+///     Reference: J. B. MacQueen, "Some methods for classification and analysis of
+///     multivariate observations," in Proceedings of the Fifth Berkeley Symposium on
+///     Mathematical Statistics and Probability, vol. 1, pp. 281–297, 1967.
 /// </summary>
 public class GH_KMeans : GH_Component
 {

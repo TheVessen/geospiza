@@ -5,33 +5,25 @@ using Grasshopper.Kernel;
 
 namespace GeospizaPlugin.Components.GeneOperations;
 
-public class GH_AutoGeneSelector : GH_Component
+public class GH_AutoGeneCollector : GH_Component
 {
     private readonly List<string> docParams = new();
 
-    /// <summary>
-    ///     Initializes a new instance of the GH_AutoGeneSelector class.
-    /// </summary>
-    public GH_AutoGeneSelector()
-        : base("Auto Gene Selector", "AutoGene",
+
+    public GH_AutoGeneCollector()
+        : base("Auto Gene Collector", "AGC",
             "Automatically finds and collects gene parameters from Gene Pool components and sliders prefixed with 'GP_'",
             "Geospiza", "GeneOperations")
     {
     }
 
-    /// <summary>
-    ///     Provides an Icon for the component.
-    /// </summary>
+
     protected override Bitmap Icon => null;
 
-    /// <summary>
-    ///     Gets the unique ID for this component. Do not change this ID after release.
-    /// </summary>
+
     public override Guid ComponentGuid => new("CC1BA854-CDE4-4A88-BFE7-97105DD75F9B");
 
-    /// <summary>
-    ///     Registers all the input parameters for this component.
-    /// </summary>
+
     protected override void RegisterInputParams(GH_InputParamManager pManager)
     {
         pManager.AddBooleanParameter("Clear", "C", "Clear the gene parameters from the doc search", GH_ParamAccess.item,
@@ -40,18 +32,11 @@ public class GH_AutoGeneSelector : GH_Component
             GH_ParamAccess.item, false);
     }
 
-    /// <summary>
-    ///     Registers all the output parameters for this component.
-    /// </summary>
     protected override void RegisterOutputParams(GH_OutputParamManager pManager)
     {
         pManager.AddTextParameter("Genes", "GID", "The gene ids", GH_ParamAccess.list);
     }
 
-    /// <summary>
-    ///     This is the method that actually does the work.
-    /// </summary>
-    /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
     protected override void SolveInstance(IGH_DataAccess DA)
     {
         var geneIds = new List<string>();

@@ -16,7 +16,7 @@ public class GH_StochasticUniversalSampling : GH_Component
             "Performs a Stochastic Universal Sampling. In SUS, the fitness of each individual is used " +
             "to assign a probability of selection. However, instead of selecting individuals " +
             "one at a time, SUS selects all individuals at once by spreading out evenly spaced pointers over the population's",
-            "Geospiza", "Selection Strategy")
+            "Geospiza", "Selection Strategies")
     {
     }
 
