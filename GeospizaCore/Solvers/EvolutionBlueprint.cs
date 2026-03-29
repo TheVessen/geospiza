@@ -83,7 +83,7 @@ public abstract class EvolutionBlueprint : IEvolutionarySolver
     /// </summary>
     public void InitializePopulation(StateManager stateManager, EvolutionObserver evolutionObserver)
     {
-        var fistGenBestFitness = 0.0;
+        var firstGenBestFitness = 0.0;
         var fitnessInstance = Fitness.Instance;
 
         var newPopulation = new Population();
@@ -94,7 +94,7 @@ public abstract class EvolutionBlueprint : IEvolutionarySolver
             foreach (var geneTemplate in stateManager.Genotype)
             {
                 var ctg = geneTemplate.Value;
-                ctg.SetTickValue(Random.Next(ctg.TickCount), stateManager);
+                ctg.SetTickValue(Random.Next(ctg.TickCount + 1), stateManager);
 
                 var stableGene = new Gene(ctg.TickValue, ctg.GeneGuid,
                     ctg.TickCount, ctg.Name, ctg.GhInstanceGuid,
@@ -112,11 +112,11 @@ public abstract class EvolutionBlueprint : IEvolutionarySolver
 
             if (i == 0)
             {
-                fistGenBestFitness = currentFitness;
+                firstGenBestFitness = currentFitness;
             }
-            else if (currentFitness > fistGenBestFitness)
+            else if (currentFitness > firstGenBestFitness)
             {
-                fistGenBestFitness = currentFitness;
+                firstGenBestFitness = currentFitness;
                 if (stateManager.PreviewLevel == 2)
                 {
                     stateManager.GetDocument().ExpirePreview(true);
@@ -183,8 +183,8 @@ public abstract class EvolutionBlueprint : IEvolutionarySolver
                 MutationStrategy.MutationRate * RecoveryDecay,
                 _baseMutationRate);
 
-        // Also adapt crossover rate: boost on full convergence, decay otherwise.
-        if (lastUniq <= 1)
+        // Also adapt crossover rate: boost on stagnation or low diversity, decay otherwise.
+        if (isStagnating || isDiversityLow)
             CrossoverStrategy.CrossoverRate = Math.Min(
                 CrossoverStrategy.CrossoverRate * StagnationBoost,
                 1.0);

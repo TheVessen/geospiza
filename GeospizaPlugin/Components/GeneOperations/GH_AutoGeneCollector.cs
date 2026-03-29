@@ -58,9 +58,20 @@ public class GH_AutoGeneCollector : GH_Component
                         docParams.Add(ghobject.InstanceGuid.ToString());
             }
 
-        if (clear) docParams.Clear();
+        if (clear)
+        {
+            docParams.Clear();
+            Message = "Cleared";
+        }
 
         geneIds.AddRange(docParams);
+
+        if (geneIds.Count == 0)
+            AddRuntimeMessage(GH_RuntimeMessageLevel.Warning,
+                "No gene parameters found. Make sure sliders or gene pools are prefixed with 'GP_' and Search Document is enabled.");
+        else
+            Message = $"{geneIds.Count} gene{(geneIds.Count == 1 ? "" : "s")}";
+
         DA.SetDataList(0, geneIds);
     }
 }

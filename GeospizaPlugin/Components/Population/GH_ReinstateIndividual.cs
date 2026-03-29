@@ -42,25 +42,51 @@ public class GH_ReinstateIndividual : GH_Component
     {
         GH_ObjectWrapper stateManagerWrapper = null;
         if (!DA.GetData(0, ref stateManagerWrapper)) return;
+
         stateManager = stateManagerWrapper.Value as StateManager;
+        if (stateManager == null)
+        {
+            AddRuntimeMessage(GH_RuntimeMessageLevel.Error,
+                "Input is not a StateManager. Connect the State Manager output from a solver component.");
+            return;
+        }
 
         var individualWrapper = new GH_Structure<IGH_Goo>();
         if (!DA.GetDataTree(1, out individualWrapper)) return;
 
         var data = individualWrapper.AllData(true).ToList();
-        if (data.Count == 0) return;
+        if (data.Count == 0)
+        {
+            AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "No individual provided.");
+            return;
+        }
 
         if (data.Count != 1)
         {
-            AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Please provide a single individual");
+            AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Please provide a single individual.");
             return;
         }
 
         individual = data[0].ScriptVariable() as Individual;
+        if (individual == null)
+        {
+            AddRuntimeMessage(GH_RuntimeMessageLevel.Error,
+                "Input is not an Individual. Connect an Individual output from a results component.");
+            return;
+        }
+
         var reinstate = false;
         if (!DA.GetData(2, ref reinstate)) return;
 
-        if (reinstate) OnPingDocument().ScheduleSolution(10, ScheduleCallback);
+        if (reinstate)
+        {
+            Message = "Reinstated";
+            OnPingDocument().ScheduleSolution(10, ScheduleCallback);
+        }
+        else
+        {
+            Message = "Ready";
+        }
     }
 
     private void ScheduleCallback(GH_Document doc)

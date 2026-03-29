@@ -43,6 +43,12 @@ public class SolverSettings
     }
 
     /// <summary>
+    ///     True when built from <c>GH_MultiObjectiveSettings</c>; false for single-objective.
+    ///     Solvers use this to reject mismatched settings at run time.
+    /// </summary>
+    public bool IsMultiObjective { get; set; }
+
+    /// <summary>
     ///     Validates that all required strategies are properly set.
     /// </summary>
     public void Validate()

@@ -105,6 +105,12 @@ public class GH_BasicSolver : GH_Component
 
         var geneIds = new List<string>();
         if (!DA.GetDataList(0, geneIds)) return;
+        if (geneIds.Count == 0)
+        {
+            AddRuntimeMessage(GH_RuntimeMessageLevel.Error,
+                "No gene IDs provided. Connect a Gene Collector component.");
+            return;
+        }
 
         var settings = new SolverSettings();
         if (!DA.GetData(1, ref settings)) return;
@@ -118,15 +124,16 @@ public class GH_BasicSolver : GH_Component
 
         // Validate only when user attempts to run
         if (runButton)
-            // Check for incompatible pairing strategy
-            if (settings.PairingStrategy is ReferencePointPairingStrategy or RankAwarePairingStrategy)
+        {
+            if (settings.IsMultiObjective)
             {
                 AddRuntimeMessage(GH_RuntimeMessageLevel.Error,
-                    "Invalid pairing strategy for Basic Solver. " +
-                    "Reference Point Pairing requires NSGA-III; Rank Aware Pairing requires NSGA-II or NSGA-III. " +
-                    "Use Inbreeding Pairing instead, or switch to the appropriate NSGA solver.");
+                    "Multi-Objective Settings are not compatible with the Basic Solver. " +
+                    "Use the standard Settings component, or switch to the NSGA-II or NSGA-III solver.");
                 return;
             }
+
+        }
 
         if (_lastSolutionId != Guid.Empty && _solutionId != _lastSolutionId)
             return;
@@ -158,7 +165,7 @@ public class GH_BasicSolver : GH_Component
 
         try
         {
-            using var cts = new CancellationTokenSource();
+            StateManager.RunCts = new CancellationTokenSource();
             _solutionId = Guid.NewGuid();
 
             EvolutionObserver.Reset();
@@ -169,7 +176,7 @@ public class GH_BasicSolver : GH_Component
             RhinoApp.Wait();
 
             var solver = new BaseSolver(_privateSettings, StateManager, EvolutionObserver);
-            solver.RunAlgorithm(cts.Token);
+            solver.RunAlgorithm(StateManager.RunCts.Token);
 
             Message = "Done";
             _lastSolutionId = _solutionId;
@@ -184,8 +191,11 @@ public class GH_BasicSolver : GH_Component
             // Unlock before returning so GH's SolveInstance call (in the same solve cycle,
             // immediately after this callback) sees _isLocked = false and writes outputs cleanly.
             EvolutionObserver.GenerationCompleted -= OnGenerationCompleted;
+            StateManager.RunCts?.Dispose();
+            StateManager.RunCts = null;
             _isRunning = false;
             _isLocked = false;
+            EvolutionObserver.NotifyRunCompleted();
         }
     }
 

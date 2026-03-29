@@ -11,8 +11,8 @@ namespace GeospizaPlugin.Components.Configuration;
 public class GH_Settings : GH_Component
 {
     public GH_Settings()
-        : base("Settings", "Settings",
-            "Configure parameters and strategies for the evolutionary algorithm including population size, generations, selection, crossover, and mutation settings.",
+        : base("Single-Objective Settings", "SOSettings",
+            "Configure parameters and strategies for the single-objective evolutionary solver.",
             "Geospiza", "Configuration")
     {
     }
@@ -63,20 +63,12 @@ public class GH_Settings : GH_Component
         double populationSize = 0;
         double maxGenerations = 0;
         double eliteSize = 0;
-        double mutationRate = 0;
-        double crossoverRate = 0;
 
         GH_ObjectWrapper selectionStrategyContainer = null;
         GH_ObjectWrapper pairingStrategyContainer = null;
         GH_ObjectWrapper crossoverStrategyContainer = null;
         GH_ObjectWrapper mutationStrategyContainer = null;
         GH_ObjectWrapper terminationStrategyContainer = null;
-
-        ISelectionStrategy selectionStrategy = null;
-        PairingStrategy pairingStrategy = null;
-        ICrossoverStrategy crossoverStrategy = null;
-        IMutationStrategy mutationStrategy = null;
-        ITerminationStrategy terminationStrategy = null;
 
         if (!DA.GetData(0, ref populationSize)) return;
         if (!DA.GetData(1, ref maxGenerations)) return;
@@ -87,21 +79,30 @@ public class GH_Settings : GH_Component
         DA.GetData(6, ref mutationStrategyContainer);
         DA.GetData(7, ref terminationStrategyContainer);
 
-        selectionStrategy =
-            selectionStrategyContainer?.Value as ISelectionStrategy ?? new TournamentSelection(3);
-        pairingStrategy = pairingStrategyContainer?.Value as PairingStrategy ?? new PairingStrategy(0.2);
-        crossoverStrategy = crossoverStrategyContainer?.Value as ICrossoverStrategy ?? new TwoPointCrossover(0.7);
-        mutationStrategy = mutationStrategyContainer?.Value as IMutationStrategy ?? new RandomMutation(0.03);
-        terminationStrategy = terminationStrategyContainer?.Value as ITerminationStrategy ?? new PopulationDiversity(2);
-
         if (populationSize <= 0)
+        {
             AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Population size must be greater than 0");
+            return;
+        }
         if (maxGenerations <= 0)
+        {
             AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Max generations must be greater than 0");
-        if (mutationRate is < 0 or > 1)
-            AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Mutation rate must be between 0 and 1");
-        if (crossoverRate is < 0 or > 1)
-            AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Crossover rate must be between 0 and 1");
+            return;
+        }
+
+        var selectionStrategy = selectionStrategyContainer?.Value as ISelectionStrategy ?? new TournamentSelection(3);
+        var pairingStrategy = pairingStrategyContainer?.Value as IPairingStrategy ?? new PairingStrategy(0.2);
+        var crossoverStrategy = crossoverStrategyContainer?.Value as ICrossoverStrategy ?? new TwoPointCrossover(0.7);
+        var mutationStrategy = mutationStrategyContainer?.Value as IMutationStrategy ?? new RandomMutation(0.03);
+        var terminationStrategy = terminationStrategyContainer?.Value as ITerminationStrategy ?? new PopulationDiversity(2);
+
+        if (pairingStrategy is IMultiObjectiveStrategy)
+        {
+            AddRuntimeMessage(GH_RuntimeMessageLevel.Error,
+                $"{pairingStrategy.GetType().Name} is only valid for multi-objective solvers. " +
+                "Use the Multi-Objective Settings component with NSGA-II or NSGA-III, or switch to Inbreeding Pairing.");
+            return;
+        }
 
         var settings = new SolverSettings
         {
@@ -112,7 +113,8 @@ public class GH_Settings : GH_Component
             PairingStrategy = pairingStrategy,
             CrossoverStrategy = crossoverStrategy,
             MutationStrategy = mutationStrategy,
-            TerminationStrategy = terminationStrategy
+            TerminationStrategy = terminationStrategy,
+            IsMultiObjective = false
         };
 
         DA.SetData(0, settings);

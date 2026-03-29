@@ -109,6 +109,12 @@ public class GH_NsgaIISolver : GH_Component
 
         var geneIds = new List<string>();
         if (!DA.GetDataList(0, geneIds)) return;
+        if (geneIds.Count == 0)
+        {
+            AddRuntimeMessage(GH_RuntimeMessageLevel.Error,
+                "No gene IDs provided. Connect a Gene Collector component.");
+            return;
+        }
 
         var settings = new SolverSettings();
         if (!DA.GetData(1, ref settings)) return;
@@ -123,7 +129,17 @@ public class GH_NsgaIISolver : GH_Component
         // Validate only when user attempts to run
         if (runButton)
         {
-            // Check for Multi-Objective Fitness
+            if (!settings.IsMultiObjective)
+            {
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Error,
+                    "Single-objective Settings are not compatible with NSGA-II. " +
+                    "Use the Multi-Objective Settings component instead.");
+                return;
+            }
+
+            // Check for Multi-Objective Fitness — force a solve first so the MOF component
+            // has a chance to populate the singleton (avoids stale empty state on file open).
+            OnPingDocument().NewSolution(false);
             if (GeospizaCore.Core.Fitness.Instance.GetObjectives().Length == 0)
             {
                 AddRuntimeMessage(GH_RuntimeMessageLevel.Error,
@@ -133,12 +149,11 @@ public class GH_NsgaIISolver : GH_Component
                 return;
             }
 
-            // Check for incompatible pairing strategy
             if (settings.PairingStrategy is ReferencePointPairingStrategy)
                 AddRuntimeMessage(GH_RuntimeMessageLevel.Warning,
-                    "Reference Point Pairing is optimized for NSGA-III, which assigns reference point indices. " +
-                    "NSGA-II does not assign reference point indices, so pairing will always fall back to random. " +
-                    "Use Rank Aware Pairing or Inbreeding Pairing with NSGA-II, or switch to the NSGA-III solver.");
+                    "Reference Point Pairing is designed for NSGA-III. " +
+                    "NSGA-II does not assign reference point indices, so niche pairing will always fall back to random. " +
+                    "Use Rank Aware Pairing with NSGA-II, or switch to the NSGA-III solver.");
         }
 
         if (_lastSolutionId != Guid.Empty && _solutionId != _lastSolutionId)
@@ -171,7 +186,7 @@ public class GH_NsgaIISolver : GH_Component
 
         try
         {
-            using var cts = new CancellationTokenSource();
+            StateManager.RunCts = new CancellationTokenSource();
             _solutionId = Guid.NewGuid();
 
             EvolutionObserver.Reset();
@@ -182,7 +197,7 @@ public class GH_NsgaIISolver : GH_Component
             RhinoApp.Wait();
 
             var solver = new NsgaIISolver(_privateSettings, StateManager, EvolutionObserver);
-            solver.RunAlgorithm(cts.Token);
+            solver.RunAlgorithm(StateManager.RunCts.Token);
 
             Message = "Done";
             _lastSolutionId = _solutionId;
@@ -195,8 +210,11 @@ public class GH_NsgaIISolver : GH_Component
         finally
         {
             EvolutionObserver.GenerationCompleted -= OnGenerationCompleted;
+            StateManager.RunCts?.Dispose();
+            StateManager.RunCts = null;
             _isRunning = false;
             _isLocked = false;
+            EvolutionObserver.NotifyRunCompleted();
         }
     }
 

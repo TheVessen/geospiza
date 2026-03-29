@@ -13,6 +13,12 @@ public interface IPairingStrategy
     IEnumerable<IndividualPair> PairIndividuals(List<Individual> selectedIndividuals);
 }
 
+/// <summary>Marker interface — strategy is only valid for single-objective solvers.</summary>
+public interface ISingleObjectiveStrategy { }
+
+/// <summary>Marker interface — strategy is only valid for multi-objective solvers (NSGA-II/III).</summary>
+public interface IMultiObjectiveStrategy { }
+
 public class PairingStrategy : IPairingStrategy
 {
     // Cached once at construction to avoid a delegate allocation per FindMate call.
@@ -97,7 +103,7 @@ public class PairingStrategy : IPairingStrategy
 ///     Computation, vol. 18, no. 4, pp. 577–601, Aug. 2014,
 ///     doi: 10.1109/TEVC.2013.2281534.
 /// </summary>
-public class ReferencePointPairingStrategy : IPairingStrategy
+public class ReferencePointPairingStrategy : IPairingStrategy, IMultiObjectiveStrategy
 {
     private readonly Random _random = new();
 
@@ -135,7 +141,7 @@ public class ReferencePointPairingStrategy : IPairingStrategy
 ///     Computation, vol. 6, no. 2, pp. 182–197, Apr. 2002,
 ///     doi: 10.1109/4235.996017.
 /// </summary>
-public class RankAwarePairingStrategy : IPairingStrategy
+public class RankAwarePairingStrategy : IPairingStrategy, IMultiObjectiveStrategy
 {
     private readonly Random _random = new();
 

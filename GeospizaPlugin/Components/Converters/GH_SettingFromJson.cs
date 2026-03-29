@@ -38,15 +38,22 @@ public class GH_SettingFromJson : GH_Component
         // If the input is not retrieved, return
         if (!DA.GetData(0, ref json)) return;
 
-        if (json == "") return;
+        if (string.IsNullOrWhiteSpace(json))
+        {
+            AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "JSON string is empty.");
+            return;
+        }
 
-        var setting = SolverSettings.FromJson(json);
-
-        // Add a null check before using the setting
-        if (setting == null)
-            // Handle the case when setting is null
-            // You might want to throw an exception, return, or assign a default value to setting
-            throw new ArgumentNullException(nameof(setting), "setting cannot be null");
+        SolverSettings setting;
+        try
+        {
+            setting = SolverSettings.FromJson(json);
+        }
+        catch (Exception ex)
+        {
+            AddRuntimeMessage(GH_RuntimeMessageLevel.Error, $"Failed to deserialize settings: {ex.Message}");
+            return;
+        }
 
         DA.SetData(0, setting);
     }

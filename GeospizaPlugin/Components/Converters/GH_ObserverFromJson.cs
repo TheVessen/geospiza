@@ -38,9 +38,22 @@ public class GH_ObserverFromJson : GH_Component
         // If the input is not retrieved, return
         if (!DA.GetData(0, ref json)) return;
 
-        if (json == "") return;
+        if (string.IsNullOrWhiteSpace(json))
+        {
+            AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "JSON string is empty.");
+            return;
+        }
 
-        var observer = EvolutionObserver.FromJson(json);
+        EvolutionObserver observer;
+        try
+        {
+            observer = EvolutionObserver.FromJson(json);
+        }
+        catch (Exception ex)
+        {
+            AddRuntimeMessage(GH_RuntimeMessageLevel.Error, $"Failed to deserialize observer: {ex.Message}");
+            return;
+        }
 
         DA.SetData(0, observer);
     }

@@ -117,7 +117,7 @@ public class NsgaIISolver : EvolutionBlueprint
             foreach (var geneTemplate in stateManager.Genotype)
             {
                 var ctg = geneTemplate.Value;
-                ctg.SetTickValue(Random.Next(ctg.TickCount), stateManager);
+                ctg.SetTickValue(Random.Next(ctg.TickCount + 1), stateManager);
 
                 var stableGene = new Gene(ctg.TickValue, ctg.GeneGuid,
                     ctg.TickCount, ctg.Name, ctg.GhInstanceGuid,

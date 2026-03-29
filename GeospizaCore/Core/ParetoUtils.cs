@@ -251,20 +251,20 @@ public static class ParetoUtils
 
         for (var m = 0; m < objectiveCount; m++)
         {
-            front.Sort((a, b) => a.Objectives![m].CompareTo(b.Objectives![m]));
+            var sorted = front.OrderBy(ind => ind.Objectives![m]).ToList();
 
-            front[0].SetCrowdingDistance(double.PositiveInfinity);
-            front[n - 1].SetCrowdingDistance(double.PositiveInfinity);
+            sorted[0].SetCrowdingDistance(double.PositiveInfinity);
+            sorted[n - 1].SetCrowdingDistance(double.PositiveInfinity);
 
-            var range = front[n - 1].Objectives![m] - front[0].Objectives![m];
+            var range = sorted[n - 1].Objectives![m] - sorted[0].Objectives![m];
             if (range == 0) continue;
 
             for (var i = 1; i < n - 1; i++)
             {
-                var current = front[i].CrowdingDistance;
+                var current = sorted[i].CrowdingDistance;
                 if (!double.IsInfinity(current))
-                    front[i].SetCrowdingDistance(
-                        current + (front[i + 1].Objectives![m] - front[i - 1].Objectives![m]) / range);
+                    sorted[i].SetCrowdingDistance(
+                        current + (sorted[i + 1].Objectives![m] - sorted[i - 1].Objectives![m]) / range);
             }
         }
     }

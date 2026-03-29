@@ -43,12 +43,17 @@ public class GH_GeneCollector : GH_Component
         var allGeneParams = Params.Input[0].Sources;
         var geneIds = new List<string>();
 
-        if (geneIds.Count == 0 || geneIds.Count != allGeneParams.Count)
+        foreach (var param in allGeneParams)
+            geneIds.Add(param.InstanceGuid.ToString());
+
+        if (geneIds.Count == 0)
         {
-            geneIds.Clear();
-            foreach (var param in allGeneParams) geneIds.Add(param.InstanceGuid.ToString());
+            AddRuntimeMessage(GH_RuntimeMessageLevel.Warning,
+                "No gene parameters connected. Connect number sliders or gene pools.");
+            return;
         }
 
+        Message = $"{geneIds.Count} gene{(geneIds.Count == 1 ? "" : "s")}";
         DA.SetDataList(0, geneIds);
     }
 }

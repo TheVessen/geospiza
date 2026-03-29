@@ -37,12 +37,14 @@ public class GH_ObserverToJson : GH_Component
         // Get inputs
         GH_ObjectWrapper observer = null;
         if (!DA.GetData(0, ref observer)) return;
-        var observerType = observer.ScriptVariable() as EvolutionObserver;
 
-        // Convert the observer to a JSON string
-        var json = observerType.ToJson();
+        if (observer.ScriptVariable() is not EvolutionObserver evolutionObserver)
+        {
+            AddRuntimeMessage(GH_RuntimeMessageLevel.Error,
+                "Input is not an EvolutionObserver. Connect the Observer output from a solver component.");
+            return;
+        }
 
-        // Set the output
-        DA.SetData(0, json);
+        DA.SetData(0, evolutionObserver.ToJson());
     }
 }

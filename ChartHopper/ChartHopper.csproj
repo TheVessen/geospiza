@@ -47,8 +47,17 @@
         parallel build racing to delete and write the same output directory at the
         same time (EBUSY). Both targets embed the same files; building once is enough.
     -->
+    <ItemGroup>
+        <WebSrc Include="$(MSBuildThisFileDirectory)app\src\**\*.*" />
+        <WebSrc Include="$(MSBuildThisFileDirectory)app\package.json" />
+        <WebSrc Include="$(MSBuildThisFileDirectory)web\src\**\*.*" />
+        <WebSrc Include="$(MSBuildThisFileDirectory)web\package.json" />
+    </ItemGroup>
+
     <Target Name="BuildWebPipelines" BeforeTargets="BeforeBuild"
-            Condition="'$(TargetFramework)' == 'net48'">
+            Condition="'$(TargetFramework)' == 'net48'"
+            Inputs="@(WebSrc)"
+            Outputs="$(WebAssetRoot)_app\version.json">
         <Message Text="Building ChartHopper legacy web package..." Importance="high" />
         <Exec Command="npm run build" WorkingDirectory="$(MSBuildThisFileDirectory)web" />
         <!-- RemoveDir here — before MSBuild opens any embedded files in either target -->

@@ -129,6 +129,12 @@ public class GH_NsgaIIISolver : GH_Component
 
         var geneIds = new List<string>();
         if (!DA.GetDataList(0, geneIds)) return;
+        if (geneIds.Count == 0)
+        {
+            AddRuntimeMessage(GH_RuntimeMessageLevel.Error,
+                "No gene IDs provided. Connect a Gene Collector component.");
+            return;
+        }
 
         var settings = new SolverSettings();
         if (!DA.GetData(1, ref settings)) return;
@@ -146,7 +152,18 @@ public class GH_NsgaIIISolver : GH_Component
 
         // Validate only when user attempts to run
         if (runButton)
-            // Check for Multi-Objective Fitness
+        {
+            if (!settings.IsMultiObjective)
+            {
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Error,
+                    "Single-objective Settings are not compatible with NSGA-III. " +
+                    "Use the Multi-Objective Settings component instead.");
+                return;
+            }
+
+            // Check for Multi-Objective Fitness — force a solve first so the MOF component
+            // has a chance to populate the singleton (avoids stale empty state on file open).
+            OnPingDocument().NewSolution(false);
             if (GeospizaCore.Core.Fitness.Instance.GetObjectives().Length == 0)
             {
                 AddRuntimeMessage(GH_RuntimeMessageLevel.Error,
@@ -155,6 +172,7 @@ public class GH_NsgaIIISolver : GH_Component
                     "The single-objective Fitness component does not work with NSGA-III.");
                 return;
             }
+        }
 
         if (_lastSolutionId != Guid.Empty && _solutionId != _lastSolutionId)
             return;
@@ -186,7 +204,7 @@ public class GH_NsgaIIISolver : GH_Component
 
         try
         {
-            using var cts = new CancellationTokenSource();
+            StateManager.RunCts = new CancellationTokenSource();
             _solutionId = Guid.NewGuid();
 
             EvolutionObserver.Reset();
@@ -197,7 +215,7 @@ public class GH_NsgaIIISolver : GH_Component
             RhinoApp.Wait();
 
             var solver = new NsgaIIISolver(_privateSettings, StateManager, EvolutionObserver, _privateDivisions);
-            solver.RunAlgorithm(cts.Token);
+            solver.RunAlgorithm(StateManager.RunCts.Token);
 
             Message = "Done";
             _lastSolutionId = _solutionId;
@@ -210,8 +228,11 @@ public class GH_NsgaIIISolver : GH_Component
         finally
         {
             EvolutionObserver.GenerationCompleted -= OnGenerationCompleted;
+            StateManager.RunCts?.Dispose();
+            StateManager.RunCts = null;
             _isRunning = false;
             _isLocked = false;
+            EvolutionObserver.NotifyRunCompleted();
         }
     }
 

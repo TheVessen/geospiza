@@ -139,7 +139,7 @@ public class Population
     /// <returns></returns>
     public double GetAverageFitness()
     {
-        return CalculateTotalFitness() / Count;
+        return Count == 0 ? 0.0 : CalculateTotalFitness() / Count;
     }
 
     /// <summary>

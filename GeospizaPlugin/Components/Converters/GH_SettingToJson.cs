@@ -34,11 +34,13 @@ public class GH_SettingToJson : GH_Component
         var settingWrapper = new GH_ObjectWrapper();
         if (!DA.GetData(0, ref settingWrapper)) return;
 
-        if (settingWrapper.Value is SolverSettings setting)
+        if (settingWrapper.Value is not SolverSettings setting)
         {
-            var json = setting.ToJson();
-
-            DA.SetData(0, json);
+            AddRuntimeMessage(GH_RuntimeMessageLevel.Error,
+                "Input is not a SolverSettings object. Connect a Settings or Multi-Objective Settings component.");
+            return;
         }
+
+        DA.SetData(0, setting.ToJson());
     }
 }

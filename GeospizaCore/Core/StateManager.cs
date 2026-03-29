@@ -1,4 +1,5 @@
-﻿using Grasshopper.Kernel;
+﻿using System.Threading;
+using Grasshopper.Kernel;
 using Grasshopper.Kernel.Special;
 
 namespace GeospizaCore.Core;
@@ -54,6 +55,12 @@ public class StateManager
     private int NumberOfGeneIds { get; set; }
 
     public bool IsRunning { get; set; }
+
+    /// <summary>
+    ///     CancellationTokenSource for the current solver run.
+    ///     Created fresh each run; external components can call Cancel() on it.
+    /// </summary>
+    public CancellationTokenSource RunCts { get; set; }
 
     /// <summary>
     ///     The preview level for the StateManager. Valid values are:
@@ -123,6 +130,26 @@ public class StateManager
             Instances.Remove(solver);
         }
     }
+
+    /// <summary>
+    ///     Returns all StateManager instances that are currently running a solver.
+    /// </summary>
+    public static IReadOnlyList<StateManager> GetRunningInstances()
+    {
+        lock (Padlock)
+        {
+            var result = new List<StateManager>();
+            foreach (var instance in Instances.Values)
+                if (instance.IsRunning)
+                    result.Add(instance);
+            return result;
+        }
+    }
+
+    /// <summary>
+    ///     Returns the solver component associated with this StateManager.
+    /// </summary>
+    public GH_Component GetSolverComponent() => SolverComponent;
 
     /// <summary>
     ///     Returns the document of the StateManager.

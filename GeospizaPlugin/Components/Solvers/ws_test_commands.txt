@@ -1,0 +1,8 @@
+const ws = new WebSocket('ws://127.0.0.1:8181');
+ws.onmessage = e => { try { console.log(JSON.parse(e.data)); } catch { console.log(e.data); } };
+ws.onopen = () => console.log('connected');
+ws.onclose = () => console.log('disconnected');
+
+send command
+
+ws.send(JSON.stringify({ command: 'run' }));

@@ -135,7 +135,10 @@ public class EvolutionObserver
     /// </summary>
     public IReadOnlyList<double> Hypervolume => _hypervolume;
 
+    public delegate void RunCompletedEventHandler(object sender, EventArgs e);
+
     public event GenerationCompletedEventHandler GenerationCompleted;
+    public event RunCompletedEventHandler RunCompleted;
 
     public static EvolutionObserver GetInstance(GH_Component solver)
     {
@@ -461,6 +464,11 @@ public class EvolutionObserver
     protected virtual void OnGenerationCompleted(GenerationCompletedEventArgs e)
     {
         GenerationCompleted?.Invoke(this, e);
+    }
+
+    public void NotifyRunCompleted()
+    {
+        RunCompleted?.Invoke(this, EventArgs.Empty);
     }
 
     private class ObserverDto
