@@ -6,3 +6,58 @@ ws.onclose = () => console.log('disconnected');
 send command
 
 ws.send(JSON.stringify({ command: 'run' }));
+
+
+In compute mode 
+
+1. GH file loads in RhinoCompute
+2. GH_WebObserver detects IsHeadless, connects as WS client to Endpoint
+3. Sends handshake { type: "handshake", algorithm: "...", objectiveNames: [...] }
+4. Sets Run=true once → solver starts
+5. Streams per-generation data to the SvelteKit server
+6. Run completes → sends { status: "done" } → disconnects
+
+
+
+/////////////
+On the SvelteKit side you need a WebSocket server that:
+
+Accepts connections from the browser client
+Accepts connections from RhinoCompute GH instances (as WS clients)
+Relays messages between them
+SvelteKit alone can't do this — it needs a Node.js WebSocket server running alongside it. The standard way is a custom server using ws or socket.io.
+
+The architecture:
+
+
+Browser ←→ SvelteKit WS Server ←→ RhinoCompute GH instance
+The server manages sessions — each RhinoCompute job gets a session ID, the browser subscribes to that session, messages from GH get forwarded to the right browser client.
+
+Concretely in SvelteKit:
+
+
+src/
+  server/
+    websocket.ts   — Node ws server, session management
+  routes/
+    api/
+      solve/
+        +server.ts — POST endpoint that triggers RhinoCompute with the session WS endpoint
+    +page.svelte   — browser client, connects to ws://yourserver/session/:id
+Flow:
+
+
+1. Browser POST /api/solve { ghFile, genes, settings }
+2. Server creates sessionId, stores pending session
+3. Server calls RhinoCompute with { ..., wsEndpoint: "ws://yourserver/relay/sessionId" }
+4. GH loads, WebObserver connects to ws://yourserver/relay/sessionId
+5. Server receives handshake → forwards to browser
+6. Per-generation messages → forwarded to browser
+7. { status: "done" } → session cleaned up
+The key package:
+
+
+npm install ws
+And in vite.config.ts you'd add a custom server plugin to attach the WS server to the same HTTP port.
+
+Want me to sketch out the actual SvelteKit server code?

@@ -8,17 +8,20 @@ using GeospizaCore.Web;
 using GeospizaPlugin.AsyncComponent;
 using GeospizaPlugin.Properties;
 using Grasshopper.Kernel;
-using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
 using Rhino;
 
 namespace GeospizaPlugin.Components.Solvers;
 
 /// <summary>
-///     Streams live evolution data over WebSocket to a web client.
-///     Wire the Run output into a solver's Run input to control which solver is targeted.
-///     The observer discovers the connected solver from the wire and auto-subscribes to its
-///     GenerationCompleted event when a run starts.
+///     Streams live evolution data over WebSocket.
+///
+///     LOCAL mode (default): hosts a WebSocket server. Wire Run output → solver Run input.
+///     Web client connects and sends {"command":"run"} to start.
+///
+///     HEADLESS mode (RhinoCompute): detected automatically via RhinoApp.IsRunningHeadless.
+///     Connects as a WebSocket client to the Endpoint input. Auto-starts the solver once
+///     after connecting. The Endpoint should be set via the RhinoCompute HTTP request inputs.
 /// </summary>
 public class GH_WebObserver : GH_Component
 {
@@ -26,14 +29,22 @@ public class GH_WebObserver : GH_Component
     private EvolutionObserver _attachedObserver;
     private string _endpoint = "ws://127.0.0.1:8181";
     private bool _run;
-    private bool _cancel;
-    private WebSocketService _wsService;
+    private bool _headlessRunFired;
+
+    // Local mode
+    private WebSocketService _wsServer;
+
+    // Headless mode
+    private WebSocketClientService _wsClient;
+
     private List<WebIndividual> _cachedIndividuals = new();
-    private List<WebIndividual> _lastSentIndividuals = null;
+    private List<WebIndividual> _lastSentIndividuals;
 
     public GH_WebObserver()
         : base("Web Observer", "WO",
-            "Streams live evolution data over WebSocket. Wire Run → solver Run input to control which solver is targeted.",
+            "Streams live evolution data over WebSocket. " +
+            "Local: hosts server, wire Run → solver. " +
+            "Headless (RhinoCompute): connects as client to Endpoint, auto-starts solver.",
             "Geospiza", "Solvers")
     {
     }
@@ -42,15 +53,18 @@ public class GH_WebObserver : GH_Component
     public override GH_Exposure Exposure => GH_Exposure.primary;
     protected override Bitmap Icon => Resources.Solver;
 
+    private bool IsHeadless => RhinoApp.IsRunningHeadless;
+
     protected override void RegisterInputParams(GH_InputParamManager pManager)
     {
         pManager.AddBooleanParameter("Activate", "A",
-            "If TRUE, starts the WebSocket server and listens for run/cancel commands.",
+            "Local mode: if TRUE starts the WebSocket server. Ignored in headless mode.",
             GH_ParamAccess.item, false);
-        pManager.AddTextParameter("Endpoint", "E", "WebSocket endpoint to listen on.",
+        pManager.AddTextParameter("Endpoint", "E",
+            "Local mode: address to host on.\nHeadless mode: address to connect to (set via RhinoCompute input).",
             GH_ParamAccess.item, "ws://127.0.0.1:8181");
         pManager.AddGenericParameter("WebIndividual", "WI",
-            "Optional geometry individuals to stream to the web client.",
+            "Optional geometry to stream. Updated per PreviewLevel.",
             GH_ParamAccess.list);
         pManager[2].Optional = true;
     }
@@ -59,7 +73,9 @@ public class GH_WebObserver : GH_Component
     {
         pManager.AddTextParameter("Message", "M", "Status message.", GH_ParamAccess.item);
         pManager.AddBooleanParameter("Run", "R",
-            "Wire this into the solver's Run input. Flips to true when the web client sends {command:'run'}, false when done or canceled.",
+            "Wire into solver's Run input. " +
+            "Local: flips true on {command:'run'} from client. " +
+            "Headless: flips true once after WS connection is established.",
             GH_ParamAccess.item);
     }
 
@@ -74,31 +90,47 @@ public class GH_WebObserver : GH_Component
         _activate = activate;
         _endpoint = endpoint;
 
-        if (!activate)
-        {
-            StopServer();
-            DA.SetData(0, "Inactive.");
-            DA.SetData(1, false);
-            return;
-        }
-
-        var individuals = new List<WebIndividual>();
+        // Cache WebIndividual geometry every solve cycle
         var ghObjects = new List<IGH_Goo>();
         DA.GetDataList(2, ghObjects);
+        var individuals = new List<WebIndividual>();
         foreach (var goo in ghObjects)
             if (goo?.ScriptVariable() is WebIndividual wi)
                 individuals.Add(wi);
         _cachedIndividuals = individuals;
 
-        StartServer();
+        if (IsHeadless)
+        {
+            HandleHeadlessSolve(DA);
+        }
+        else
+        {
+            HandleLocalSolve(DA, activate);
+        }
+    }
 
-        DA.SetData(0, _wsService?.IsRunning == true ? $"Listening on {_endpoint}" : "Server failed to start.");
+    // -------------------------------------------------------------------------
+    // LOCAL MODE
+    // -------------------------------------------------------------------------
+
+    private void HandleLocalSolve(IGH_DataAccess DA, bool activate)
+    {
+        if (!activate)
+        {
+            StopLocalServer();
+            DA.SetData(0, "Inactive.");
+            DA.SetData(1, false);
+            return;
+        }
+
+        StartLocalServer();
+        DA.SetData(0, _wsServer?.IsRunning == true ? $"Listening on {_endpoint}" : "Server failed to start.");
         DA.SetData(1, _run);
     }
 
-    private void StartServer()
+    private void StartLocalServer()
     {
-        if (_wsService != null && _wsService.IsRunning)
+        if (_wsServer != null && _wsServer.IsRunning)
             return;
 
         if (!Uri.TryCreate(_endpoint, UriKind.Absolute, out var uri) ||
@@ -108,101 +140,106 @@ public class GH_WebObserver : GH_Component
             return;
         }
 
-        _wsService = new WebSocketService(_endpoint);
-        _wsService.OnMessageReceived += HandleMessage;
-        _wsService.OnClientConnected += OnClientConnected;
-        _wsService.OnClientDisconnected += () => RhinoApp.WriteLine("WebObserver: client disconnected.");
-        _wsService.Start();
+        _wsServer = new WebSocketService(_endpoint);
+        _wsServer.OnMessageReceived += HandleIncomingMessage;
+        _wsServer.OnClientConnected += SendHandshake;
+        _wsServer.OnClientDisconnected += () => RhinoApp.WriteLine("WebObserver: client disconnected.");
+        _wsServer.Start();
 
         RhinoApp.WriteLine($"WebObserver: server started on {_endpoint}");
     }
 
-    private void StopServer()
+    private void StopLocalServer()
     {
         DetachObserver();
-        _wsService?.Stop();
-        _wsService = null;
+        _wsServer?.Stop();
+        _wsServer = null;
     }
 
-    /// <summary>
-    ///     Finds the solver component connected to this observer's Run output (index 1)
-    ///     and returns its EvolutionObserver singleton.
-    /// </summary>
-    private EvolutionObserver FindConnectedObserver()
+    private void SendMessage(string json)
     {
-        var runOutput = Params.Output[1];
-        var recipient = runOutput.Recipients.FirstOrDefault();
-        if (recipient == null)
-            return null;
-
-        var solverComponent = recipient.Attributes?.GetTopLevel?.DocObject as GH_Component;
-        if (solverComponent == null)
-            return null;
-
-        return EvolutionObserver.GetInstance(solverComponent);
+        if (IsHeadless)
+            _wsClient?.SendMessage(json);
+        else
+            _wsServer?.SendMessage(json);
     }
 
-    private void AttachObserver(EvolutionObserver observer)
+    // -------------------------------------------------------------------------
+    // HEADLESS MODE
+    // -------------------------------------------------------------------------
+
+    private void HandleHeadlessSolve(IGH_DataAccess DA)
     {
-        if (_attachedObserver == observer)
-            return;
+        // Connect once
+        if (_wsClient == null || !_wsClient.IsConnected)
+            ConnectAsClient();
 
-        DetachObserver();
-        _attachedObserver = observer;
-        _attachedObserver.GenerationCompleted += OnGenerationCompleted;
-        _attachedObserver.RunCompleted += OnRunCompleted;
+        // Auto-trigger run once after connecting, but never re-trigger
+        if (_wsClient?.IsConnected == true && !_headlessRunFired && !_run)
+        {
+            _headlessRunFired = true;
+            TriggerRun();
+        }
+
+        var status = _wsClient?.IsConnected == true ? $"Connected to {_endpoint}" : $"Connecting to {_endpoint}...";
+        DA.SetData(0, status);
+        DA.SetData(1, _run);
     }
 
-    private void DetachObserver()
+    private void ConnectAsClient()
     {
-        if (_attachedObserver == null)
-            return;
+        _wsClient?.Dispose();
+        _wsClient = new WebSocketClientService(_endpoint);
+        _wsClient.OnConnected += () =>
+        {
+            RhinoApp.WriteLine("WebObserver: connected to server.");
+            SendHandshake();
+        };
+        _wsClient.OnDisconnected += () => RhinoApp.WriteLine("WebObserver: disconnected from server.");
+        _wsClient.OnMessageReceived += HandleIncomingMessage;
 
-        _attachedObserver.GenerationCompleted -= OnGenerationCompleted;
-        _attachedObserver.RunCompleted -= OnRunCompleted;
-        _attachedObserver = null;
+        // Block briefly to establish connection before first solve
+        _wsClient.ConnectAsync().GetAwaiter().GetResult();
     }
 
-    private void OnGenerationCompleted(object sender, EvolutionObserver.GenerationCompletedEventArgs e)
+    // -------------------------------------------------------------------------
+    // SHARED
+    // -------------------------------------------------------------------------
+
+    private void SendHandshake()
     {
-        if (_wsService == null || !_wsService.IsRunning)
-            return;
+        var observer = FindConnectedObserver();
+        var handshake = new Dictionary<string, object>
+        {
+            { "type", "handshake" },
+            { "algorithm", observer?.Algorithm.ToString() ?? "Unknown" },
+            { "mode", IsHeadless ? "headless" : "local" }
+        };
 
-        var observer = (EvolutionObserver)sender;
-        _wsService.SendMessage(BuildMessage(observer, "running"));
+        if (observer?.ObjectiveNames != null)
+            handshake["objectiveNames"] = observer.ObjectiveNames;
+
+        SendMessage(JsonSerializer.Serialize(handshake,
+            new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }));
     }
 
-    private void OnRunCompleted(object sender, EventArgs e)
-    {
-        var observer = (EvolutionObserver)sender;
-        _wsService?.SendMessage(BuildMessage(observer, "done"));
-        _run = false;
-        DetachObserver();
-        OnPingDocument()?.ScheduleSolution(50, doc => ExpireSolution(true));
-    }
-
-    private void HandleMessage(string message)
+    private void HandleIncomingMessage(string message)
     {
         try
         {
-            using var doc = System.Text.Json.JsonDocument.Parse(message);
+            using var doc = JsonDocument.Parse(message);
             var command = doc.RootElement.TryGetProperty("command", out var cmd)
                 ? cmd.GetString()?.ToLowerInvariant()
                 : null;
 
             if (command == "run")
-            {
                 RhinoApp.InvokeOnUiThread(() => TriggerRun());
-            }
             else if (command == "cancel")
-            {
                 RhinoApp.InvokeOnUiThread(() => TriggerCancel());
-            }
             else if (command == "status")
             {
-                var observer = FindConnectedObserver();
-                var isRunning = observer != null && StateManager.GetRunningInstances().Count > 0;
-                _wsService?.SendMessage(JsonSerializer.Serialize(new { status = isRunning ? "running" : "idle" }));
+                var isRunning = StateManager.GetRunningInstances().Count > 0;
+                SendMessage(JsonSerializer.Serialize(new { status = isRunning ? "running" : "idle" }));
             }
         }
         catch (Exception ex)
@@ -211,16 +248,39 @@ public class GH_WebObserver : GH_Component
         }
     }
 
+    private EvolutionObserver FindConnectedObserver()
+    {
+        var recipient = Params.Output[1].Recipients.FirstOrDefault();
+        if (recipient == null) return null;
+        var solverComponent = recipient.Attributes?.GetTopLevel?.DocObject as GH_Component;
+        return solverComponent == null ? null : EvolutionObserver.GetInstance(solverComponent);
+    }
+
+    private void AttachObserver(EvolutionObserver observer)
+    {
+        if (_attachedObserver == observer) return;
+        DetachObserver();
+        _attachedObserver = observer;
+        _attachedObserver.GenerationCompleted += OnGenerationCompleted;
+        _attachedObserver.RunCompleted += OnRunCompleted;
+    }
+
+    private void DetachObserver()
+    {
+        if (_attachedObserver == null) return;
+        _attachedObserver.GenerationCompleted -= OnGenerationCompleted;
+        _attachedObserver.RunCompleted -= OnRunCompleted;
+        _attachedObserver = null;
+    }
+
     private void TriggerRun()
     {
-        if (!_activate) return;
+        if (!IsHeadless && !_activate) return;
 
         var observer = FindConnectedObserver();
-        if (observer != null)
-            AttachObserver(observer);
+        if (observer != null) AttachObserver(observer);
 
         _run = true;
-        _cancel = false;
         _lastSentIndividuals = null;
 
         OnPingDocument()?.ScheduleSolution(50, doc => ExpireSolution(true));
@@ -230,37 +290,35 @@ public class GH_WebObserver : GH_Component
     {
         _run = false;
 
-        // Cancel via the StateManager's CTS directly — no need to wait for a solve cycle
         var running = StateManager.GetRunningInstances();
         foreach (var sm in running)
             sm.RunCts?.Cancel();
 
-        _wsService?.SendMessage(JsonSerializer.Serialize(new { status = "canceled" }));
-
+        SendMessage(JsonSerializer.Serialize(new { status = "canceled" }));
         DetachObserver();
         OnPingDocument()?.ScheduleSolution(50, doc => ExpireSolution(true));
     }
 
-
-    private void OnClientConnected()
+    private void OnGenerationCompleted(object sender, EvolutionObserver.GenerationCompletedEventArgs e)
     {
-        RhinoApp.WriteLine("WebObserver: client connected.");
+        SendMessage(BuildMessage((EvolutionObserver)sender, "running"));
+    }
 
-        var observer = FindConnectedObserver();
-        var algorithmType = observer?.Algorithm.ToString() ?? "Unknown";
-        var objectiveNames = observer?.ObjectiveNames;
+    private void OnRunCompleted(object sender, EventArgs e)
+    {
+        SendMessage(BuildMessage((EvolutionObserver)sender, "done"));
+        _run = false;
+        DetachObserver();
 
-        var handshake = new Dictionary<string, object>
+        if (IsHeadless)
         {
-            { "type", "handshake" },
-            { "algorithm", algorithmType },
-        };
-
-        if (objectiveNames != null)
-            handshake["objectiveNames"] = objectiveNames;
-
-        _wsService?.SendMessage(JsonSerializer.Serialize(handshake,
-            new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }));
+            // Disconnect cleanly — compute instance is done
+            _wsClient?.Disconnect();
+        }
+        else
+        {
+            OnPingDocument()?.ScheduleSolution(50, doc => ExpireSolution(true));
+        }
     }
 
     private string BuildMessage(EvolutionObserver observer, string status)
@@ -273,7 +331,7 @@ public class GH_WebObserver : GH_Component
         {
             { "status", status },
             { "algorithm", observer.Algorithm.ToString() },
-            { "currentGeneration", observer.CurrentGenerationIndex },
+            { "currentGeneration", observer.CurrentGenerationIndex }
         };
 
         switch (observer.Algorithm)
@@ -300,20 +358,19 @@ public class GH_WebObserver : GH_Component
                 {
                     var latestStats = observer.ObjectiveStats[observer.ObjectiveStats.Count - 1];
                     var names = observer.ObjectiveNames;
-                    var objArray = new List<Dictionary<string, object>>();
+                    var objList = new List<Dictionary<string, object>>();
                     for (var i = 0; i < latestStats.Length; i++)
                     {
                         var stat = latestStats[i];
-                        var entry = new Dictionary<string, object>
+                        objList.Add(new Dictionary<string, object>
                         {
                             { "name", names != null && i < names.Length ? names[i] : $"Objective {i + 1}" },
                             { "min", stat[0] },
                             { "max", stat[1] },
                             { "mean", stat[2] }
-                        };
-                        objArray.Add(entry);
+                        });
                     }
-                    root["objectives"] = objArray;
+                    root["objectives"] = objList;
                 }
                 break;
         }
@@ -327,7 +384,8 @@ public class GH_WebObserver : GH_Component
 
     public override void RemovedFromDocument(GH_Document document)
     {
-        StopServer();
+        StopLocalServer();
+        _wsClient?.Dispose();
         base.RemovedFromDocument(document);
     }
 }
