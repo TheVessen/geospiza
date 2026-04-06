@@ -55,13 +55,22 @@ export function initThree(canvas: HTMLCanvasElement) {
   window.addEventListener("resize", setSize);
 
   // Animation loop
-  (function animate() {
-    requestAnimationFrame(animate);
+  let animationFrameId: number;
+  function animate() {
+    animationFrameId = requestAnimationFrame(animate);
     controls.update();
     renderer.render(scene, camera);
-  })();
+  }
+  animate();
 
-  return { scene, camera, renderer, controls };
+  function dispose() {
+    cancelAnimationFrame(animationFrameId);
+    window.removeEventListener("resize", setSize);
+    controls.dispose();
+    renderer.dispose();
+  }
+
+  return { scene, camera, renderer, controls, dispose };
 }
 
 /**

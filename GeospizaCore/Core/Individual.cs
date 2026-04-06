@@ -51,7 +51,7 @@ public class Individual : IEquatable<Individual>
         _genePool = individual.GenePool.Select(g => new Gene(g)).ToList();
         GenePool = _genePool.AsReadOnly();
         Fitness = individual.Fitness;
-        Probability = 0;
+        Probability = individual.Probability;
         Generation = individual.Generation;
         Objectives = individual.Objectives != null ? (double[])individual.Objectives.Clone() : null;
         ParetoRank = individual.ParetoRank;

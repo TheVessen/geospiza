@@ -23,7 +23,8 @@
 
   // Three.js related variables
   let canvas: HTMLCanvasElement | null = $state(null);
-  let scene: THREE.Scene;
+  let scene: THREE.Scene | undefined;
+  let disposeThree: (() => void) | undefined;
 
   // D3 related variables
   let chartContainer: HTMLDivElement;
@@ -40,6 +41,7 @@
         currentGeneration = data.currentGeneration;
 
         if (
+          scene &&
           showMeshPreview &&
           data.meshes?.length > 0 &&
           fitnessValues.length % MESH_UPDATE_INTERVAL === 0
@@ -56,7 +58,7 @@
 
   function toggleMeshPreview() {
     showMeshPreview = !showMeshPreview;
-    if (!showMeshPreview) {
+    if (!showMeshPreview && scene) {
       clearScene(scene);
     }
   }
@@ -98,11 +100,16 @@
     });
 
     wsService.connect();
-    if (canvas) ({ scene } = initThree(canvas));
+    if (canvas) {
+      const three = initThree(canvas);
+      scene = three.scene;
+      disposeThree = three.dispose;
+    }
     initD3Chart(chartContainer);
   });
 
   onDestroy(() => {
+    disposeThree?.();
     wsService?.disconnect();
   });
 </script>

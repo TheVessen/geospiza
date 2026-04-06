@@ -5,7 +5,7 @@ type ConnectionStatus = "connecting" | "connected" | "timeout" | "error" | "disc
 type EventCallback = (...args: any[]) => void;
 
 export class EventEmitter {
-  private events: Map<string, EventCallback[]>;
+  protected events: Map<string, EventCallback[]>;
 
   constructor() {
     this.events = new Map();
@@ -90,7 +90,8 @@ export class WebSocketService extends EventEmitter {
     };
 
     this.socket.onmessage = (event: MessageEvent) => {
-      if (typeof event.data === "string" && event.data.trim()[0] !== "{") {
+      const trimmed = typeof event.data === "string" ? event.data.trim() : "";
+      if (typeof event.data === "string" && (trimmed.length === 0 || trimmed[0] !== "{")) {
         console.warn("Non-JSON message received:", event.data);
         return;
       }
@@ -143,5 +144,10 @@ export class WebSocketService extends EventEmitter {
     this.isMounted = false;
     if (this.socket) this.socket.close();
     if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
+    this.removeAllListeners();
+  }
+
+  public removeAllListeners(): void {
+    this.events.clear();
   }
 }

@@ -97,7 +97,8 @@ public class BaseSolver : EvolutionBlueprint
         if (completed)
         {
             var best = Population.SelectTopIndividuals(1);
-            best[0].Reinstate(StateManager);
+            if (best.Count > 0)
+                best[0].Reinstate(StateManager);
         }
     }
 
