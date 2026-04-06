@@ -202,7 +202,9 @@ public class GH_BasicSolver : GH_Component
     public override void RemovedFromDocument(GH_Document document)
     {
         EvolutionObserver.RemoveInstance(this);
+        EvolutionObserver = null;
         StateManager.RemoveInstance(this);
+        StateManager = null;
         base.RemovedFromDocument(document);
     }
 

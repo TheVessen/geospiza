@@ -239,7 +239,9 @@ public class GH_NsgaIIISolver : GH_Component
     public override void RemovedFromDocument(GH_Document document)
     {
         EvolutionObserver.RemoveInstance(this);
+        EvolutionObserver = null;
         StateManager.RemoveInstance(this);
+        StateManager = null;
         base.RemovedFromDocument(document);
     }
 

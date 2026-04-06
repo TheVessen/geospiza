@@ -167,7 +167,8 @@ public class NsgaIISolver : EvolutionBlueprint
         var offspring = new Population();
         var selector = new NsgaIITournamentSelection(Random);
 
-        while (offspring.Count < PopulationSize && !cancellationToken.IsCancellationRequested)
+        var safetyLimit = PopulationSize * 10;
+        while (offspring.Count < PopulationSize && !cancellationToken.IsCancellationRequested && safetyLimit-- > 0)
         {
             var matingPool = selector.Select(Population, PopulationSize);
             var pairs = PairingStrategy.PairIndividuals(matingPool);

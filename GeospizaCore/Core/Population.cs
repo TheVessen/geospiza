@@ -56,13 +56,15 @@ public class Population
 
     /// <summary>
     ///     Tests the population by evaluating the fitness of each individual and updating their fitness values.
+    ///     Pass <paramref name="skipCount" /> to skip the first N individuals (e.g. elites already evaluated).
     /// </summary>
     /// <param name="stateManager">The state manager containing the genotype and other state information.</param>
     /// <param name="evolutionObserver">The evolution observer used to track the best fitness values.</param>
+    /// <param name="skipCount">Number of leading individuals to skip (they retain their existing fitness).</param>
     /// <exception cref="System.Exception">Thrown if the document or fitness component is null.</exception>
-    public void TestPopulation(StateManager stateManager, EvolutionObserver evolutionObserver)
+    public void TestPopulation(StateManager stateManager, EvolutionObserver evolutionObserver, int skipCount = 0)
     {
-        EvaluateIndividuals(stateManager, evolutionObserver,
+        EvaluateIndividuals(stateManager, evolutionObserver, skipCount,
             individual => { individual.SetFitness(Fitness.Instance.GetFitness()); });
     }
 
@@ -70,10 +72,11 @@ public class Population
     ///     Tests the population for multi-objective optimization by evaluating each individual's objectives
     ///     and updating their <see cref="Individual.Objectives" /> values.
     ///     Also sets <see cref="Individual.Fitness" /> to <c>objectives[0]</c> for observer backward-compatibility.
+    ///     Pass <paramref name="skipCount" /> to skip the first N individuals (e.g. elites already evaluated).
     /// </summary>
-    public void TestPopulationMultiObjective(StateManager stateManager, EvolutionObserver evolutionObserver)
+    public void TestPopulationMultiObjective(StateManager stateManager, EvolutionObserver evolutionObserver, int skipCount = 0)
     {
-        EvaluateIndividuals(stateManager, evolutionObserver, individual =>
+        EvaluateIndividuals(stateManager, evolutionObserver, skipCount, individual =>
         {
             var objectives = Fitness.Instance.GetObjectives();
             individual.SetObjectives(objectives);
@@ -84,15 +87,17 @@ public class Population
 
     /// <summary>
     ///     Shared evaluation loop: applies genes, solves the document, and delegates fitness assignment to the caller.
+    ///     Skips the first <paramref name="skipCount" /> individuals without re-evaluating them.
     /// </summary>
     private void EvaluateIndividuals(StateManager stateManager, EvolutionObserver evolutionObserver,
-        Action<Individual> assignFitness)
+        int skipCount, Action<Individual> assignFitness)
     {
         var bestFitness = evolutionObserver.BestFitness;
         var max = bestFitness.Count > 0 ? bestFitness[bestFitness.Count - 1] : double.MinValue;
 
-        foreach (var individual in Inhabitants)
+        for (var idx = skipCount; idx < Inhabitants.Count; idx++)
         {
+            var individual = Inhabitants[idx];
             foreach (var gene in individual.GenePool)
             {
                 var genotype = stateManager.Genotype;

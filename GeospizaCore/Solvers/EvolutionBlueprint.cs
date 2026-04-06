@@ -18,6 +18,12 @@ public abstract class EvolutionBlueprint : IEvolutionarySolver
     // Adaptive rate control — base values captured once at algorithm start.
     private double _baseMutationRate;
 
+    // Configured rates read from settings at construction time — used to reset
+    // strategy objects before each run so drift from AdaptStrategies doesn't
+    // compound across consecutive runs on the same SolverSettings instance.
+    private readonly double _configuredMutationRate;
+    private readonly double _configuredCrossoverRate;
+
     /// <summary>
     ///     Initializes the evolutionary algorithm with the given settings.
     /// </summary>
@@ -32,6 +38,11 @@ public abstract class EvolutionBlueprint : IEvolutionarySolver
         MutationStrategy = settings.MutationStrategy;
         PairingStrategy = settings.PairingStrategy;
         TerminationStrategy = settings.TerminationStrategy;
+
+        // Capture the user-configured rates before any run so we can restore them
+        // at the start of each run (AdaptStrategies mutates these on the shared objects).
+        _configuredMutationRate = settings.MutationStrategy.MutationRate;
+        _configuredCrossoverRate = settings.CrossoverStrategy.CrossoverRate;
     }
 
     protected Population Population { get; set; } = new();
@@ -139,13 +150,16 @@ public abstract class EvolutionBlueprint : IEvolutionarySolver
     }
 
     /// <summary>
-    ///     Records the initial mutation and crossover rates so <see cref="AdaptStrategies" /> can
-    ///     decay back to them after a stagnation boost. Call once before the main loop.
+    ///     Resets strategy rates to the user-configured values and records them as the base
+    ///     for <see cref="AdaptStrategies" /> decay. Call once before the main loop.
+    ///     This undoes any rate drift left on the shared strategy objects from a previous run.
     /// </summary>
     protected void CaptureBaseRates()
     {
-        _baseMutationRate = MutationStrategy.MutationRate;
-        _baseCrossoverRate = CrossoverStrategy.CrossoverRate;
+        MutationStrategy.MutationRate = _configuredMutationRate;
+        CrossoverStrategy.CrossoverRate = _configuredCrossoverRate;
+        _baseMutationRate = _configuredMutationRate;
+        _baseCrossoverRate = _configuredCrossoverRate;
     }
 
     /// <summary>

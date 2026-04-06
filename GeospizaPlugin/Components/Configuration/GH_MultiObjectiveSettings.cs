@@ -37,7 +37,7 @@ public class GH_MultiObjectiveSettings : GH_Component
             "The number of elite individuals. If 0 no elite will be picked", GH_ParamAccess.item, 1);
         pManager.AddGenericParameter("Selection Strategy", "SS",
             "The selection strategy. Default: TournamentSelection with size 3.", GH_ParamAccess.item);
-        pManager.AddGenericParameter("Pairing Strategy", "PS",
+        pManager.AddGenericParameter("Pairing Strategy", "PA",
             "The pairing strategy. Default: RankAwarePairing (recommended for NSGA-II/III).",
             GH_ParamAccess.item);
         pManager.AddGenericParameter("Crossover Strategy", "CS",
@@ -89,6 +89,12 @@ public class GH_MultiObjectiveSettings : GH_Component
         if (maxGenerations <= 0)
         {
             AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Max generations must be greater than 0");
+            return;
+        }
+        if (eliteSize < 0 || eliteSize >= populationSize)
+        {
+            AddRuntimeMessage(GH_RuntimeMessageLevel.Error,
+                $"Elite size must be between 0 and population size - 1 (got {(int)eliteSize}, population {(int)populationSize})");
             return;
         }
 

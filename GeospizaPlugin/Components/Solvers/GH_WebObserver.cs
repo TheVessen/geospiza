@@ -384,6 +384,7 @@ public class GH_WebObserver : GH_Component
 
     public override void RemovedFromDocument(GH_Document document)
     {
+        DetachObserver();
         StopLocalServer();
         _wsClient?.Dispose();
         base.RemovedFromDocument(document);

@@ -66,7 +66,7 @@ public class BaseSolver : EvolutionBlueprint
                 foreach (var inhabitant in newPopulation.Inhabitants)
                     inhabitant.SetGeneration(i + 1);
 
-                newPopulation.TestPopulation(StateManager, EvolutionObserver);
+                newPopulation.TestPopulation(StateManager, EvolutionObserver, elite.Count);
 
                 StateManager.GetDocument().ExpirePreview(false);
                 EvolutionObserver.Snapshot(newPopulation);

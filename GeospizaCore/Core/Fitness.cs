@@ -63,6 +63,7 @@ public class Fitness
     public void ResetFitness()
     {
         _fitness = 0;
+        _objectives = Array.Empty<double>();
         _objectiveNames = Array.Empty<string>();
     }
 }
