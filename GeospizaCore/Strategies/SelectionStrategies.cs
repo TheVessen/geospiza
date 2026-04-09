@@ -64,7 +64,7 @@ public class TournamentSelection : SelectionStrategy
     /// <summary>
     ///     The size of the tournament in tournament selection.
     /// </summary>
-    private int TournamentSize { get; }
+    public int TournamentSize { get; }
 
     public override List<Individual> Select(Population population, int numberOfSelections)
     {

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Linq;
 using System.Threading;
 using GeospizaCore.Core;
 using GeospizaCore.Solvers;
@@ -101,11 +102,13 @@ public class GH_NsgaIISolver : GH_Component
 
     protected override void SolveInstance(IGH_DataAccess DA)
     {
-        if (_isLocked)
+        ClearRuntimeMessages();
+        if (_isLocked && _isRunning)
         {
             AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "Solver is currently running. Please wait.");
             return;
         }
+        _isLocked = false;
 
         var geneIds = new List<string>();
         if (!DA.GetDataList(0, geneIds)) return;
@@ -137,18 +140,6 @@ public class GH_NsgaIISolver : GH_Component
                 return;
             }
 
-            // Check for Multi-Objective Fitness — force a solve first so the MOF component
-            // has a chance to populate the singleton (avoids stale empty state on file open).
-            OnPingDocument().NewSolution(false);
-            if (GeospizaCore.Core.Fitness.Instance.GetObjectives().Length == 0)
-            {
-                AddRuntimeMessage(GH_RuntimeMessageLevel.Error,
-                    "No multi-objective fitness found. " +
-                    "Connect a Multi-Objective Fitness (MOF) component with at least one objective. " +
-                    "The single-objective Fitness component does not work with NSGA-II.");
-                return;
-            }
-
             if (settings.PairingStrategy is ReferencePointPairingStrategy)
                 AddRuntimeMessage(GH_RuntimeMessageLevel.Warning,
                     "Reference Point Pairing is designed for NSGA-III. " +
@@ -175,6 +166,23 @@ public class GH_NsgaIISolver : GH_Component
 
     private void ScheduleCallback(GH_Document doc)
     {
+        // Validate MOF by scanning the canvas — more reliable than checking the Fitness
+        // singleton, which may be wiped by StateManager.Reset() during the same solve cycle.
+        var hasMof = doc.Objects
+            .OfType<Grasshopper.Kernel.IGH_Component>()
+            .Any(c => c.GetType().Name == "GH_MultiObjectiveFitness");
+        if (!hasMof)
+        {
+            AddRuntimeMessage(GH_RuntimeMessageLevel.Error,
+                "No multi-objective fitness found. " +
+                "Connect a Multi-Objective Fitness (MOF) component with at least one objective. " +
+                "The single-objective Fitness component does not work with NSGA-II.");
+            _isRunning = false;
+            _isLocked = false;
+            OnDisplayExpired(true);
+            return;
+        }
+
         var maxGenerations = _privateSettings.MaxGenerations;
 
         void OnGenerationCompleted(object sender, EvolutionObserver.GenerationCompletedEventArgs e)
@@ -214,7 +222,9 @@ public class GH_NsgaIISolver : GH_Component
             StateManager.RunCts = null;
             _isRunning = false;
             _isLocked = false;
+            ClearRuntimeMessages();
             EvolutionObserver.NotifyRunCompleted();
+            ExpireSolution(true);
         }
     }
 

@@ -12,11 +12,46 @@ public class SolverSettings
     private int _eliteSize;
     private int _maxGenerations;
     private int _populationSize;
+    private ICrossoverStrategy _crossoverStrategy = null!;
+    private IMutationStrategy _mutationStrategy = null!;
     public ISelectionStrategy SelectionStrategy { get; set; } = null!;
-    public ICrossoverStrategy CrossoverStrategy { get; set; } = null!;
-    public IMutationStrategy MutationStrategy { get; set; } = null!;
+
+    public ICrossoverStrategy CrossoverStrategy
+    {
+        get => _crossoverStrategy;
+        set
+        {
+            _crossoverStrategy = value;
+            ConfiguredCrossoverRate = value?.CrossoverRate ?? 0;
+        }
+    }
+
+    public IMutationStrategy MutationStrategy
+    {
+        get => _mutationStrategy;
+        set
+        {
+            _mutationStrategy = value;
+            ConfiguredMutationRate = value?.MutationRate ?? 0;
+        }
+    }
+
     public IPairingStrategy PairingStrategy { get; set; } = null!;
     public ITerminationStrategy TerminationStrategy { get; set; } = null!;
+
+    /// <summary>
+    ///     The mutation rate as originally configured by the user.
+    ///     Captured when <see cref="MutationStrategy" /> is first assigned and never mutated by
+    ///     <c>AdaptStrategies</c>, so it is always safe to read as the true baseline.
+    /// </summary>
+    public double ConfiguredMutationRate { get; private set; }
+
+    /// <summary>
+    ///     The crossover rate as originally configured by the user.
+    ///     Captured when <see cref="CrossoverStrategy" /> is first assigned and never mutated by
+    ///     <c>AdaptStrategies</c>, so it is always safe to read as the true baseline.
+    /// </summary>
+    public double ConfiguredCrossoverRate { get; private set; }
 
     public int PopulationSize
     {

@@ -100,10 +100,22 @@ public class Population
             var individual = Inhabitants[idx];
             foreach (var gene in individual.GenePool)
             {
-                var genotype = stateManager.Genotype;
-                if (genotype == null) throw new Exception("Genotype is null for " + gene.GeneName);
-                if (genotype.TryGetValue(gene.GeneGuid, out var matchingGene))
-                    matchingGene.SetTickValue(gene.TickValue, stateManager);
+                if (gene.GenePoolIndex >= 0)
+                {
+                    if (stateManager.AllGenePools.TryGetValue(gene.GhInstanceGuid, out var genePool))
+                    {
+                        genePool.set_TickValue(gene.GenePoolIndex, gene.TickValue);
+                        genePool.ExpireSolutionTopLevel(false);
+                    }
+                }
+                else
+                {
+                    if (stateManager.AllSliders.TryGetValue(gene.GhInstanceGuid, out var slider))
+                    {
+                        slider.TickValue = gene.TickValue;
+                        slider.ExpireSolutionTopLevel(false);
+                    }
+                }
             }
 
             var doc = stateManager.GetDocument();

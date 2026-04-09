@@ -38,7 +38,7 @@ public class StateManager
     ///     gene pool.
     /// </summary>
     public Dictionary<Guid, dynamic> AllGenePools { get; private set; } = new();
-
+    
     /// <summary>
     ///     A dictionary that holds all number sliders, where the key is a Guid and the value is a GH_NumberSlider object.
     /// </summary>
@@ -55,6 +55,8 @@ public class StateManager
     private int NumberOfGeneIds { get; set; }
 
     public bool IsRunning { get; set; }
+    
+    
 
     /// <summary>
     ///     CancellationTokenSource for the current solver run.

@@ -94,6 +94,7 @@ public class GeneTemplate
             {
                 slider.TickValue = tickValue;
                 TickValue = tickValue;
+                slider.ExpireSolutionTopLevel(false);
             }
         }
         else

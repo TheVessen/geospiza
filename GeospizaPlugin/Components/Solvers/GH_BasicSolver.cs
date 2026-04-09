@@ -97,11 +97,13 @@ public class GH_BasicSolver : GH_Component
 
     protected override void SolveInstance(IGH_DataAccess DA)
     {
-        if (_isLocked)
+        ClearRuntimeMessages();
+        if (_isLocked && _isRunning)
         {
             AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "Solver is currently running. Please wait.");
             return;
         }
+        _isLocked = false;
 
         var geneIds = new List<string>();
         if (!DA.GetDataList(0, geneIds)) return;
@@ -195,7 +197,9 @@ public class GH_BasicSolver : GH_Component
             StateManager.RunCts = null;
             _isRunning = false;
             _isLocked = false;
+            ClearRuntimeMessages();
             EvolutionObserver.NotifyRunCompleted();
+            ExpireSolution(true);
         }
     }
 

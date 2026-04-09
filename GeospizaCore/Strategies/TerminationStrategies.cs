@@ -8,6 +8,25 @@ public interface ITerminationStrategy
     public bool Evaluate(EvolutionObserver evolutionObserver);
 }
 
+/// <summary>
+///     Combines multiple termination strategies and fires when any one of them triggers.
+/// </summary>
+public class CompositeTermination : ITerminationStrategy
+{
+    private readonly List<ITerminationStrategy> _strategies;
+
+    public CompositeTermination(IEnumerable<ITerminationStrategy> strategies)
+    {
+        _strategies = new List<ITerminationStrategy>(strategies);
+    }
+
+    // Not meaningful for composite — individual strategies have their own thresholds.
+    public double TerminationThreshold { get; set; }
+
+    public bool Evaluate(EvolutionObserver evolutionObserver)
+        => _strategies.Any(s => s.Evaluate(evolutionObserver));
+}
+
 public abstract class TerminationStrategy : ITerminationStrategy
 {
     public abstract bool Evaluate(EvolutionObserver evolutionObserver);
@@ -16,7 +35,7 @@ public abstract class TerminationStrategy : ITerminationStrategy
 
 public class ProgressConvergence : TerminationStrategy
 {
-    private readonly int ProgressRange;
+    public int ProgressRange { get; }
 
     public ProgressConvergence(double threshold = 0.1, int progressRange = 5)
     {
@@ -48,6 +67,31 @@ public class ProgressConvergence : TerminationStrategy
         var finalNormalizedDelta = totalNormalizedDelta / ProgressRange;
 
         return finalNormalizedDelta < TerminationThreshold;
+    }
+}
+
+/// <summary>
+///     Termination strategy that fires when the best fitness has not improved
+///     by more than <see cref="ITerminationStrategy.TerminationThreshold" /> over
+///     the last <see cref="StagnationGenerations" /> generations.
+/// </summary>
+public class BestFitnessStagnation : TerminationStrategy
+{
+    public int StagnationGenerations { get; }
+
+    public BestFitnessStagnation(int stagnationGenerations = 20, double threshold = 1e-6)
+    {
+        StagnationGenerations = stagnationGenerations;
+        TerminationThreshold = threshold;
+    }
+
+    public override bool Evaluate(EvolutionObserver evolutionObserver)
+    {
+        var best = evolutionObserver.BestFitness;
+        if (best.Count <= StagnationGenerations) return false;
+        var recent = best[best.Count - 1];
+        var baseline = best[best.Count - StagnationGenerations - 1];
+        return Math.Abs(recent - baseline) <= TerminationThreshold;
     }
 }
 

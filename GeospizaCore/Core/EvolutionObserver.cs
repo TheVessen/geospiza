@@ -1,4 +1,5 @@
-﻿using System.Collections.Concurrent;
+using System.Collections.Concurrent;
+using GeospizaCore.Solvers;
 using Grasshopper.Kernel;
 using Newtonsoft.Json;
 
@@ -8,10 +9,6 @@ namespace GeospizaCore.Core;
 ///     Observes and tracks the evolution of a population across generations.
 ///     Implements the Singleton pattern per GH_Component and provides thread-safe access to evolution metrics.
 /// </summary>
-/// <remarks>
-///     Generation history is stored in compact form: gene metadata (<see cref="GeneSchema" />) is recorded once
-///     and per-generation data contains only tick values and fitness, avoiding massive metadata repetition.
-/// </remarks>
 public class EvolutionObserver
 {
     public enum AlgorithmType
@@ -28,7 +25,8 @@ public class EvolutionObserver
     private static readonly JsonSerializerSettings _toJsonSettings = new()
     {
         FloatFormatHandling = FloatFormatHandling.String,
-        Converters = { new Individual.IndividualConverter() }
+        NullValueHandling = NullValueHandling.Ignore,
+        Converters = { new Individual.IndividualConverter(), new Newtonsoft.Json.Converters.StringEnumConverter() }
     };
 
     private static readonly JsonSerializerSettings _fromJsonSettings = new()
@@ -36,40 +34,26 @@ public class EvolutionObserver
         Converters = { new Individual.IndividualConverter() }
     };
 
-    // Compact generation history: tick values + fitness only (gene metadata lives in _geneSchema).
-    private readonly List<IReadOnlyList<IndividualSnapshot>> _allGenerations = new();
+    // Per-generation aggregate stats
     private readonly List<double> _averageFitness = new();
     private readonly List<double> _bestFitness = new();
-    private readonly List<Individual> _bestIndividuals = new();
-    private readonly List<int> _diversity = new();
+    private readonly List<double> _worstFitness = new();
     private readonly List<double> _fitnessStandardDeviation = new();
-
-    private readonly List<int> _frontCount = new();
-
-    // Hypervolume indicator per generation. 0 for single-objective runs.
-    private readonly List<double> _hypervolume = new();
-    private readonly object _listLock = new();
-
     private readonly List<int> _numberOfUniqueIndividuals = new();
 
-    // Per generation, per objective: [min, max, mean]. Empty array for single-objective runs.
-    private readonly List<double[][]> _objectiveStats = new();
-
-    // Number of rank-0 individuals per generation. Replaces the old _paretoFronts deep-copy list.
+    // Multi-objective per-generation stats
+    private readonly List<double> _hypervolume = new();
     private readonly List<int> _paretoFrontSizes = new();
-    private readonly List<double> _totalFitness = new();
 
-    private readonly List<double> _worstFitness = new();
+    private readonly object _listLock = new();
 
-    // Shared gene metadata — extracted once from the first generation (genes don't change during a run).
-
-    // Fixed HV reference point — computed once from the initial population's nadir and never changed.
-    // Freezing it ensures HV values are comparable across all generations.
+    // Fixed HV reference point — computed once from the initial population's nadir.
     private double[]? _hvReferencePoint;
 
-    private bool _isDisposed;
+    // Only the last generation's population is stored for individual reinstatement.
+    private IndividualSnapshot[]? _finalPopulationSnapshot;
 
-    // Objective names — extracted once from the Fitness singleton on the first multi-objective snapshot.
+    private bool _isDisposed;
 
     private EvolutionObserver()
     {
@@ -84,23 +68,41 @@ public class EvolutionObserver
     /// </summary>
     public AlgorithmType Algorithm { get; private set; } = AlgorithmType.SingleObjective;
 
-
     /// <summary>
     ///     Records which algorithm is driving this observer.
     ///     Should be called once before <see cref="Snapshot" /> is first invoked.
     /// </summary>
     public void SetAlgorithmType(AlgorithmType type) => Algorithm = type;
 
+    /// <summary>
+    ///     The solver configuration that produced this observation run.
+    ///     Set by the solver before it starts running.
+    /// </summary>
+    public SolverSettings? Settings { get; private set; }
+
+    /// <summary>
+    ///     Records the solver configuration for this run.
+    ///     Should be called once before <see cref="Snapshot" /> is first invoked.
+    /// </summary>
+    public void SetSettings(SolverSettings settings) => Settings = settings;
+
+    /// <summary>
+    ///     Whether the termination strategy fired before MaxGenerations was reached.
+    /// </summary>
+    public bool TerminatedEarly { get; private set; }
+
+    /// <summary>
+    ///     Marks the run as having terminated early due to the termination strategy.
+    /// </summary>
+    public void SetTerminatedEarly() => TerminatedEarly = true;
+
     public IReadOnlyList<double> AverageFitness => _averageFitness;
     public IReadOnlyList<double> BestFitness => _bestFitness;
     public IReadOnlyList<double> WorstFitness => _worstFitness;
-    public IReadOnlyList<double> TotalFitness => _totalFitness;
-    public IReadOnlyList<int> NumberOfUniqueIndividuals => _numberOfUniqueIndividuals;
-    public IReadOnlyList<int> Diversity => _diversity;
-    public IReadOnlyList<Individual> BestIndividuals => _bestIndividuals;
     public IReadOnlyList<double> FitnessStandardDeviation => _fitnessStandardDeviation;
-    public IReadOnlyList<int> FrontCount => _frontCount;
-    public IReadOnlyList<double[][]> ObjectiveStats => _objectiveStats;
+    public IReadOnlyList<int> NumberOfUniqueIndividuals => _numberOfUniqueIndividuals;
+    public IReadOnlyList<double> Hypervolume => _hypervolume;
+    public IReadOnlyList<int> ParetoFrontSizes => _paretoFrontSizes;
 
     /// <summary>
     ///     Gene metadata shared by every individual across all generations.
@@ -109,31 +111,14 @@ public class EvolutionObserver
     public GeneSchema[]? GeneSchema { get; private set; }
 
     /// <summary>
-    ///     Names of the objectives, taken from the Multi-Objective Fitness component's input parameter names.
-    ///     Null for single-objective runs. Captured once from the Fitness singleton on the first snapshot.
+    ///     Names of the objectives. Null for single-objective runs.
     /// </summary>
     public string[]? ObjectiveNames { get; private set; }
 
     /// <summary>
-    ///     Compact snapshots of every generation's population in order.
-    ///     Each entry contains tick values and fitness data only; reconstruct full individuals with
-    ///     <see cref="IndividualSnapshot.ToIndividual" />.
+    ///     The best individual from the final generation.
     /// </summary>
-    public IReadOnlyList<IReadOnlyList<IndividualSnapshot>> AllGenerations => _allGenerations;
-
-    /// <summary>
-    ///     Number of rank-0 (Pareto-optimal) individuals per generation.
-    ///     0 for single-objective runs.
-    /// </summary>
-    public IReadOnlyList<int> ParetoFrontSizes => _paretoFrontSizes;
-
-    /// <summary>
-    ///     Hypervolume indicator per generation. Computed against a fixed reference point
-    ///     derived from the initial population's nadir (set once, never updated).
-    ///     This ensures values are comparable across all generations.
-    ///     0 for single-objective runs.
-    /// </summary>
-    public IReadOnlyList<double> Hypervolume => _hypervolume;
+    public Individual? FinalBestIndividual { get; private set; }
 
     public delegate void RunCompletedEventHandler(object sender, EventArgs e);
 
@@ -168,29 +153,27 @@ public class EvolutionObserver
 
             GeneSchema = null;
             ObjectiveNames = null;
-            _allGenerations.Clear();
+            Settings = null;
+            FinalBestIndividual = null;
+            _finalPopulationSnapshot = null;
             _averageFitness.Clear();
             _bestFitness.Clear();
             _worstFitness.Clear();
-            _totalFitness.Clear();
-            _numberOfUniqueIndividuals.Clear();
-            _diversity.Clear();
-            _bestIndividuals.Clear();
             _fitnessStandardDeviation.Clear();
-            _frontCount.Clear();
-            _objectiveStats.Clear();
-            _paretoFrontSizes.Clear();
+            _numberOfUniqueIndividuals.Clear();
             _hypervolume.Clear();
+            _paretoFrontSizes.Clear();
             _hvReferencePoint = null;
             CurrentPopulation = null;
             CurrentGenerationIndex = 0;
+            TerminatedEarly = false;
             Algorithm = AlgorithmType.SingleObjective;
         }
     }
 
     /// <summary>
-    ///     Takes a compact snapshot of the current population's statistics.
-    ///     Gene metadata is extracted once; subsequent generations store only tick values.
+    ///     Takes a snapshot of the current population's aggregate statistics.
+    ///     Only the last generation's full population is retained for individual reinstatement.
     /// </summary>
     public void Snapshot(Population currentPopulation)
     {
@@ -216,7 +199,7 @@ public class EvolutionObserver
 
             var average = sum / n;
 
-            // Second pass: variance for standard deviation
+            // Second pass: standard deviation
             var sumOfSquares = 0.0;
             for (var i = 0; i < n; i++)
             {
@@ -226,7 +209,6 @@ public class EvolutionObserver
 
             _bestFitness.Add(best);
             _worstFitness.Add(worst);
-            _totalFitness.Add(sum);
             _averageFitness.Add(average);
             _fitnessStandardDeviation.Add(Math.Sqrt(sumOfSquares / n));
             _numberOfUniqueIndividuals.Add(currentPopulation.GetDiversity());
@@ -244,15 +226,9 @@ public class EvolutionObserver
                 }
             }
 
-            // Compact snapshot: tick values + fitness data only (no Gene metadata duplication).
-            var snapshot = new IndividualSnapshot[n];
-            for (var i = 0; i < n; i++)
-                snapshot[i] = IndividualSnapshot.FromIndividual(inhabitants[i]);
-            _allGenerations.Add(snapshot);
-
             var isMultiObjective = inhabitants[0].Objectives is { Length: > 0 };
 
-            // Best individual — linear O(n) scan instead of O(n log n) sort.
+            // Best individual — linear O(n) scan.
             var bestIndividual = inhabitants[0];
             if (isMultiObjective)
             {
@@ -274,25 +250,29 @@ public class EvolutionObserver
                         bestIndividual = inhabitants[i];
             }
 
-            _bestIndividuals.Add(bestIndividual);
+            FinalBestIndividual = bestIndividual;
+
+            // Replace the stored snapshot with the current generation — only the last one is kept.
+            var snapshot = new IndividualSnapshot[n];
+            for (var i = 0; i < n; i++)
+                snapshot[i] = IndividualSnapshot.FromIndividual(inhabitants[i]);
+            _finalPopulationSnapshot = snapshot;
 
             CurrentPopulation = currentPopulation;
 
-            // Capture objective names from the Fitness singleton each generation so
-            // that user renames on GH_MultiObjectiveFitness are always reflected.
+            // Capture objective names each generation so renames in GH are always reflected.
             if (isMultiObjective)
             {
                 var names = Fitness.Instance.GetObjectiveNames();
                 ObjectiveNames = names.Length > 0 ? (string[])names.Clone() : null;
             }
 
-            // Multi-objective tracking — single pass for objectives, rank-0 count, and max rank.
+            // Multi-objective tracking.
             if (isMultiObjective)
             {
                 var objCount = inhabitants[0].Objectives!.Length;
                 var mins = new double[objCount];
                 var maxs = new double[objCount];
-                var sums = new double[objCount];
                 for (var m = 0; m < objCount; m++)
                 {
                     mins[m] = double.MaxValue;
@@ -300,7 +280,6 @@ public class EvolutionObserver
                 }
 
                 var rank0Count = 0;
-                var maxRank = 0;
                 for (var i = 0; i < n; i++)
                 {
                     var obj = inhabitants[i].Objectives!;
@@ -308,22 +287,12 @@ public class EvolutionObserver
                     {
                         if (obj[m] < mins[m]) mins[m] = obj[m];
                         if (obj[m] > maxs[m]) maxs[m] = obj[m];
-                        sums[m] += obj[m];
                     }
-
                     if (inhabitants[i].ParetoRank == 0) rank0Count++;
-                    if (inhabitants[i].ParetoRank > maxRank) maxRank = inhabitants[i].ParetoRank;
                 }
 
-                var stats = new double[objCount][];
-                for (var m = 0; m < objCount; m++)
-                    stats[m] = new[] { mins[m], maxs[m], sums[m] / n };
-                _objectiveStats.Add(stats);
-                _frontCount.Add(maxRank + 1);
                 _paretoFrontSizes.Add(rank0Count);
 
-                // Fix reference point once from the initial population — never updated after that.
-                // Using a stable reference point ensures HV is comparable across generations.
                 if (_hvReferencePoint == null)
                 {
                     _hvReferencePoint = new double[objCount];
@@ -334,21 +303,12 @@ public class EvolutionObserver
                     }
                 }
 
-                var refPoint = _hvReferencePoint;
-
                 var rank0Front = new List<Individual>(rank0Count);
                 for (var i = 0; i < n; i++)
                     if (inhabitants[i].ParetoRank == 0)
                         rank0Front.Add(inhabitants[i]);
 
-                _hypervolume.Add(HypervolumeUtils.Compute(rank0Front, refPoint));
-            }
-            else
-            {
-                _objectiveStats.Add(Array.Empty<double[]>());
-                _frontCount.Add(0);
-                _paretoFrontSizes.Add(0);
-                _hypervolume.Add(0.0);
+                _hypervolume.Add(HypervolumeUtils.Compute(rank0Front, _hvReferencePoint));
             }
         }
 
@@ -367,61 +327,110 @@ public class EvolutionObserver
 
             GeneSchema = null;
             ObjectiveNames = null;
-            _allGenerations.Clear();
+            Settings = null;
+            FinalBestIndividual = null;
+            _finalPopulationSnapshot = null;
             _averageFitness.Clear();
             _bestFitness.Clear();
             _worstFitness.Clear();
-            _totalFitness.Clear();
-            _numberOfUniqueIndividuals.Clear();
-            _diversity.Clear();
-            _bestIndividuals.Clear();
             _fitnessStandardDeviation.Clear();
-            _frontCount.Clear();
-            _objectiveStats.Clear();
-            _paretoFrontSizes.Clear();
+            _numberOfUniqueIndividuals.Clear();
             _hypervolume.Clear();
+            _paretoFrontSizes.Clear();
             _hvReferencePoint = null;
             CurrentPopulation = null;
             CurrentGenerationIndex = 0;
+            TerminatedEarly = false;
             Algorithm = AlgorithmType.SingleObjective;
         }
     }
 
     /// <summary>
-    ///     Serializes the observer to a compact JSON string.
-    ///     Gene metadata is stored once; per-generation data contains only tick values and fitness.
+    ///     Serializes the observer to a compact JSON string for analytics and AI analysis.
+    ///     Contains per-generation aggregate stats and the final population for reinstatement.
     /// </summary>
     public string ToJson()
     {
         lock (_listLock)
         {
+            var isMultiObjective = Algorithm != AlgorithmType.SingleObjective;
             var dto = new
             {
-                CurrentGenerationIndex,
                 Algorithm,
+                TerminatedEarly,
+                CurrentGenerationIndex,
+                Settings,
                 GeneSchema = GeneSchema ?? Array.Empty<GeneSchema>(),
-                ObjectiveNames = ObjectiveNames ?? [],
+                GeneSummary = ComputeGeneSummary(),
+                ObjectiveNames = isMultiObjective ? ObjectiveNames : null,
                 BestFitness = _bestFitness,
                 AverageFitness = _averageFitness,
                 WorstFitness = _worstFitness,
-                TotalFitness = _totalFitness,
-                NumberOfUniqueIndividuals = _numberOfUniqueIndividuals,
-                Diversity = _diversity,
                 FitnessStandardDeviation = _fitnessStandardDeviation,
-                FrontCount = _frontCount,
-                ParetoFrontSizes = _paretoFrontSizes,
-                Hypervolume = _hypervolume,
-                ObjectiveStats = _objectiveStats,
-                BestIndividuals = _bestIndividuals,
-                AllGenerations = _allGenerations
+                NumberOfUniqueIndividuals = _numberOfUniqueIndividuals,
+                ParetoFrontSizes = isMultiObjective ? _paretoFrontSizes : null,
+                Hypervolume = isMultiObjective ? _hypervolume : null,
+                FinalBestIndividual,
+                FinalPopulation = _finalPopulationSnapshot
             };
             return JsonConvert.SerializeObject(dto, _toJsonSettings);
         }
     }
 
+    private object[]? ComputeGeneSummary()
+    {
+        if (GeneSchema == null || _finalPopulationSnapshot == null || _finalPopulationSnapshot.Length == 0)
+            return null;
+
+        var pop = _finalPopulationSnapshot;
+        var n = pop.Length;
+        var geneCount = GeneSchema.Length;
+
+        // Collect fitness values once
+        var fitness = new double[n];
+        for (var i = 0; i < n; i++) fitness[i] = pop[i].Fitness;
+
+        var meanFitness = fitness.Average();
+        var fitnessDev = fitness.Select(f => f - meanFitness).ToArray();
+        var fitnessSumSq = fitnessDev.Sum(d => d * d);
+
+        var summary = new object[geneCount];
+        for (var g = 0; g < geneCount; g++)
+        {
+            var ticks = new double[n];
+            for (var i = 0; i < n; i++) ticks[i] = pop[i].TickValues[g];
+
+            var mean = ticks.Average();
+            var variance = ticks.Sum(t => (t - mean) * (t - mean)) / n;
+            var std = Math.Sqrt(variance);
+            var min = ticks.Min();
+            var max = ticks.Max();
+
+            // Pearson correlation between tick values and fitness
+            var tickDev = ticks.Select(t => t - mean).ToArray();
+            var tickSumSq = tickDev.Sum(d => d * d);
+            var covariance = 0.0;
+            for (var i = 0; i < n; i++) covariance += tickDev[i] * fitnessDev[i];
+            var denom = Math.Sqrt(tickSumSq * fitnessSumSq);
+            var correlation = denom > 0 ? covariance / denom : 0.0;
+
+            summary[g] = new
+            {
+                GeneSchema[g].GeneGuid,
+                MeanTick = Math.Round(mean, 2),
+                StdTick = Math.Round(std, 2),
+                MinTick = (int)min,
+                MaxTick = (int)max,
+                FitnessCorrelation = Math.Round(correlation, 3)
+            };
+        }
+
+        return summary;
+    }
+
     /// <summary>
     ///     Reconstructs an <see cref="EvolutionObserver" /> from a JSON string produced by <see cref="ToJson" />.
-    ///     <see cref="CurrentPopulation" /> is rebuilt from the last recorded generation.
+    ///     <see cref="CurrentPopulation" /> is rebuilt from the stored final population snapshot.
     /// </summary>
     public static EvolutionObserver? FromJson(string json)
     {
@@ -431,33 +440,29 @@ public class EvolutionObserver
         var obs = new EvolutionObserver();
         obs.GeneSchema = dto.GeneSchema;
         obs.ObjectiveNames = dto.ObjectiveNames is { Length: > 0 } ? dto.ObjectiveNames : null;
+        obs.Settings = dto.Settings;
+        obs.Algorithm = dto.Algorithm;
+        obs.CurrentGenerationIndex = dto.CurrentGenerationIndex;
+        obs.TerminatedEarly = dto.TerminatedEarly;
+        obs.FinalBestIndividual = dto.FinalBestIndividual;
         obs._bestFitness.AddRange(dto.BestFitness);
         obs._averageFitness.AddRange(dto.AverageFitness);
         obs._worstFitness.AddRange(dto.WorstFitness);
-        obs._totalFitness.AddRange(dto.TotalFitness);
-        obs._numberOfUniqueIndividuals.AddRange(dto.NumberOfUniqueIndividuals);
-        obs._diversity.AddRange(dto.Diversity);
-        obs._bestIndividuals.AddRange(dto.BestIndividuals);
         obs._fitnessStandardDeviation.AddRange(dto.FitnessStandardDeviation);
-        obs._frontCount.AddRange(dto.FrontCount);
-        obs._objectiveStats.AddRange(dto.ObjectiveStats);
+        obs._numberOfUniqueIndividuals.AddRange(dto.NumberOfUniqueIndividuals);
         obs._paretoFrontSizes.AddRange(dto.ParetoFrontSizes);
         obs._hypervolume.AddRange(dto.Hypervolume);
 
-        foreach (var gen in dto.AllGenerations)
-            obs._allGenerations.Add(gen);
-
-        // Rebuild CurrentPopulation from the last recorded generation.
-        if (dto.GeneSchema is { Length: > 0 } && dto.AllGenerations.Count > 0)
+        // Rebuild CurrentPopulation from the final population snapshot.
+        if (dto.GeneSchema is { Length: > 0 } && dto.FinalPopulation is { Count: > 0 })
         {
+            obs._finalPopulationSnapshot = dto.FinalPopulation.ToArray();
             var pop = new Population();
-            foreach (var snap in dto.AllGenerations[dto.AllGenerations.Count - 1])
+            foreach (var snap in dto.FinalPopulation)
                 pop.AddIndividual(snap.ToIndividual(dto.GeneSchema));
             obs.CurrentPopulation = pop;
         }
 
-        obs.CurrentGenerationIndex = dto.CurrentGenerationIndex;
-        obs.Algorithm = dto.Algorithm;
         return obs;
     }
 
@@ -475,32 +480,24 @@ public class EvolutionObserver
     {
         public int CurrentGenerationIndex { get; set; }
         public AlgorithmType Algorithm { get; set; } = AlgorithmType.SingleObjective;
+        public bool TerminatedEarly { get; set; }
+        public SolverSettings? Settings { get; set; }
         public GeneSchema[]? GeneSchema { get; set; }
         public string[]? ObjectiveNames { get; set; }
+        public Individual? FinalBestIndividual { get; set; }
+        public List<IndividualSnapshot> FinalPopulation { get; } = [];
         public List<double> BestFitness { get; } = new();
         public List<double> AverageFitness { get; } = new();
         public List<double> WorstFitness { get; } = new();
-        public List<double> TotalFitness { get; } = new();
-        public List<int> NumberOfUniqueIndividuals { get; } = new();
-        public List<int> Diversity { get; } = new();
-        public List<Individual> BestIndividuals { get; } = new();
         public List<double> FitnessStandardDeviation { get; } = new();
-        public List<int> FrontCount { get; } = new();
-        public List<double[][]> ObjectiveStats { get; } = new();
+        public List<int> NumberOfUniqueIndividuals { get; } = new();
         public List<int> ParetoFrontSizes { get; } = new();
         public List<double> Hypervolume { get; } = new();
-        public List<List<IndividualSnapshot>> AllGenerations { get; } = new();
     }
 
-    public class GenerationCompletedEventArgs : EventArgs
+    public class GenerationCompletedEventArgs(int generationIndex, Population population) : EventArgs
     {
-        public GenerationCompletedEventArgs(int generationIndex, Population population)
-        {
-            GenerationIndex = generationIndex;
-            Population = population;
-        }
-
-        public int GenerationIndex { get; }
-        public Population Population { get; }
+        public int GenerationIndex { get; } = generationIndex;
+        public Population Population { get; } = population;
     }
 }

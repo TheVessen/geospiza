@@ -3,7 +3,6 @@ using System.Drawing;
 using GeospizaCore.Core;
 using GeospizaPlugin.Properties;
 using Grasshopper.Kernel;
-using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
 
 namespace GeospizaPlugin.Components.Analysis;
@@ -30,7 +29,7 @@ public class GH_Results : GH_Component
 
     protected override void RegisterOutputParams(GH_OutputParamManager pManager)
     {
-        pManager.AddGenericParameter("Individuals", "I",
+        pManager.AddGenericParameter("Final Population", "FP",
             "All individuals from the final generation",
             GH_ParamAccess.list);
         pManager.AddNumberParameter("Best Fitness", "BF",
@@ -48,9 +47,6 @@ public class GH_Results : GH_Component
         pManager.AddIntegerParameter("Diversity", "D",
             "Number of unique individuals per generation",
             GH_ParamAccess.list);
-        pManager.AddGenericParameter("All Generations", "AG",
-            "All individuals across every generation. Path index = generation number.",
-            GH_ParamAccess.tree);
     }
 
     protected override void SolveInstance(IGH_DataAccess DA)
@@ -73,14 +69,5 @@ public class GH_Results : GH_Component
         DA.SetDataList(4, obs.FitnessStandardDeviation);
         DA.SetDataList(5, obs.NumberOfUniqueIndividuals);
 
-        var tree = new GH_Structure<GH_ObjectWrapper>();
-        for (var g = 0; g < obs.AllGenerations.Count; g++)
-        {
-            var path = new GH_Path(g);
-            foreach (var snap in obs.AllGenerations[g])
-                tree.Append(new GH_ObjectWrapper(snap), path);
-        }
-
-        DA.SetDataTree(6, tree);
     }
 }

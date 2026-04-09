@@ -13,6 +13,7 @@ public class GH_ReinstateIndividual : GH_Component
 {
     private Individual individual;
     private StateManager stateManager;
+    private bool _reinstating;
 
     public GH_ReinstateIndividual()
         : base("Reinstate Individual", "Reinstate Individual",
@@ -78,12 +79,13 @@ public class GH_ReinstateIndividual : GH_Component
         var reinstate = false;
         if (!DA.GetData(2, ref reinstate)) return;
 
-        if (reinstate)
+        if (reinstate && !_reinstating)
         {
             Message = "Reinstated";
+            _reinstating = true;
             OnPingDocument().ScheduleSolution(10, ScheduleCallback);
         }
-        else
+        else if (!reinstate)
         {
             Message = "Ready";
         }
@@ -91,9 +93,14 @@ public class GH_ReinstateIndividual : GH_Component
 
     private void ScheduleCallback(GH_Document doc)
     {
-        OnPingDocument().NewSolution(false);
         individual.Reinstate(stateManager);
-        ExpirePreview(false);
-        ExpireSolution(false);
+
+        foreach (var genePool in stateManager.AllGenePools.Values)
+            genePool.ExpireSolutionTopLevel(false);
+        foreach (var slider in stateManager.AllSliders.Values)
+            slider.ExpireSolutionTopLevel(false);
+
+        doc.NewSolution(false);
+        _reinstating = false;
     }
 }

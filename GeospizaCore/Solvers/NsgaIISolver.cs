@@ -27,6 +27,7 @@ public class NsgaIISolver : EvolutionBlueprint
         StateManager = stateManager;
         EvolutionObserver = evolutionObserver;
         evolutionObserver.SetAlgorithmType(EvolutionObserver.AlgorithmType.NsgaII);
+        evolutionObserver.SetSettings(settings);
     }
 
     private StateManager StateManager { get; }
@@ -98,64 +99,6 @@ public class NsgaIISolver : EvolutionBlueprint
                 .FirstOrDefault() ?? Population.Inhabitants[0];
             best.Reinstate(StateManager);
         }
-    }
-
-    /// <summary>
-    ///     Initializes the first population by randomizing genes and reading multi-objective fitness.
-    /// </summary>
-    /// <returns>The number of objectives detected from the first evaluation.</returns>
-    private int InitializePopulationMultiObjective(StateManager stateManager, EvolutionObserver evolutionObserver)
-    {
-        var fitnessInstance = Fitness.Instance;
-        var newPopulation = new Population();
-        var objectiveCount = 0;
-
-        for (var i = 0; i < PopulationSize; i++)
-        {
-            var individual = new Individual();
-
-            foreach (var geneTemplate in stateManager.Genotype)
-            {
-                var ctg = geneTemplate.Value;
-                ctg.SetTickValue(Random.Next(ctg.TickCount + 1), stateManager);
-
-                var stableGene = new Gene(ctg.TickValue, ctg.GeneGuid,
-                    ctg.TickCount, ctg.Name, ctg.GhInstanceGuid,
-                    ctg.GenePoolIndex);
-
-                individual.AddGene(stableGene);
-            }
-
-            if (stateManager.PreviewLevel == 0)
-                stateManager.GetDocument().NewSolution(false);
-            else
-                stateManager.GetDocument().NewSolution(false, GH_SolutionMode.Silent);
-
-            var objectives = fitnessInstance.GetObjectives();
-            objectiveCount = objectives.Length;
-            individual.SetObjectives(objectives);
-            if (objectives.Length > 0) individual.SetFitness(objectives[0]);
-            individual.SetGeneration(0);
-            newPopulation.AddIndividual(individual);
-        }
-
-        // Initial Pareto sort
-        if (objectiveCount > 0)
-        {
-            var fronts = ParetoUtils.FastNonDominatedSort(newPopulation.Inhabitants);
-            foreach (var front in fronts)
-                ParetoUtils.AssignCrowdingDistance(front, objectiveCount);
-        }
-
-        evolutionObserver.Snapshot(newPopulation);
-        Population = newPopulation;
-        if (stateManager.PreviewLevel == 1)
-        {
-            stateManager.GetDocument().ExpirePreview(true);
-            RhinoApp.Wait();
-        }
-
-        return objectiveCount;
     }
 
     /// <summary>

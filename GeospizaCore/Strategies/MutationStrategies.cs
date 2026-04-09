@@ -30,7 +30,7 @@ public class FixedValueMutation : MutationStrategy
     /// <summary>
     ///     A value that is added or subtracted from the gene value.
     /// </summary>
-    private int MutationValue { get; }
+    public int MutationValue { get; }
 
     public override void Mutate(Individual individual)
     {
@@ -61,7 +61,7 @@ public class PercentageMutation : MutationStrategy
     /// <summary>
     ///     Mutation in percentage eg. 0.1 for 10%
     /// </summary>
-    private double MutationPercentage { get; }
+    public double MutationPercentage { get; }
 
     /// <summary>
     ///     Overrides the Mutate method from the MutationStrategy base class.

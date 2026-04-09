@@ -197,8 +197,16 @@ public class Individual : IEquatable<Individual>
 
         foreach (var gene in GenePool)
         {
-            stateManager.Genotype.TryGetValue(gene.GeneGuid, out var matchingGene);
-            matchingGene?.SetTickValue(gene.TickValue, stateManager);
+            if (gene.GenePoolIndex >= 0)
+            {
+                if (stateManager.AllGenePools.TryGetValue(gene.GhInstanceGuid, out var genePool))
+                    genePool.set_TickValue(gene.GenePoolIndex, gene.TickValue);
+            }
+            else
+            {
+                if (stateManager.AllSliders.TryGetValue(gene.GhInstanceGuid, out var slider))
+                    slider.TickValue = gene.TickValue;
+            }
         }
     }
 

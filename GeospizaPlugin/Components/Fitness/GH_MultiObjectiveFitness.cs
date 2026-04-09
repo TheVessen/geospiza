@@ -69,7 +69,6 @@ public class GH_MultiObjectiveFitness : GH_Component, IGH_VariableParameterCompo
         }
     }
 
-    // ── GH_Component overrides ───────────────────────────────────────────────
 
     protected override void RegisterInputParams(GH_InputParamManager pManager)
     {

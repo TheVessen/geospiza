@@ -75,7 +75,6 @@
     <!-- Project References -->
     <ItemGroup>
         <ProjectReference Include="..\GeospizaCore\GeospizaCore.csproj"/>
-        <ProjectReference Include="..\ChartHopper\ChartHopper.csproj"/>
     </ItemGroup>
 
     <!-- Manifest generation -->

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Drawing;
 using GeospizaCore.Solvers;
 using GeospizaCore.Strategies;
@@ -42,8 +43,8 @@ public class GH_Settings : GH_Component
             "The mutation strategy. As default random mutation will be used with a mutation rate of 0.03",
             GH_ParamAccess.item);
         pManager.AddGenericParameter("Termination Strategy", "TS",
-            "The termination strategy. As a default it will terminate if the population diversity falls below 2",
-            GH_ParamAccess.item);
+            "One or more termination strategies. The solver stops when any one triggers. Default: PopulationDiversity below 2.",
+            GH_ParamAccess.list);
 
         pManager[3].Optional = true;
         pManager[4].Optional = true;
@@ -68,7 +69,7 @@ public class GH_Settings : GH_Component
         GH_ObjectWrapper pairingStrategyContainer = null;
         GH_ObjectWrapper crossoverStrategyContainer = null;
         GH_ObjectWrapper mutationStrategyContainer = null;
-        GH_ObjectWrapper terminationStrategyContainer = null;
+        var terminationStrategyContainers = new List<GH_ObjectWrapper>();
 
         if (!DA.GetData(0, ref populationSize)) return;
         if (!DA.GetData(1, ref maxGenerations)) return;
@@ -77,7 +78,7 @@ public class GH_Settings : GH_Component
         DA.GetData(4, ref pairingStrategyContainer);
         DA.GetData(5, ref crossoverStrategyContainer);
         DA.GetData(6, ref mutationStrategyContainer);
-        DA.GetData(7, ref terminationStrategyContainer);
+        DA.GetDataList(7, terminationStrategyContainers);
 
         if (populationSize <= 0)
         {
@@ -100,7 +101,7 @@ public class GH_Settings : GH_Component
         var pairingStrategy = pairingStrategyContainer?.Value as IPairingStrategy ?? new PairingStrategy(0.2);
         var crossoverStrategy = crossoverStrategyContainer?.Value as ICrossoverStrategy ?? new TwoPointCrossover(0.7);
         var mutationStrategy = mutationStrategyContainer?.Value as IMutationStrategy ?? new RandomMutation(0.03);
-        var terminationStrategy = terminationStrategyContainer?.Value as ITerminationStrategy ?? new PopulationDiversity(2);
+        var terminationStrategy = BuildTerminationStrategy(terminationStrategyContainers);
 
         if (pairingStrategy is IMultiObjectiveStrategy)
         {
@@ -124,5 +125,17 @@ public class GH_Settings : GH_Component
         };
 
         DA.SetData(0, settings);
+    }
+
+    private static ITerminationStrategy BuildTerminationStrategy(List<GH_ObjectWrapper> containers)
+    {
+        var strategies = new List<ITerminationStrategy>();
+        foreach (var c in containers)
+            if (c?.Value is ITerminationStrategy s)
+                strategies.Add(s);
+
+        if (strategies.Count == 0) return new PopulationDiversity(2);
+        if (strategies.Count == 1) return strategies[0];
+        return new CompositeTermination(strategies);
     }
 }

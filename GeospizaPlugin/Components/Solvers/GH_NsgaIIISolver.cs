@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Linq;
 using System.Threading;
 using GeospizaCore.Core;
 using GeospizaCore.Solvers;
@@ -24,7 +25,7 @@ public class GH_NsgaIIISolver : GH_Component
     private bool _isLocked;
     private bool _isRunning;
     private Guid _lastSolutionId;
-    private int _privateDivisions = 12;
+    private int _privateDivisions = 4;
     private SolverSettings _privateSettings;
     private Guid _solutionId = Guid.NewGuid();
 
@@ -80,20 +81,25 @@ public class GH_NsgaIIISolver : GH_Component
         );
 
         var divisionsParam = new Param_Integer();
-        divisionsParam.AddNamedValue("Few (4)", 4);
-        divisionsParam.AddNamedValue("Moderate (8)", 8);
-        divisionsParam.AddNamedValue("Default (12)", 12);
-        divisionsParam.AddNamedValue("Dense (20)", 20);
-        divisionsParam.PersistentData.Append(new GH_Integer(12));
+        divisionsParam.AddNamedValue("Small (4) — 2 obj, any population", 4);
+        divisionsParam.AddNamedValue("Medium (6) — 3 obj, pop 50–100", 6);
+        divisionsParam.AddNamedValue("Large (8) — 4 obj, pop 100–200", 8);
+        divisionsParam.AddNamedValue("Extra Large (12) — 5+ obj, pop 200+", 12);
+        divisionsParam.PersistentData.Append(new GH_Integer(6));
         pManager.AddParameter(
             divisionsParam,
             "Divisions",
             "D",
-            "Reference point density on the objective hyperplane.\n" +
-            "Higher values give more uniform diversity coverage but increase computation.\n" +
-            "• 4  → few reference points (fast, low objective count)\n" +
-            "• 12 → default (recommended for 3–5 objectives)\n" +
-            "• 20 → dense (for 2–3 objectives with large populations)",
+            "Controls how many diversity targets (reference points) the algorithm tries to cover.\n\n" +
+            "Think of it like a grid stretched across your objective space — each cell is a target " +
+            "the algorithm tries to place at least one good solution into. " +
+            "Too few cells and solutions cluster together. Too many cells for your population size " +
+            "and most cells stay empty, causing unstable results.\n\n" +
+            "Recommended settings:\n" +
+            "• 3 objectives, population  50 → Divisions 4  (15 targets)\n" +
+            "• 3 objectives, population 100 → Divisions 6  (28 targets)\n" +
+            "• 4 objectives, population 100 → Divisions 4  (35 targets)\n\n" +
+            "If you see the Pareto front jumping around between generations, try a lower value.",
             GH_ParamAccess.item
         );
 
@@ -121,11 +127,13 @@ public class GH_NsgaIIISolver : GH_Component
 
     protected override void SolveInstance(IGH_DataAccess DA)
     {
-        if (_isLocked)
+        ClearRuntimeMessages();
+        if (_isLocked && _isRunning)
         {
             AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "Solver is currently running. Please wait.");
             return;
         }
+        _isLocked = false;
 
         var geneIds = new List<string>();
         if (!DA.GetDataList(0, geneIds)) return;
@@ -160,18 +168,6 @@ public class GH_NsgaIIISolver : GH_Component
                     "Use the Multi-Objective Settings component instead.");
                 return;
             }
-
-            // Check for Multi-Objective Fitness — force a solve first so the MOF component
-            // has a chance to populate the singleton (avoids stale empty state on file open).
-            OnPingDocument().NewSolution(false);
-            if (GeospizaCore.Core.Fitness.Instance.GetObjectives().Length == 0)
-            {
-                AddRuntimeMessage(GH_RuntimeMessageLevel.Error,
-                    "No multi-objective fitness found. " +
-                    "Connect a Multi-Objective Fitness (MOF) component with at least one objective. " +
-                    "The single-objective Fitness component does not work with NSGA-III.");
-                return;
-            }
         }
 
         if (_lastSolutionId != Guid.Empty && _solutionId != _lastSolutionId)
@@ -193,6 +189,23 @@ public class GH_NsgaIIISolver : GH_Component
 
     private void ScheduleCallback(GH_Document doc)
     {
+        // Validate MOF by scanning the canvas — more reliable than checking the Fitness
+        // singleton, which may be wiped by StateManager.Reset() during the same solve cycle.
+        var hasMof = doc.Objects
+            .OfType<Grasshopper.Kernel.IGH_Component>()
+            .Any(c => c.GetType().Name == "GH_MultiObjectiveFitness");
+        if (!hasMof)
+        {
+            AddRuntimeMessage(GH_RuntimeMessageLevel.Error,
+                "No multi-objective fitness found. " +
+                "Connect a Multi-Objective Fitness (MOF) component with at least one objective. " +
+                "The single-objective Fitness component does not work with NSGA-III.");
+            _isRunning = false;
+            _isLocked = false;
+            OnDisplayExpired(true);
+            return;
+        }
+
         var maxGenerations = _privateSettings.MaxGenerations;
 
         void OnGenerationCompleted(object sender, EvolutionObserver.GenerationCompletedEventArgs e)
@@ -232,7 +245,9 @@ public class GH_NsgaIIISolver : GH_Component
             StateManager.RunCts = null;
             _isRunning = false;
             _isLocked = false;
+            ClearRuntimeMessages();
             EvolutionObserver.NotifyRunCompleted();
+            ExpireSolution(true);
         }
     }
 

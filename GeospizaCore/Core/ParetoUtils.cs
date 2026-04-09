@@ -127,8 +127,12 @@ public static class ParetoUtils
     }
 
     /// <summary>
-    ///     Normalizes each individual's objectives using the ideal point (per-objective minimum)
-    ///     and the objective range across <paramref name="population" />.
+    ///     Normalizes each individual's objectives for NSGA-III reference-point association.
+    ///     Because all objectives are maximized, the ideal point is the per-objective maximum
+    ///     and the nadir is the per-objective minimum. Each objective is translated so that
+    ///     the ideal maps to 0 and divided by the range, giving normalized values in [0, 1]
+    ///     where 0 = best and 1 = worst. This matches the simplex geometry used by the
+    ///     reference points (Deb &amp; Jain 2014).
     ///     Returns a jagged array <c>normalized[individualIndex][objectiveIndex]</c>.
     /// </summary>
     public static double[][] NormalizeObjectives(List<Individual> population, int objectiveCount)
@@ -136,12 +140,13 @@ public static class ParetoUtils
         var n = population.Count;
         const double epsilon = 1e-10;
 
+        // For maximization: ideal = per-objective max (best), nadir = per-objective min (worst).
         var ideal = new double[objectiveCount];
         var nadir = new double[objectiveCount];
         for (var m = 0; m < objectiveCount; m++)
         {
-            ideal[m] = double.MaxValue;
-            nadir[m] = double.MinValue;
+            ideal[m] = double.MinValue;
+            nadir[m] = double.MaxValue;
         }
 
         foreach (var ind in population)
@@ -149,22 +154,23 @@ public static class ParetoUtils
             var obj = ind.Objectives!;
             for (var m = 0; m < objectiveCount; m++)
             {
-                if (obj[m] < ideal[m]) ideal[m] = obj[m];
-                if (obj[m] > nadir[m]) nadir[m] = obj[m];
+                if (obj[m] > ideal[m]) ideal[m] = obj[m];
+                if (obj[m] < nadir[m]) nadir[m] = obj[m];
             }
         }
 
         var range = new double[objectiveCount];
         for (var m = 0; m < objectiveCount; m++)
-            range[m] = Math.Max(nadir[m] - ideal[m], epsilon);
+            range[m] = Math.Max(ideal[m] - nadir[m], epsilon);
 
+        // Translate so ideal → 0, divide by range. Better individuals are closer to the origin.
         var normalized = new double[n][];
         for (var i = 0; i < n; i++)
         {
             var obj = population[i].Objectives!;
             normalized[i] = new double[objectiveCount];
             for (var m = 0; m < objectiveCount; m++)
-                normalized[i][m] = (obj[m] - ideal[m]) / range[m];
+                normalized[i][m] = (ideal[m] - obj[m]) / range[m];
         }
 
         return normalized;
