@@ -70,7 +70,7 @@ public class BaseSolver : EvolutionBlueprint
                 newPopulation.TestPopulation(StateManager, EvolutionObserver, elite.Count);
 
                 StateManager.GetDocument().ExpirePreview(false);
-                EvolutionObserver.Snapshot(newPopulation);
+                EvolutionObserver.Snapshot(newPopulation, StateManager);
                 AdaptStrategies(EvolutionObserver);
 
                 //TODO: For multi processing here would be the point to send the observer to the main thread

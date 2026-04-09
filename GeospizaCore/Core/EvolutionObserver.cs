@@ -120,6 +120,16 @@ public class EvolutionObserver
     /// </summary>
     public Individual? FinalBestIndividual { get; private set; }
 
+    /// <summary>
+    ///     The final population snapshot. Null until the run completes.
+    /// </summary>
+    public IndividualSnapshot[]? FinalPopulationSnapshot => _finalPopulationSnapshot;
+
+    /// <summary>
+    ///     Per-gene statistics correlated against fitness. Null until the run completes.
+    /// </summary>
+    public GeneCorrelationEntry[]? GeneSummary => _finalPopulationSnapshot != null ? ComputeGeneSummaryPublic() : null;
+
     public delegate void RunCompletedEventHandler(object sender, EventArgs e);
 
     public event GenerationCompletedEventHandler GenerationCompleted;
@@ -175,7 +185,7 @@ public class EvolutionObserver
     ///     Takes a snapshot of the current population's aggregate statistics.
     ///     Only the last generation's full population is retained for individual reinstatement.
     /// </summary>
-    public void Snapshot(Population currentPopulation)
+    public void Snapshot(Population currentPopulation, StateManager stateManager = null)
     {
         lock (_listLock)
         {
@@ -221,8 +231,27 @@ public class EvolutionObserver
                 for (var i = 0; i < pool.Count; i++)
                 {
                     var g = pool[i];
+                    var minVal = double.NaN;
+                    var maxVal = double.NaN;
+                    if (stateManager != null)
+                    {
+                        if (g.GenePoolIndex >= 0)
+                        {
+                            if (stateManager.AllGenePools.TryGetValue(g.GhInstanceGuid, out var genePool))
+                            {
+                                try { minVal = (double)genePool.Minimum; maxVal = (double)genePool.Maximum; } catch { }
+                            }
+                        }
+                        else
+                        {
+                            if (stateManager.AllSliders.TryGetValue(g.GhInstanceGuid, out var slider))
+                            {
+                                try { minVal = (double)slider.Slider.Minimum; maxVal = (double)slider.Slider.Maximum; } catch { }
+                            }
+                        }
+                    }
                     GeneSchema[i] = new GeneSchema(g.GeneGuid, g.TickCount, g.GeneName, g.GhInstanceGuid,
-                        g.GenePoolIndex);
+                        g.GenePoolIndex, minVal, maxVal);
                 }
             }
 
@@ -428,6 +457,51 @@ public class EvolutionObserver
         return summary;
     }
 
+    private GeneCorrelationEntry[]? ComputeGeneSummaryPublic()
+    {
+        if (GeneSchema == null || _finalPopulationSnapshot == null || _finalPopulationSnapshot.Length == 0)
+            return null;
+
+        var pop = _finalPopulationSnapshot;
+        var n = pop.Length;
+        var geneCount = GeneSchema.Length;
+
+        var fitness = new double[n];
+        for (var i = 0; i < n; i++) fitness[i] = pop[i].Fitness;
+
+        var meanFitness = fitness.Average();
+        var fitnessDev = fitness.Select(f => f - meanFitness).ToArray();
+        var fitnessSumSq = fitnessDev.Sum(d => d * d);
+
+        var summary = new GeneCorrelationEntry[geneCount];
+        for (var g = 0; g < geneCount; g++)
+        {
+            var ticks = new double[n];
+            for (var i = 0; i < n; i++) ticks[i] = pop[i].TickValues[g];
+
+            var mean = ticks.Average();
+            var variance = ticks.Sum(t => (t - mean) * (t - mean)) / n;
+            var std = Math.Sqrt(variance);
+            var tickDev = ticks.Select(t => t - mean).ToArray();
+            var tickSumSq = tickDev.Sum(d => d * d);
+            var covariance = 0.0;
+            for (var i = 0; i < n; i++) covariance += tickDev[i] * fitnessDev[i];
+            var denom = Math.Sqrt(tickSumSq * fitnessSumSq);
+
+            summary[g] = new GeneCorrelationEntry
+            {
+                GeneGuid = GeneSchema[g].GeneGuid,
+                MeanTick = Math.Round(mean, 2),
+                StdTick = Math.Round(std, 2),
+                MinTick = (int)ticks.Min(),
+                MaxTick = (int)ticks.Max(),
+                FitnessCorrelation = Math.Round(denom > 0 ? covariance / denom : 0.0, 3)
+            };
+        }
+
+        return summary;
+    }
+
     /// <summary>
     ///     Reconstructs an <see cref="EvolutionObserver" /> from a JSON string produced by <see cref="ToJson" />.
     ///     <see cref="CurrentPopulation" /> is rebuilt from the stored final population snapshot.
@@ -500,4 +574,14 @@ public class EvolutionObserver
         public int GenerationIndex { get; } = generationIndex;
         public Population Population { get; } = population;
     }
+}
+
+public class GeneCorrelationEntry
+{
+    public Guid GeneGuid { get; set; }
+    public double MeanTick { get; set; }
+    public double StdTick { get; set; }
+    public int MinTick { get; set; }
+    public int MaxTick { get; set; }
+    public double FitnessCorrelation { get; set; }
 }

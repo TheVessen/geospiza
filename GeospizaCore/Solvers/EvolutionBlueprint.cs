@@ -140,7 +140,7 @@ public abstract class EvolutionBlueprint : IEvolutionarySolver
                 ParetoUtils.AssignCrowdingDistance(front, objectiveCount);
         }
 
-        evolutionObserver.Snapshot(newPopulation);
+        evolutionObserver.Snapshot(newPopulation, stateManager);
         Population = newPopulation;
 
         if (stateManager.PreviewLevel == 1)
@@ -203,7 +203,7 @@ public abstract class EvolutionBlueprint : IEvolutionarySolver
             newPopulation.AddIndividual(individual);
         }
 
-        evolutionObserver.Snapshot(newPopulation);
+        evolutionObserver.Snapshot(newPopulation, stateManager);
         Population = newPopulation;
         if (stateManager.PreviewLevel == 1)
         {

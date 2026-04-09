@@ -4,6 +4,7 @@ using System.Linq;
 using GeospizaCore.Core;
 using GeospizaPlugin.Properties;
 using Grasshopper.Kernel;
+using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
 
 namespace GeospizaPlugin.Components.Analysis;
@@ -60,6 +61,11 @@ public class GH_NsgaResults : GH_Component
             "Names of each objective, taken from the Multi-Objective Fitness component's input labels. " +
             "Use these to label charts or annotate analysis outputs.",
             GH_ParamAccess.list);
+
+        // 6
+        pManager.AddNumberParameter("Objective Values", "OV",
+            "Tree of objective values per individual. Each branch {i} corresponds to individual i in the Final Population output, with one value per objective in the same order as Objective Names.",
+            GH_ParamAccess.tree);
     }
 
     protected override void SolveInstance(IGH_DataAccess DA)
@@ -97,5 +103,17 @@ public class GH_NsgaResults : GH_Component
 
         if (obs.ObjectiveNames != null)
             DA.SetDataList(5, obs.ObjectiveNames);
+
+        var objectiveTree = new GH_Structure<GH_Number>();
+        var inhabitants = obs.CurrentPopulation.Inhabitants;
+        for (var i = 0; i < inhabitants.Count; i++)
+        {
+            var path = new GH_Path(i);
+            var objectives = inhabitants[i].Objectives;
+            if (objectives != null)
+                foreach (var v in objectives)
+                    objectiveTree.Append(new GH_Number(v), path);
+        }
+        DA.SetDataTree(6, objectiveTree);
     }
 }

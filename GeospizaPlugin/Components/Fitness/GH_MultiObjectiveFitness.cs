@@ -56,13 +56,11 @@ public class GH_MultiObjectiveFitness : GH_Component, IGH_VariableParameterCompo
         {
             var p = Params.Input[i];
 
-            // Auto-name only when the param still carries a default generated name.
-            // A default name matches "Fitness N" exactly — anything else is a user rename.
-            var hasDefaultName = string.IsNullOrEmpty(p.Name) || p.Name == $"Fitness {i}";
-            var hasDefaultNick = string.IsNullOrEmpty(p.NickName) || p.NickName == $"F{i}";
+            var isUserRenamedName = !string.IsNullOrEmpty(p.Name) && p.Name != "Number" && !p.Name.StartsWith("Fitness ");
+            var isUserRenamedNick = !string.IsNullOrEmpty(p.NickName) && !p.NickName.Equals("num", StringComparison.OrdinalIgnoreCase) && !p.NickName.Equals("Number", StringComparison.OrdinalIgnoreCase) && !System.Text.RegularExpressions.Regex.IsMatch(p.NickName, @"^F\d+$");
 
-            if (hasDefaultName) p.Name = $"Fitness {i}";
-            if (hasDefaultNick) p.NickName = $"F{i}";
+            if (!isUserRenamedName) p.Name = $"Fitness {i}";
+            if (!isUserRenamedNick) p.NickName = $"Fitness {i}";
 
             p.Description = $"Fitness objective {i} for multi-objective optimization.";
             p.Optional = i >= 1;

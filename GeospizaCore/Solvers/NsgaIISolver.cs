@@ -70,7 +70,7 @@ public class NsgaIISolver : EvolutionBlueprint
                 Population = nextPopulation;
 
                 StateManager.GetDocument().ExpirePreview(false);
-                EvolutionObserver.Snapshot(nextPopulation);
+                EvolutionObserver.Snapshot(nextPopulation, StateManager);
                 AdaptStrategies(EvolutionObserver);
 
                 if (i > TerminationEvaluationThreshold)

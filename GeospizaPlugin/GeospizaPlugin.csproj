@@ -70,6 +70,7 @@
             <LastGenOutput>Resources.Designer.cs</LastGenOutput>
         </EmbeddedResource>
         <EmbeddedResource Include="Resources\Icons\*.png"/>
+        <EmbeddedResource Include="Src\AI\Prompts\*.md"/>
     </ItemGroup>
 
     <!-- Project References -->
