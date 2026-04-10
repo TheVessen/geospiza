@@ -1,9 +1,11 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
 using GeospizaCore.Core;
+using GeospizaCore.Strategies;
 
 namespace GeospizaPlugin.AI;
 
@@ -79,16 +81,142 @@ public static class PromptBuilder
     private static void AppendSettings(StringBuilder sb, EvolutionObserver obs)
     {
         if (obs == null) return;
+        var isMultiObjective = obs.Algorithm != EvolutionObserver.AlgorithmType.SingleObjective;
+
         sb.AppendLine($"Algorithm: {obs.Algorithm}  |  Generations: {obs.CurrentGenerationIndex}  |  TerminatedEarly: {obs.TerminatedEarly}");
+
+        if (isMultiObjective && obs.ObjectiveNames != null && obs.ObjectiveNames.Length > 0)
+            sb.AppendLine($"Objectives ({obs.ObjectiveNames.Length}): {string.Join(", ", obs.ObjectiveNames.Select((n, i) => $"[{i}]={n}"))}");
+
         if (obs.Settings != null)
         {
             var s = obs.Settings;
-            sb.AppendLine($"PopulationSize: {s.PopulationSize}  |  MaxGenerations: {s.MaxGenerations}  |  EliteSize: {s.EliteSize}");
-            sb.AppendLine($"MutationRate: {s.ConfiguredMutationRate}  |  CrossoverRate: {s.ConfiguredCrossoverRate}");
-            if (s.SelectionStrategy != null)
-                sb.AppendLine($"Selection: {s.SelectionStrategy.GetType().Name}  |  Crossover: {s.CrossoverStrategy?.GetType().Name}  |  Mutation: {s.MutationStrategy?.GetType().Name}");
+            sb.Append($"PopulationSize: {s.PopulationSize}  |  MaxGenerations: {s.MaxGenerations}");
+            if (!isMultiObjective) sb.Append($"  |  EliteSize: {s.EliteSize}");
+            sb.AppendLine();
+
+            if (s.SelectionStrategy != null && !isMultiObjective)
+            {
+                var selParams = s.SelectionStrategy switch
+                {
+                    TournamentSelection ts =>
+                        $"TournamentSize={ts.TournamentSize}",
+                    _ => ""
+                };
+                sb.AppendLine($"Selection: {s.SelectionStrategy.GetType().Name}" +
+                              (selParams.Length > 0 ? $"  |  {selParams}" : ""));
+            }
+            if (s.CrossoverStrategy != null)
+                sb.AppendLine($"Crossover: {s.CrossoverStrategy.GetType().Name}  |  CrossoverRate={s.ConfiguredCrossoverRate}");
+            if (s.MutationStrategy != null)
+            {
+                var mutParams = s.MutationStrategy switch
+                {
+                    FixedValueMutation fvm =>
+                        $"MutationRate={s.ConfiguredMutationRate}  |  MutationValue={fvm.MutationValue}",
+                    PercentageMutation pm =>
+                        $"MutationRate={s.ConfiguredMutationRate}  |  MutationPercentage={pm.MutationPercentage}",
+                    _ =>
+                        $"MutationRate={s.ConfiguredMutationRate}"
+                };
+                sb.AppendLine($"Mutation: {s.MutationStrategy.GetType().Name}  |  {mutParams}");
+            }
+            if (s.PairingStrategy != null)
+            {
+                var pairParams = s.PairingStrategy switch
+                {
+                    PairingStrategy ps =>
+                        $"InBreedingFactor={ps.InBreedingFactor}  |  DistanceFunction={ps.DistanceFunction}",
+                    _ => ""
+                };
+                sb.AppendLine($"Pairing: {s.PairingStrategy.GetType().Name}" +
+                              (pairParams.Length > 0 ? $"  |  {pairParams}" : ""));
+            }
+            if (s.TerminationStrategy != null)
+            {
+                AppendTerminationParams(sb, s.TerminationStrategy, indent: "");
+
+                // Flag termination strategies that use scalar fitness — misleading for multi-objective
+                if (isMultiObjective)
+                {
+                    var scalarTerminators = GetScalarTerminatorNames(s.TerminationStrategy);
+                    if (scalarTerminators.Count > 0)
+                        sb.AppendLine($"CONFIG-WARNING: {string.Join(", ", scalarTerminators)} use scalar fitness to decide when to stop, which is unreliable for multi-objective runs. Prefer PopulationDiversity.");
+                }
+            }
+
+            // NSGA-III: emit divisions, reference point count, and coverage ratio
+            if (obs.Algorithm == EvolutionObserver.AlgorithmType.NsgaIII && s.ReferencePointDivisions > 0)
+            {
+                var objCount = obs.ObjectiveNames?.Length ?? 0;
+                var refCount = objCount > 0
+                    ? ParetoUtils.ReferencePointCount(objCount, s.ReferencePointDivisions)
+                    : 0;
+                sb.Append($"NSGA-III: Divisions={s.ReferencePointDivisions}");
+                if (refCount > 0)
+                {
+                    sb.Append($"  |  ReferencePoints={refCount}");
+                    var coverage = (double)s.PopulationSize / refCount;
+                    sb.Append($"  |  Pop/RefPoint={coverage:F2}");
+                    if (coverage < 1.0)
+                        sb.Append("  ← CONFIG-WARNING: population smaller than reference point count — many reference points will stay empty, causing unstable diversity.");
+                    else if (coverage < 2.0)
+                        sb.Append("  ← NOTE: population barely covers reference points. Consider increasing population or reducing divisions.");
+                }
+                sb.AppendLine();
+            }
         }
         sb.AppendLine();
+    }
+
+    /// <summary>
+    /// Emits termination strategy parameters, expanding CompositeTermination into its components.
+    /// </summary>
+    private static void AppendTerminationParams(StringBuilder sb, ITerminationStrategy t, string indent)
+    {
+        if (t is CompositeTermination ct)
+        {
+            sb.AppendLine($"{indent}Termination: CompositeTermination (fires when any sub-strategy triggers)");
+            // Reflect into the private _strategies list to enumerate components
+            var field = ct.GetType().GetField("_strategies",
+                BindingFlags.NonPublic | BindingFlags.Instance);
+            if (field?.GetValue(ct) is List<ITerminationStrategy> inner)
+                foreach (var s in inner)
+                    AppendTerminationParams(sb, s, indent + "  ");
+            return;
+        }
+
+        var tParams = t switch
+        {
+            ProgressConvergence pc =>
+                $"Threshold={pc.TerminationThreshold}  |  ProgressRange={pc.ProgressRange}",
+            BestFitnessStagnation bfs =>
+                $"Threshold={bfs.TerminationThreshold}  |  StagnationGenerations={bfs.StagnationGenerations}",
+            PopulationDiversity pd =>
+                $"Threshold={pd.TerminationThreshold}",
+            _ => $"Threshold={t.TerminationThreshold}"
+        };
+        sb.AppendLine($"{indent}Termination: {t.GetType().Name}  |  {tParams}");
+    }
+
+    /// <summary>
+    /// Returns the names of any scalar-fitness-based termination strategies, recursing into CompositeTermination.
+    /// </summary>
+    private static List<string> GetScalarTerminatorNames(ITerminationStrategy t)
+    {
+        var result = new List<string>();
+        if (t is CompositeTermination ct)
+        {
+            var field = ct.GetType().GetField("_strategies",
+                BindingFlags.NonPublic | BindingFlags.Instance);
+            if (field?.GetValue(ct) is List<ITerminationStrategy> inner)
+                foreach (var s in inner)
+                    result.AddRange(GetScalarTerminatorNames(s));
+            return result;
+        }
+        if (t is ProgressConvergence || t is BestFitnessStagnation)
+            result.Add(t.GetType().Name);
+        return result;
     }
 
     private static void AppendLastGenerationData(StringBuilder sb, EvolutionObserver obs, bool isMultiObjective)
@@ -165,15 +293,20 @@ public static class PromptBuilder
                 var front = pop.Where(ind => ind.ParetoRank == 0).ToList();
                 if (obs.ObjectiveNames != null)
                     sb.AppendLine($"Objectives: {string.Join(", ", obs.ObjectiveNames.Select((n, i) => $"[{i}]={n}"))}");
+
+                // Tell the AI the direction so it describes results correctly
+                sb.AppendLine("Note: Geospiza always maximizes. Larger number = better, always, regardless of scale or sign. Do not judge by absolute value or assume any particular range. Say \"best on [objective]\" for the highest value, \"weakest on [objective]\" for the lowest.");
+
                 sb.AppendLine($"Pareto front size: {front.Count}");
-                sb.AppendLine("Idx | Fitness    | Objectives");
+                sb.AppendLine("Id       | Gen | Fitness    | Objectives");
                 for (var i = 0; i < Math.Min(front.Count, 20); i++)
                 {
                     var ind = front[i];
+                    var shortId = ind.Id.ToString().Substring(0, 8);
                     var objs = ind.Objectives != null
                         ? string.Join(", ", ind.Objectives.Select(o => o.ToString("F3")))
                         : "n/a";
-                    sb.AppendLine($"{i,3} | {ind.Fitness,10:F4} | [{objs}]");
+                    sb.AppendLine($"{shortId} | {ind.Generation,3} | {ind.Fitness,10:F4} | [{objs}]");
                 }
                 sb.AppendLine();
             }
@@ -182,37 +315,16 @@ public static class PromptBuilder
 
     private static void AppendSettingsFeedbackData(StringBuilder sb, EvolutionObserver obs, bool isMultiObjective)
     {
-        // Fitness curve
-        var best = obs.BestFitness;
-        var avg  = obs.AverageFitness;
-        if (best != null && best.Count > 0)
+        if (isMultiObjective)
         {
-            sb.AppendLine("### Fitness Curve (sampled)");
-            sb.AppendLine("Gen | BestFitness       | AvgFitness");
-            var step = Math.Max(1, best.Count / 10);
-            for (var i = 0; i < best.Count; i += step)
-            {
-                var avgVal = (avg != null && i < avg.Count) ? avg[i].ToString("F2") : "n/a";
-                sb.AppendLine($"{i,3} | {best[i],17:F4} | {avgVal}");
-            }
-            var last = best.Count - 1;
-            if (last % step != 0)
-            {
-                var avgLast = (avg != null && last < avg.Count) ? avg[last].ToString("F2") : "n/a";
-                sb.AppendLine($"{last,3} | {best[last],17:F4} | {avgLast}");
-            }
-            sb.AppendLine();
-
-            // Flag constraint violations
-            if (avg != null)
-            {
-                var spikes = avg.Count(a => Math.Abs(a) > Math.Abs(best[0]) * 10);
-                if (spikes > 0)
-                    sb.AppendLine($"Note: {spikes} generations had average fitness >10x worse than gen0 best — likely constraint violations.");
-            }
+            AppendMultiObjectiveFeedbackData(sb, obs);
+        }
+        else
+        {
+            AppendSingleObjectiveFeedbackData(sb, obs);
         }
 
-        // Diversity
+        // Diversity — relevant for both
         var uniq = obs.NumberOfUniqueIndividuals;
         if (uniq != null && uniq.Count > 0)
         {
@@ -224,16 +336,19 @@ public static class PromptBuilder
             sb.AppendLine();
         }
 
-        // Gene influence (fewer entries — just top 6 for context)
+        // Gene influence — top 6 by variability across the final population
+        // Note: for multi-objective runs the correlation is against the scalar fitness proxy, not individual objectives.
         var schema = obs.GeneSchema;
         var geneSummary = obs.GeneSummary;
         if (geneSummary != null && schema != null && geneSummary.Length > 0)
         {
-            sb.AppendLine("### Gene Influence (top 6)");
+            sb.AppendLine(isMultiObjective
+                ? "### Gene Variability (top 6 by Std — correlation is vs scalar fitness proxy, not per-objective)"
+                : "### Gene Influence (top 6)");
             sb.AppendLine("Gene            | Corr   | Std");
             var ranked = geneSummary
                 .Select((g, i) => new { g, sch = i < schema.Length ? schema[i] : null })
-                .OrderByDescending(x => Math.Abs(x.g.FitnessCorrelation))
+                .OrderByDescending(x => isMultiObjective ? x.g.StdTick : Math.Abs(x.g.FitnessCorrelation))
                 .Take(6);
             foreach (var entry in ranked)
             {
@@ -244,19 +359,126 @@ public static class PromptBuilder
             }
             sb.AppendLine();
         }
+    }
 
-        // Pareto front size trend for multi-objective
-        if (isMultiObjective)
+    private static void AppendSingleObjectiveFeedbackData(StringBuilder sb, EvolutionObserver obs)
+    {
+        var best = obs.BestFitness;
+        var avg  = obs.AverageFitness;
+        if (best == null || best.Count == 0) return;
+
+        sb.AppendLine("### Fitness Curve (sampled)");
+        sb.AppendLine("Gen | BestFitness       | AvgFitness");
+        var step = Math.Max(1, best.Count / 10);
+        for (var i = 0; i < best.Count; i += step)
         {
-            var frontSizes = obs.ParetoFrontSizes;
-            if (frontSizes != null && frontSizes.Count > 0)
+            var avgVal = (avg != null && i < avg.Count) ? avg[i].ToString("F2") : "n/a";
+            sb.AppendLine($"{i,3} | {best[i],17:F4} | {avgVal}");
+        }
+        var last = best.Count - 1;
+        if (last % step != 0)
+        {
+            var avgLast = (avg != null && last < avg.Count) ? avg[last].ToString("F2") : "n/a";
+            sb.AppendLine($"{last,3} | {best[last],17:F4} | {avgLast}");
+        }
+        sb.AppendLine();
+
+        if (avg != null)
+        {
+            var spikes = avg.Count(a => Math.Abs(a) > Math.Abs(best[0]) * 10);
+            if (spikes > 0)
+                sb.AppendLine($"Note: {spikes} generations had average fitness >10x worse than gen0 best — likely constraint violations.");
+        }
+    }
+
+    private static void AppendMultiObjectiveFeedbackData(StringBuilder sb, EvolutionObserver obs)
+    {
+        var hv          = obs.Hypervolume;
+        var frontSizes  = obs.ParetoFrontSizes;
+        var popSize     = obs.Settings?.PopulationSize ?? 0;
+
+        // Hypervolume + front size as the primary progress signal
+        if (hv != null && hv.Count > 0 && frontSizes != null && frontSizes.Count > 0)
+        {
+            sb.AppendLine("### Multi-Objective Progress (sampled)");
+            sb.AppendLine("Note: scalar BestFitness is NOT the primary signal here — use Hypervolume and FrontSize.");
+            sb.AppendLine("Gen | Hypervolume  | FrontSize | FrontFull%");
+            var step = Math.Max(1, hv.Count / 10);
+            var indices = Enumerable.Range(0, hv.Count)
+                .Where(i => i % step == 0 || i == hv.Count - 1)
+                .ToList();
+            foreach (var i in indices)
             {
-                var step = Math.Max(1, frontSizes.Count / 10);
-                var samples = Enumerable.Range(0, frontSizes.Count)
-                    .Where(i => i % step == 0 || i == frontSizes.Count - 1)
-                    .Select(i => $"gen{i}:{frontSizes[i]}");
-                sb.AppendLine($"ParetoFrontSizes (sampled): {string.Join(", ", samples)}");
+                var fs   = i < frontSizes.Count ? frontSizes[i] : 0;
+                var pct  = popSize > 0 ? (fs * 100 / popSize) : 0;
+                sb.AppendLine($"{i,3} | {hv[i],12:F4} | {fs,9} | {pct,9}%");
             }
+            sb.AppendLine();
+
+            // Summarise trend
+            var hvFirst = hv[0];
+            var hvLast  = hv[hv.Count - 1];
+            var hvGain  = hvFirst > 0 ? (hvLast - hvFirst) / hvFirst * 100 : double.NaN;
+            sb.Append($"HV trend: {hvFirst:F4} → {hvLast:F4}");
+            if (!double.IsNaN(hvGain))
+                sb.Append($"  ({hvGain:+0.#;-0.#;0}% change)");
+            sb.AppendLine();
+
+            // Flag stagnation: HV unchanged in last quarter of run
+            var quarterStart = hv.Count * 3 / 4;
+            var hvQuarterDelta = Math.Abs(hvLast - hv[quarterStart]);
+            if (hvQuarterDelta < 1e-6 && hv.Count >= 8)
+                sb.AppendLine("Warning: Hypervolume did not change in the final quarter of the run — the search has stalled.");
+
+            // Flag if front filled the whole population (crowding may be an issue)
+            var finalFrontSize = frontSizes[frontSizes.Count - 1];
+            if (popSize > 0 && finalFrontSize >= popSize)
+                sb.AppendLine("Warning: Pareto front covers 100% of the population — no dominated individuals remain. Consider increasing PopulationSize or adding constraints.");
+            sb.AppendLine();
+        }
+
+        // Per-objective range across the final front — shows how well the trade-off space is covered
+        var pop = obs.FinalPopulationSnapshot;
+        var objNames = obs.ObjectiveNames;
+        if (pop != null && pop.Length > 0 && pop[0].Objectives != null)
+        {
+            var front = pop.Where(ind => ind.ParetoRank == 0).ToArray();
+            if (front.Length > 0)
+            {
+                var objCount = front[0].Objectives.Length;
+                sb.AppendLine("### Objective Range Across Final Pareto Front");
+                sb.AppendLine("Objective       | Min    | Max    | Spread");
+                for (var m = 0; m < objCount; m++)
+                {
+                    var vals  = front.Select(ind => ind.Objectives[m]).ToArray();
+                    var oMin  = vals.Min();
+                    var oMax  = vals.Max();
+                    var name  = (objNames != null && m < objNames.Length) ? objNames[m] : $"obj[{m}]";
+                    sb.AppendLine($"{name,-16} | {oMin,6:F3} | {oMax,6:F3} | {oMax - oMin,6:F3}");
+                }
+
+                // Crowding distance: low spread = front is clustered, not well-distributed
+                var crowding = front.Select(ind => ind.CrowdingDistance).Where(d => !double.IsInfinity(d)).ToArray();
+                if (crowding.Length > 0)
+                {
+                    var cdMean = crowding.Average();
+                    var cdMin  = crowding.Min();
+                    sb.AppendLine($"CrowdingDistance (non-∞): mean={cdMean:F3}  min={cdMin:F3}");
+                    if (cdMin < 0.01)
+                        sb.AppendLine("Note: very low minimum crowding distance — front solutions are clustered in places. Spread may be poor.");
+                }
+                sb.AppendLine();
+            }
+        }
+
+        // Constraint violation proxy — avg fitness spikes vs best at gen0
+        var best = obs.BestFitness;
+        var avg  = obs.AverageFitness;
+        if (avg != null && best != null && best.Count > 0)
+        {
+            var spikes = avg.Count(a => Math.Abs(a) > Math.Abs(best[0]) * 10);
+            if (spikes > 0)
+                sb.AppendLine($"Note: {spikes} generations had average fitness >10x worse than gen0 best — likely constraint violations.");
         }
     }
 }

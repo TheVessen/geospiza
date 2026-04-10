@@ -180,6 +180,11 @@ public class GH_BasicSolver : GH_Component
             var solver = new BaseSolver(_privateSettings, StateManager, EvolutionObserver);
             solver.RunAlgorithm(StateManager.RunCts.Token);
 
+            foreach (var genePool in StateManager.AllGenePools.Values)
+                genePool.ExpireSolutionTopLevel(false);
+            foreach (var slider in StateManager.AllSliders.Values)
+                slider.ExpireSolutionTopLevel(false);
+
             Message = "Done";
             _lastSolutionId = _solutionId;
         }

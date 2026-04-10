@@ -26,6 +26,7 @@ public class NsgaIISolver : EvolutionBlueprint
     {
         StateManager = stateManager;
         EvolutionObserver = evolutionObserver;
+        PairingStrategy = new RankAwarePairingStrategy();
         evolutionObserver.SetAlgorithmType(EvolutionObserver.AlgorithmType.NsgaII);
         evolutionObserver.SetSettings(settings);
     }
@@ -37,8 +38,6 @@ public class NsgaIISolver : EvolutionBlueprint
     {
         _objectiveCount = InitializePopulationMultiObjective(StateManager, EvolutionObserver);
         CaptureBaseRates();
-        var completed = false;
-
         try
         {
             for (var i = 0; i < MaxGenerations - 1; i++)
@@ -83,14 +82,15 @@ public class NsgaIISolver : EvolutionBlueprint
                 }
             }
 
-            completed = !cancellationToken.IsCancellationRequested;
         }
         catch (Exception ex)
         {
             Console.Error.WriteLine($"NSGA-II Solver error: {ex.Message}");
         }
 
-        if (completed)
+        // Reinstate the best individual whenever the run was not explicitly cancelled by the user.
+        // This covers both normal completion and early termination via a termination strategy.
+        if (!cancellationToken.IsCancellationRequested)
         {
             // Reinstate best individual from rank-0 front; prefer highest crowding distance for diversity
             var best = Population.Inhabitants

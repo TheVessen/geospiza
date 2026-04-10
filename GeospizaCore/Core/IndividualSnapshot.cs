@@ -7,6 +7,7 @@ namespace GeospizaCore.Core;
 /// </summary>
 public class IndividualSnapshot
 {
+    public Guid Id { get; set; }
     public int[] TickValues { get; set; } = Array.Empty<int>();
     public double Fitness { get; set; }
     public double Probability { get; set; }
@@ -28,6 +29,7 @@ public class IndividualSnapshot
         }
 
         var ind = new Individual(genes);
+        ind.SetId(Id);
         ind.SetFitness(Fitness);
         ind.SetProbability(Probability);
         if (Objectives != null) ind.SetObjectives((double[])Objectives.Clone());
@@ -49,6 +51,7 @@ public class IndividualSnapshot
 
         return new IndividualSnapshot
         {
+            Id = individual.Id,
             TickValues = ticks,
             Fitness = individual.Fitness,
             Probability = individual.Probability,

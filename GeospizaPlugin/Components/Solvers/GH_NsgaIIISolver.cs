@@ -154,6 +154,7 @@ public class GH_NsgaIIISolver : GH_Component
         var divisions = 12;
         if (!DA.GetData(3, ref divisions)) return;
         _privateDivisions = divisions;
+        settings.ReferencePointDivisions = divisions;
 
         var runButton = false;
         if (!DA.GetData(4, ref runButton)) return;
@@ -229,6 +230,11 @@ public class GH_NsgaIIISolver : GH_Component
 
             var solver = new NsgaIIISolver(_privateSettings, StateManager, EvolutionObserver, _privateDivisions);
             solver.RunAlgorithm(StateManager.RunCts.Token);
+
+            foreach (var genePool in StateManager.AllGenePools.Values)
+                genePool.ExpireSolutionTopLevel(false);
+            foreach (var slider in StateManager.AllSliders.Values)
+                slider.ExpireSolutionTopLevel(false);
 
             Message = "Done";
             _lastSolutionId = _solutionId;

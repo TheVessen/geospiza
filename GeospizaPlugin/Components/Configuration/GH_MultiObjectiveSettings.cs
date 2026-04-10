@@ -11,8 +11,8 @@ namespace GeospizaPlugin.Components.Configuration;
 
 /// <summary>
 ///     Settings component for multi-objective solvers (NSGA-II, NSGA-III).
-///     Defaults to <see cref="RankAwarePairingStrategy" /> and rejects strategies
-///     that are incompatible with multi-objective optimization.
+///     Pairing strategy is fixed per algorithm: NSGA-II always uses <see cref="RankAwarePairingStrategy" />,
+///     NSGA-III always uses <see cref="ReferencePointPairingStrategy" />.
 /// </summary>
 public class GH_MultiObjectiveSettings : GH_Component
 {
@@ -34,26 +34,17 @@ public class GH_MultiObjectiveSettings : GH_Component
         pManager.AddNumberParameter("Population Size", "PS", "The size of the population", GH_ParamAccess.item, 50);
         pManager.AddNumberParameter("Max Generations", "MG", "The maximum number of generations",
             GH_ParamAccess.item, 50);
-        pManager.AddNumberParameter("Elite Size", "ES",
-            "The number of elite individuals. If 0 no elite will be picked", GH_ParamAccess.item, 1);
-        pManager.AddGenericParameter("Selection Strategy", "SS",
-            "The selection strategy. Default: TournamentSelection with size 3.", GH_ParamAccess.item);
-        pManager.AddGenericParameter("Pairing Strategy", "PA",
-            "The pairing strategy. Default: RankAwarePairing (recommended for NSGA-II/III).",
-            GH_ParamAccess.item);
         pManager.AddGenericParameter("Crossover Strategy", "CS",
             "The crossover strategy. Default: TwoPointCrossover with rate 0.7.", GH_ParamAccess.item);
         pManager.AddGenericParameter("Mutation Strategy", "MS",
-            "The mutation strategy. Default: RandomMutation with rate 0.03.", GH_ParamAccess.item);
+            "The mutation strategy. Default: RandomMutation with rate 0.05.", GH_ParamAccess.item);
         pManager.AddGenericParameter("Termination Strategy", "TS",
             "One or more termination strategies. The solver stops when any one triggers. Default: PopulationDiversity below 2.",
             GH_ParamAccess.list);
 
+        pManager[2].Optional = true;
         pManager[3].Optional = true;
         pManager[4].Optional = true;
-        pManager[5].Optional = true;
-        pManager[6].Optional = true;
-        pManager[7].Optional = true;
     }
 
     protected override void RegisterOutputParams(GH_OutputParamManager pManager)
@@ -66,22 +57,16 @@ public class GH_MultiObjectiveSettings : GH_Component
     {
         double populationSize = 0;
         double maxGenerations = 0;
-        double eliteSize = 0;
 
-        GH_ObjectWrapper selectionStrategyContainer = null;
-        GH_ObjectWrapper pairingStrategyContainer = null;
         GH_ObjectWrapper crossoverStrategyContainer = null;
         GH_ObjectWrapper mutationStrategyContainer = null;
         var terminationStrategyContainers = new List<GH_ObjectWrapper>();
 
         if (!DA.GetData(0, ref populationSize)) return;
         if (!DA.GetData(1, ref maxGenerations)) return;
-        if (!DA.GetData(2, ref eliteSize)) return;
-        DA.GetData(3, ref selectionStrategyContainer);
-        DA.GetData(4, ref pairingStrategyContainer);
-        DA.GetData(5, ref crossoverStrategyContainer);
-        DA.GetData(6, ref mutationStrategyContainer);
-        DA.GetDataList(7, terminationStrategyContainers);
+        DA.GetData(2, ref crossoverStrategyContainer);
+        DA.GetData(3, ref mutationStrategyContainer);
+        DA.GetDataList(4, terminationStrategyContainers);
 
         if (populationSize <= 0)
         {
@@ -93,39 +78,21 @@ public class GH_MultiObjectiveSettings : GH_Component
             AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Max generations must be greater than 0");
             return;
         }
-        if (eliteSize < 0 || eliteSize >= populationSize)
-        {
-            AddRuntimeMessage(GH_RuntimeMessageLevel.Error,
-                $"Elite size must be between 0 and population size - 1 (got {(int)eliteSize}, population {(int)populationSize})");
-            return;
-        }
 
-        var selectionStrategy = selectionStrategyContainer?.Value as ISelectionStrategy ?? new TournamentSelection(3);
-        var pairingStrategy = pairingStrategyContainer?.Value as IPairingStrategy ?? new RankAwarePairingStrategy();
         var crossoverStrategy = crossoverStrategyContainer?.Value as ICrossoverStrategy ?? new TwoPointCrossover(0.7);
-        var mutationStrategy = mutationStrategyContainer?.Value as IMutationStrategy ?? new RandomMutation(0.03);
+        var mutationStrategy = mutationStrategyContainer?.Value as IMutationStrategy ?? new RandomMutation(0.05);
         var terminationStrategy = BuildTerminationStrategy(terminationStrategyContainers);
 
-        if (pairingStrategy is ISingleObjectiveStrategy)
-        {
-            AddRuntimeMessage(GH_RuntimeMessageLevel.Error,
-                $"{pairingStrategy.GetType().Name} is only valid for single-objective solvers. " +
-                "Use Rank Aware Pairing or Reference Point Pairing with NSGA-II/III.");
-            return;
-        }
+        WarnScalarTerminators(terminationStrategyContainers);
 
-        if (pairingStrategy is not IMultiObjectiveStrategy)
-            AddRuntimeMessage(GH_RuntimeMessageLevel.Warning,
-                "Inbreeding Pairing ignores Pareto rank and crowding distance. " +
-                "Consider using Rank Aware Pairing or Reference Point Pairing for better multi-objective diversity.");
-
+        // Pairing is set automatically by each solver (RankAwarePairing for NSGA-II, ReferencePointPairing for NSGA-III).
+        // A placeholder is required here because SolverSettings.Validate() checks for a non-null pairing strategy.
         var settings = new SolverSettings
         {
             PopulationSize = Convert.ToInt32(populationSize),
             MaxGenerations = Convert.ToInt32(maxGenerations),
-            EliteSize = Convert.ToInt32(eliteSize),
-            SelectionStrategy = selectionStrategy,
-            PairingStrategy = pairingStrategy,
+            EliteSize = 0,
+            PairingStrategy = new ReferencePointPairingStrategy(),
             CrossoverStrategy = crossoverStrategy,
             MutationStrategy = mutationStrategy,
             TerminationStrategy = terminationStrategy,
@@ -133,6 +100,19 @@ public class GH_MultiObjectiveSettings : GH_Component
         };
 
         DA.SetData(0, settings);
+    }
+
+    private void WarnScalarTerminators(List<GH_ObjectWrapper> containers)
+    {
+        foreach (var c in containers)
+        {
+            if (c?.Value is BestFitnessStagnation)
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Warning,
+                    "BestFitnessStagnation uses scalar fitness to decide when to stop, which is unreliable for multi-objective runs. Prefer PopulationDiversity.");
+            else if (c?.Value is ProgressConvergence)
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Warning,
+                    "ProgressConvergence uses scalar fitness to decide when to stop, which is unreliable for multi-objective runs. Prefer PopulationDiversity.");
+        }
     }
 
     private static ITerminationStrategy BuildTerminationStrategy(List<GH_ObjectWrapper> containers)

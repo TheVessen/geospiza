@@ -16,6 +16,12 @@ public abstract class CrossoverStrategy : ICrossoverStrategy
     protected readonly Random Random = new();
     public double CrossoverRate { get; set; }
 
+    /// <summary>
+    ///     The crossover rate as originally set at construction time.
+    ///     Never modified by <c>AdaptStrategies</c>, so it is always safe to read as the true baseline.
+    /// </summary>
+    public double InitialCrossoverRate { get; protected set; }
+
     public abstract List<Individual> Crossover(Individual parent1, Individual parent2);
 
     public string ToJson()
@@ -55,6 +61,7 @@ public class SinglePointCrossover : CrossoverStrategy
     public SinglePointCrossover(double crossoverRate)
     {
         CrossoverRate = crossoverRate;
+        InitialCrossoverRate = crossoverRate;
     }
 
     /// <summary>
@@ -115,6 +122,7 @@ public class TwoPointCrossover : CrossoverStrategy
     public TwoPointCrossover(double crossoverRate)
     {
         CrossoverRate = crossoverRate;
+        InitialCrossoverRate = crossoverRate;
     }
 
     /// <summary>

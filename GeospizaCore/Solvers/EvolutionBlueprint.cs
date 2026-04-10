@@ -19,12 +19,6 @@ public abstract class EvolutionBlueprint : IEvolutionarySolver
     // Adaptive rate control — base values captured once at algorithm start.
     private double _baseMutationRate;
 
-    // Configured rates read from settings at construction time — used to reset
-    // strategy objects before each run so drift from AdaptStrategies doesn't
-    // compound across consecutive runs on the same SolverSettings instance.
-    private readonly double _configuredMutationRate;
-    private readonly double _configuredCrossoverRate;
-
     /// <summary>
     ///     Initializes the evolutionary algorithm with the given settings.
     /// </summary>
@@ -39,12 +33,6 @@ public abstract class EvolutionBlueprint : IEvolutionarySolver
         MutationStrategy = settings.MutationStrategy;
         PairingStrategy = settings.PairingStrategy;
         TerminationStrategy = settings.TerminationStrategy;
-
-        // Read the user-configured rates from SolverSettings, which captures them
-        // at assignment time and is never touched by AdaptStrategies. This is safe
-        // across multiple consecutive runs on the same settings instance.
-        _configuredMutationRate = settings.ConfiguredMutationRate;
-        _configuredCrossoverRate = settings.ConfiguredCrossoverRate;
     }
 
     protected Population Population { get; set; } = new();
@@ -219,10 +207,18 @@ public abstract class EvolutionBlueprint : IEvolutionarySolver
     /// </summary>
     protected void CaptureBaseRates()
     {
-        MutationStrategy.MutationRate = _configuredMutationRate;
-        CrossoverStrategy.CrossoverRate = _configuredCrossoverRate;
-        _baseMutationRate = _configuredMutationRate;
-        _baseCrossoverRate = _configuredCrossoverRate;
+        // Read the initial rate stored on the strategy at construction time — this is immune
+        // to drift from AdaptStrategies regardless of how many times the same strategy object
+        // has been reused across consecutive runs.
+        var initialMutation = (MutationStrategy as MutationStrategy)?.InitialMutationRate
+                              ?? MutationStrategy.MutationRate;
+        var initialCrossover = (CrossoverStrategy as CrossoverStrategy)?.InitialCrossoverRate
+                               ?? CrossoverStrategy.CrossoverRate;
+
+        MutationStrategy.MutationRate = initialMutation;
+        CrossoverStrategy.CrossoverRate = initialCrossover;
+        _baseMutationRate = initialMutation;
+        _baseCrossoverRate = initialCrossover;
     }
 
     /// <summary>

@@ -109,6 +109,25 @@ public static class ParetoUtils
         return points;
     }
 
+    /// <summary>
+    ///     Returns the number of Das &amp; Dennis reference points for the given objective count and divisions.
+    ///     Formula: C(divisions + objectiveCount - 1, objectiveCount - 1).
+    /// </summary>
+    public static int ReferencePointCount(int objectiveCount, int divisions)
+    {
+        // C(n, k) where n = divisions + objectiveCount - 1, k = objectiveCount - 1
+        var n = divisions + objectiveCount - 1;
+        var k = objectiveCount - 1;
+        if (k == 0) return 1;
+        long num = 1, den = 1;
+        for (var i = 0; i < k; i++)
+        {
+            num *= n - i;
+            den *= i + 1;
+        }
+        return (int)(num / den);
+    }
+
     private static void GenerateRefPointsRecursive(
         double[] point, int depth, int remaining, int total, List<double[]> result)
     {
@@ -210,6 +229,7 @@ public static class ParetoUtils
             refIndices[i] = minRef;
             distances[i] = minDist;
             population[i].SetReferencePointIndex(minRef);
+            population[i].SetReferencePointDistance(minDist);
         }
 
         return (refIndices, distances);

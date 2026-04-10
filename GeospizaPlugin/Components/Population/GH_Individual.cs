@@ -43,6 +43,9 @@ public class GH_Individual : GH_Component
         pManager.AddIntegerParameter("Generation", "Gen",
             "The generation in which this individual was created.",
             GH_ParamAccess.item);
+        pManager.AddTextParameter("Id", "Id",
+            "Stable unique identifier for this individual. Preserved through copies, snapshots, and JSON. Use this to reliably identify or reinstate a specific individual.",
+            GH_ParamAccess.item);
     }
 
     protected override void SolveInstance(IGH_DataAccess DA)
@@ -55,6 +58,7 @@ public class GH_Individual : GH_Component
         DA.SetData(0, individual.Fitness);
         DA.SetDataList(1, individual.GenePool);
         DA.SetData(5, individual.Generation);
+        DA.SetData(6, individual.Id.ToString());
 
         if (individual.Objectives is { Length: > 0 })
         {

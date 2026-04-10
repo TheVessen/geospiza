@@ -12,6 +12,13 @@ public abstract class MutationStrategy : IMutationStrategy
 {
     protected readonly Random Random = new();
     public double MutationRate { get; set; }
+
+    /// <summary>
+    ///     The mutation rate as originally set at construction time.
+    ///     Never modified by <c>AdaptStrategies</c>, so it is always safe to read as the true baseline.
+    /// </summary>
+    public double InitialMutationRate { get; protected set; }
+
     public abstract void Mutate(Individual individual);
 }
 
@@ -24,6 +31,7 @@ public class FixedValueMutation : MutationStrategy
     public FixedValueMutation(double mutationRate, int mutationValue)
     {
         MutationRate = mutationRate;
+        InitialMutationRate = mutationRate;
         MutationValue = mutationValue;
     }
 
@@ -55,6 +63,7 @@ public class PercentageMutation : MutationStrategy
     public PercentageMutation(double mutationRate, double mutationPercentage)
     {
         MutationRate = mutationRate;
+        InitialMutationRate = mutationRate;
         MutationPercentage = mutationPercentage;
     }
 
@@ -91,6 +100,7 @@ public class RandomMutation : MutationStrategy
     public RandomMutation(double mutationRate)
     {
         MutationRate = mutationRate;
+        InitialMutationRate = mutationRate;
     }
 
     public override void Mutate(Individual individual)

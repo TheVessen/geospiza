@@ -24,7 +24,7 @@ public class GH_RandomMutation : GH_Component
 
     protected override void RegisterInputParams(GH_InputParamManager pManager)
     {
-        pManager.AddNumberParameter("Mutation Rate", "MR", "The mutation rate", GH_ParamAccess.item, 0.03);
+        pManager.AddNumberParameter("Mutation Rate", "MR", "The mutation rate", GH_ParamAccess.item, 0.05);
     }
 
     protected override void RegisterOutputParams(GH_OutputParamManager pManager)

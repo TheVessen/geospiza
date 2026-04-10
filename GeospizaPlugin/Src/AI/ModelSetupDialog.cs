@@ -31,14 +31,20 @@ public class ModelSetupDialog : Dialog
         Resizable = false;
         MinimumSize = new Size(480, 230);
 
+        var currentModel = AiConfig.Load().SelectedModel;
+        var currentIndex = ModelChoices.FindIndex(m => m.Tag == currentModel);
+
         _modelDropDown = new DropDown();
         foreach (var (_, label) in ModelChoices)
             _modelDropDown.Items.Add(label);
-        _modelDropDown.SelectedIndex = 1; // default: e4b
+        _modelDropDown.SelectedIndex = currentIndex >= 0 ? currentIndex : 1;
+        _modelDropDown.SelectedIndexChanged += (_, _) => UpdateButtonLabel();
 
         _statusLabel = new Label
         {
-            Text = "Select a model and click Download & Use. Ollama must be running.",
+            Text = currentIndex >= 0
+                ? $"Current model: {currentModel}. Select a model and click Download & Use."
+                : "Select a model and click Download & Use. Ollama must be running.",
             Wrap = WrapMode.Word
         };
 
@@ -56,6 +62,7 @@ public class ModelSetupDialog : Dialog
 
         DefaultButton = _downloadButton;
         AbortButton = _cancelButton;
+        LoadComplete += (_, _) => UpdateButtonLabel();
 
         Content = new TableLayout
         {
@@ -76,6 +83,15 @@ public class ModelSetupDialog : Dialog
                     })
             }
         };
+    }
+
+    private async void UpdateButtonLabel()
+    {
+        var idx = _modelDropDown.SelectedIndex;
+        if (idx < 0 || idx >= ModelChoices.Count) return;
+        var tag = ModelChoices[idx].Tag;
+        var already = await OllamaService.HasModelAsync(tag);
+        _downloadButton.Text = already ? "Use" : "Download & Use";
     }
 
     private async void OnDownloadClicked(object? sender, EventArgs e)

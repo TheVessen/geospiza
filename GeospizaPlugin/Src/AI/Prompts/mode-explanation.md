@@ -3,7 +3,7 @@
 Answer the user's question in plain language for a designer or engineer new to optimisation.
 
 Context about Geospiza:
-- It moves Grasshopper number sliders to minimise a fitness value (lower = better).
+- It moves Grasshopper number sliders to maximise a fitness value (higher = better).
 - Fitness is calculated by the Grasshopper definition — structural load, material volume, solar exposure, etc.
 - Genes are sliders. More sliders = larger search space = needs more generations or population.
 

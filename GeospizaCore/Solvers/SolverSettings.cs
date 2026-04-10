@@ -22,7 +22,7 @@ public class SolverSettings
         set
         {
             _crossoverStrategy = value;
-            ConfiguredCrossoverRate = value?.CrossoverRate ?? 0;
+            ConfiguredCrossoverRate = (value as CrossoverStrategy)?.InitialCrossoverRate ?? value?.CrossoverRate ?? 0;
         }
     }
 
@@ -32,7 +32,7 @@ public class SolverSettings
         set
         {
             _mutationStrategy = value;
-            ConfiguredMutationRate = value?.MutationRate ?? 0;
+            ConfiguredMutationRate = (value as MutationStrategy)?.InitialMutationRate ?? value?.MutationRate ?? 0;
         }
     }
 
@@ -40,16 +40,14 @@ public class SolverSettings
     public ITerminationStrategy TerminationStrategy { get; set; } = null!;
 
     /// <summary>
-    ///     The mutation rate as originally configured by the user.
-    ///     Captured when <see cref="MutationStrategy" /> is first assigned and never mutated by
-    ///     <c>AdaptStrategies</c>, so it is always safe to read as the true baseline.
+    ///     The mutation rate as originally configured by the user (read from <see cref="MutationStrategy.InitialMutationRate"/>).
+    ///     Always reflects the construction-time value, immune to drift from <c>AdaptStrategies</c>.
     /// </summary>
     public double ConfiguredMutationRate { get; private set; }
 
     /// <summary>
-    ///     The crossover rate as originally configured by the user.
-    ///     Captured when <see cref="CrossoverStrategy" /> is first assigned and never mutated by
-    ///     <c>AdaptStrategies</c>, so it is always safe to read as the true baseline.
+    ///     The crossover rate as originally configured by the user (read from <see cref="CrossoverStrategy.InitialCrossoverRate"/>).
+    ///     Always reflects the construction-time value, immune to drift from <c>AdaptStrategies</c>.
     /// </summary>
     public double ConfiguredCrossoverRate { get; private set; }
 
@@ -84,11 +82,20 @@ public class SolverSettings
     public bool IsMultiObjective { get; set; }
 
     /// <summary>
+    ///     NSGA-III only: number of divisions used to generate Das &amp; Dennis reference points.
+    ///     0 means not applicable (single-objective or NSGA-II).
+    /// </summary>
+    public int ReferencePointDivisions { get; set; }
+
+    /// <summary>
     ///     Validates that all required strategies are properly set.
+    ///     For multi-objective runs, SelectionStrategy is not required — NSGA solvers
+    ///     use their own internal tournament selection based on Pareto rank and crowding distance.
     /// </summary>
     public void Validate()
     {
-        if (SelectionStrategy == null) throw new InvalidOperationException("Selection strategy is required");
+        if (!IsMultiObjective && SelectionStrategy == null)
+            throw new InvalidOperationException("Selection strategy is required");
         if (CrossoverStrategy == null) throw new InvalidOperationException("Crossover strategy is required");
         if (MutationStrategy == null) throw new InvalidOperationException("Mutation strategy is required");
         if (PairingStrategy == null) throw new InvalidOperationException("Pairing strategy is required");

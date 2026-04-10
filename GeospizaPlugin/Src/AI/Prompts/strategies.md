@@ -2,11 +2,11 @@
 
 ### Algorithm
 
-- SingleObjective: Standard GA, minimises a single scalar fitness value.
+- SingleObjective: Standard GA, maximises a single scalar fitness value (higher = better).
 - NSGA2: Multi-objective GA using Pareto rank + crowding distance; good for 2-3 objectives.
 - NSGA3: Multi-objective GA using reference points; scales better for 3+ objectives.
 
-### Selection
+### Selection (SingleObjective only — NSGA-II and NSGA-III use internal tournament selection, do NOT suggest changing this for multi-objective runs)
 
 - TournamentSelection: Runs small tournaments; increase size for more selection pressure.
 - RouletteWheelSelection: Fitness-proportionate; avoid when fitness values are very similar.
@@ -26,9 +26,8 @@
 
 ### Pairing
 
-- PairingStrategy (Inbreeding): Pairs similar parents; encourages exploitation.
-- ReferencePointPairingStrategy: NSGA-III pairing; maintains diversity in many-objective runs.
-- RankAwarePairingStrategy: NSGA-II pairing by Pareto rank + crowding distance.
+- For SingleObjective only: PairingStrategy (Inbreeding) — configurable via InBreedingFactor (negative = similar parents, positive = dissimilar parents).
+- For NSGA-II and NSGA-III: pairing is hardcoded per algorithm. Do NOT suggest changing it.
 
 ### Termination
 

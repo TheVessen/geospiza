@@ -40,7 +40,7 @@ public class GH_Settings : GH_Component
             "The crossover strategy. As default TwoPoint crossover will be used with a crossover rate of 0.7",
             GH_ParamAccess.item);
         pManager.AddGenericParameter("Mutation Strategy", "MS",
-            "The mutation strategy. As default random mutation will be used with a mutation rate of 0.03",
+            "The mutation strategy. As default random mutation will be used with a mutation rate of 0.05",
             GH_ParamAccess.item);
         pManager.AddGenericParameter("Termination Strategy", "TS",
             "One or more termination strategies. The solver stops when any one triggers. Default: PopulationDiversity below 2.",
@@ -100,7 +100,7 @@ public class GH_Settings : GH_Component
         var selectionStrategy = selectionStrategyContainer?.Value as ISelectionStrategy ?? new TournamentSelection(3);
         var pairingStrategy = pairingStrategyContainer?.Value as IPairingStrategy ?? new PairingStrategy(0.2);
         var crossoverStrategy = crossoverStrategyContainer?.Value as ICrossoverStrategy ?? new TwoPointCrossover(0.7);
-        var mutationStrategy = mutationStrategyContainer?.Value as IMutationStrategy ?? new RandomMutation(0.03);
+        var mutationStrategy = mutationStrategyContainer?.Value as IMutationStrategy ?? new RandomMutation(0.05);
         var terminationStrategy = BuildTerminationStrategy(terminationStrategyContainers);
 
         if (pairingStrategy is IMultiObjectiveStrategy)

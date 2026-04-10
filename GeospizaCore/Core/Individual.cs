@@ -23,6 +23,7 @@ public class Individual : IEquatable<Individual>
 
     public Individual()
     {
+        Id = Guid.NewGuid();
         _genePool = new List<Gene>();
         GenePool = _genePool.AsReadOnly();
     }
@@ -34,6 +35,7 @@ public class Individual : IEquatable<Individual>
     /// <exception cref="ArgumentNullException"></exception>
     public Individual(IEnumerable<Gene> genePool)
     {
+        Id = Guid.NewGuid();
         _genePool = (genePool ?? throw new ArgumentNullException(nameof(genePool)))
             .Select(g => new Gene(g)).ToList();
         GenePool = _genePool.AsReadOnly();
@@ -41,6 +43,7 @@ public class Individual : IEquatable<Individual>
 
     /// <summary>
     ///     Creates a new individual object from an existing individual.
+    ///     Preserves the original Id so the copy can be traced back to its source.
     /// </summary>
     /// <param name="individual"></param>
     /// <exception cref="ArgumentNullException"></exception>
@@ -48,6 +51,7 @@ public class Individual : IEquatable<Individual>
     {
         if (individual == null) throw new ArgumentNullException(nameof(individual));
 
+        Id = individual.Id;
         _genePool = individual.GenePool.Select(g => new Gene(g)).ToList();
         GenePool = _genePool.AsReadOnly();
         Fitness = individual.Fitness;
@@ -57,6 +61,7 @@ public class Individual : IEquatable<Individual>
         ParetoRank = individual.ParetoRank;
         CrowdingDistance = individual.CrowdingDistance;
         ReferencePointIndex = individual.ReferencePointIndex;
+        ReferencePointDistance = individual.ReferencePointDistance;
     }
 
     /// <summary>
@@ -68,12 +73,19 @@ public class Individual : IEquatable<Individual>
     {
         var parsed = FromJson(json) ??
                      throw new ArgumentException("Failed to parse individual from JSON.", nameof(json));
+        Id = parsed.Id;
         _genePool = new List<Gene>(parsed.GenePool);
         GenePool = _genePool.AsReadOnly();
         Fitness = parsed.Fitness;
         Probability = parsed.Probability;
         Generation = parsed.Generation;
     }
+
+    /// <summary>
+    ///     Stable identity assigned at creation and preserved through copies, snapshots, and JSON round-trips.
+    ///     Use this to reliably identify or reinstate a specific individual across any context.
+    /// </summary>
+    public Guid Id { get; private set; }
 
     public IReadOnlyList<Gene> GenePool { get; }
 
@@ -106,6 +118,11 @@ public class Individual : IEquatable<Individual>
     ///     Index of the nearest NSGA-III reference point. Transient — recomputed each generation, not serialized.
     /// </summary>
     public int ReferencePointIndex { get; private set; } = -1;
+
+    /// <summary>
+    ///     Perpendicular distance to the nearest NSGA-III reference point. Transient — recomputed each generation, not serialized.
+    /// </summary>
+    public double ReferencePointDistance { get; private set; } = double.MaxValue;
 
     public int Generation { get; private set; }
 
@@ -155,6 +172,11 @@ public class Individual : IEquatable<Individual>
         Probability = normalizedFitness;
     }
 
+    public void SetId(Guid id)
+    {
+        Id = id;
+    }
+
     public void SetObjectives(double[] objectives)
     {
         Objectives = objectives;
@@ -173,6 +195,11 @@ public class Individual : IEquatable<Individual>
     public void SetReferencePointIndex(int index)
     {
         ReferencePointIndex = index;
+    }
+
+    public void SetReferencePointDistance(double distance)
+    {
+        ReferencePointDistance = distance;
     }
 
     /// <summary>
@@ -276,6 +303,9 @@ public class Individual : IEquatable<Individual>
 
             // Write properties directly using the existing writer/serializer — no nested serializer.
             writer.WriteStartObject();
+
+            writer.WritePropertyName("Id");
+            writer.WriteValue(value.Id);
 
             writer.WritePropertyName("GenePool");
             serializer.Serialize(writer, value.GenePool);

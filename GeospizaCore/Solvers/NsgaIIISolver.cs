@@ -31,6 +31,7 @@ public class NsgaIIISolver : EvolutionBlueprint
         StateManager = stateManager;
         EvolutionObserver = evolutionObserver;
         _referencePointDivisions = referencePointDivisions;
+        PairingStrategy = new ReferencePointPairingStrategy();
         evolutionObserver.SetAlgorithmType(EvolutionObserver.AlgorithmType.NsgaIII);
         evolutionObserver.SetSettings(settings);
     }
@@ -44,8 +45,6 @@ public class NsgaIIISolver : EvolutionBlueprint
         CaptureBaseRates();
 
         _referencePoints = ParetoUtils.GenerateReferencePoints(_objectiveCount, _referencePointDivisions);
-
-        var completed = false;
 
         try
         {
@@ -93,20 +92,21 @@ public class NsgaIIISolver : EvolutionBlueprint
                 }
             }
 
-            completed = !cancellationToken.IsCancellationRequested;
         }
         catch (Exception ex)
         {
             Console.Error.WriteLine($"NSGA-III Solver error: {ex.Message}");
         }
 
-        if (completed)
+        // Reinstate the best individual whenever the run was not explicitly cancelled by the user.
+        // This covers both normal completion and early termination via a termination strategy.
+        if (!cancellationToken.IsCancellationRequested)
         {
             // Reinstate the rank-0 individual with the smallest perpendicular distance to its
             // reference point (best-represented point on the Pareto front).
             var best = Population.Inhabitants
                 .Where(ind => ind.ParetoRank == 0)
-                .OrderByDescending(ind => ind.CrowdingDistance)
+                .OrderBy(ind => ind.ReferencePointDistance)
                 .FirstOrDefault() ?? Population.Inhabitants[0];
             best.Reinstate(StateManager);
         }
