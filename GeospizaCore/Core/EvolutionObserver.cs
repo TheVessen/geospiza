@@ -282,10 +282,15 @@ public class EvolutionObserver
             FinalBestIndividual = bestIndividual;
 
             // Replace the stored snapshot with the current generation — only the last one is kept.
-            var snapshot = new IndividualSnapshot[n];
+            // Deduplicate by Id: the same individual can appear multiple times when selected repeatedly.
+            var seen = new HashSet<Guid>();
+            var snapshotList = new List<IndividualSnapshot>(n);
             for (var i = 0; i < n; i++)
-                snapshot[i] = IndividualSnapshot.FromIndividual(inhabitants[i]);
-            _finalPopulationSnapshot = snapshot;
+            {
+                if (seen.Add(inhabitants[i].Id))
+                    snapshotList.Add(IndividualSnapshot.FromIndividual(inhabitants[i]));
+            }
+            _finalPopulationSnapshot = snapshotList.ToArray();
 
             CurrentPopulation = currentPopulation;
 

@@ -43,6 +43,7 @@ public class FixedValueMutation : MutationStrategy
     public override void Mutate(Individual individual)
     {
         if (MutationValue <= 0) return;
+        var mutated = false;
         foreach (var t in individual.GenePool)
         {
             if (Random.NextDouble() >= MutationRate) continue;
@@ -50,7 +51,9 @@ public class FixedValueMutation : MutationStrategy
             var newValue = t.TickValue + Random.Next(-MutationValue, MutationValue);
             newValue = Math.Min(Math.Max(newValue, 0), t.TickCount);
             t.MutatedValue(newValue);
+            mutated = true;
         }
+        if (mutated) individual.SetId(Guid.NewGuid());
     }
 }
 
@@ -79,6 +82,7 @@ public class PercentageMutation : MutationStrategy
     /// <param name="individual">The individual to be mutated.</param>
     public override void Mutate(Individual individual)
     {
+        var mutated = false;
         foreach (var t in individual.GenePool)
         {
             if (Random.NextDouble() >= MutationRate) continue;
@@ -87,7 +91,9 @@ public class PercentageMutation : MutationStrategy
             var newValue = t.TickValue + Random.Next(-mutationAmount, mutationAmount + 1);
             newValue = Math.Min(Math.Max(newValue, 0), t.TickCount);
             t.MutatedValue(newValue);
+            mutated = true;
         }
+        if (mutated) individual.SetId(Guid.NewGuid());
     }
 }
 
@@ -105,10 +111,13 @@ public class RandomMutation : MutationStrategy
 
     public override void Mutate(Individual individual)
     {
+        var mutated = false;
         foreach (var t in individual.GenePool)
         {
             if (Random.NextDouble() >= MutationRate) continue;
             t.MutatedValue(Random.Next(0, t.TickCount + 1));
+            mutated = true;
         }
+        if (mutated) individual.SetId(Guid.NewGuid());
     }
 }

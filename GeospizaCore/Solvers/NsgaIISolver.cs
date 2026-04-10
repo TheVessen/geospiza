@@ -166,7 +166,7 @@ public class NsgaIISolver : EvolutionBlueprint
     {
         if (Random.NextDouble() < CrossoverStrategy.CrossoverRate)
             return CrossoverStrategy.Crossover(pair.Individual1, pair.Individual2);
-        return new List<Individual> { pair.Individual1, pair.Individual2 };
+        return new List<Individual> { new Individual(pair.Individual1.GenePool), new Individual(pair.Individual2.GenePool) };
     }
 
     private void MutateChildren(List<Individual> children)

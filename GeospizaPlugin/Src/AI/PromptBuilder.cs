@@ -290,7 +290,11 @@ public static class PromptBuilder
             var pop = obs.FinalPopulationSnapshot;
             if (pop != null)
             {
-                var front = pop.Where(ind => ind.ParetoRank == 0).ToList();
+                var front = pop
+                    .Where(ind => ind.ParetoRank == 0)
+                    .GroupBy(ind => ind.Id)
+                    .Select(g => g.First())
+                    .ToList();
                 if (obs.ObjectiveNames != null)
                     sb.AppendLine($"Objectives: {string.Join(", ", obs.ObjectiveNames.Select((n, i) => $"[{i}]={n}"))}");
 
@@ -298,6 +302,22 @@ public static class PromptBuilder
                 sb.AppendLine("Note: Geospiza always maximizes. Larger number = better, always, regardless of scale or sign. Do not judge by absolute value or assume any particular range. Say \"best on [objective]\" for the highest value, \"weakest on [objective]\" for the lowest.");
 
                 sb.AppendLine($"Pareto front size: {front.Count}");
+
+                // Pre-compute per-objective best so the AI doesn't have to scan the table itself
+                if (front.Count > 0 && front[0].Objectives != null)
+                {
+                    var objCount = front[0].Objectives.Length;
+                    sb.Append("Best per objective (highest value = best):");
+                    for (var m = 0; m < objCount; m++)
+                    {
+                        var best = front.OrderByDescending(ind => ind.Objectives[m]).First();
+                        var objName = obs.ObjectiveNames != null && m < obs.ObjectiveNames.Length
+                            ? obs.ObjectiveNames[m] : $"obj[{m}]";
+                        sb.Append($" {objName}={best.Objectives[m]:F3}({best.Id.ToString().Substring(0, 8)})");
+                    }
+                    sb.AppendLine();
+                }
+
                 sb.AppendLine("Id       | Gen | Fitness    | Objectives");
                 for (var i = 0; i < Math.Min(front.Count, 20); i++)
                 {
