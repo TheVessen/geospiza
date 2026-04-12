@@ -33,7 +33,10 @@ public static class PromptBuilder
         if (mode != AnalysisMode.Explanation)
         {
             if (mode == AnalysisMode.SettingsFeedback)
-                sb.AppendLine(LoadPrompt("strategies.md"));
+            {
+                var strategiesFile = isMultiObjective ? "strategies-multi.md" : "strategies-single.md";
+                sb.AppendLine(LoadPrompt(strategiesFile));
+            }
             sb.AppendLine("## Run Data");
             AppendSettings(sb, obs);
 
@@ -62,20 +65,20 @@ public static class PromptBuilder
 
     private static string ModeFileName(AnalysisMode mode) => mode switch
     {
-        AnalysisMode.LastGeneration  => "last-generation",
+        AnalysisMode.LastGeneration => "last-generation",
         AnalysisMode.SettingsFeedback => "settings-feedback",
-        AnalysisMode.Explanation     => "explanation",
-        _                            => "settings-feedback"
+        AnalysisMode.Explanation => "explanation",
+        _ => "settings-feedback"
     };
 
     private static string DefaultQuestion(AnalysisMode mode, bool isMultiObjective) => mode switch
     {
-        AnalysisMode.LastGeneration  => isMultiObjective
+        AnalysisMode.LastGeneration => isMultiObjective
             ? "Describe the Pareto front and identify 2-3 individuals worth inspecting."
             : "Describe the best individual and the final population state.",
         AnalysisMode.SettingsFeedback => "What settings changes would improve the next run?",
-        AnalysisMode.Explanation      => "How should I set up my fitness function to work well with Geospiza?",
-        _                             => "Analyse this run."
+        AnalysisMode.Explanation => "How should I set up my fitness function to work well with Geospiza?",
+        _ => "Analyse this run."
     };
 
     private static void AppendSettings(StringBuilder sb, EvolutionObserver obs)
@@ -244,8 +247,8 @@ public static class PromptBuilder
                 if (hasRealValues && sch != null && !double.IsNaN(sch.MinValue))
                 {
                     var meanVal = sch.TickToValue((int)Math.Round(g.MeanTick));
-                    var minVal  = sch.TickToValue(g.MinTick);
-                    var maxVal  = sch.TickToValue(g.MaxTick);
+                    var minVal = sch.TickToValue(g.MinTick);
+                    var maxVal = sch.TickToValue(g.MaxTick);
                     sb.AppendLine($"{label,-16} | {g.FitnessCorrelation,6:F3} | {meanVal,10:G4} | n/a        | {minVal:G4}-{maxVal:G4}");
                 }
                 else
@@ -292,7 +295,9 @@ public static class PromptBuilder
             {
                 var front = pop
                     .Where(ind => ind.ParetoRank == 0)
-                    .GroupBy(ind => ind.Id)
+                    .GroupBy(ind => ind.Objectives != null
+                        ? string.Join(",", ind.Objectives.Select(o => o.ToString("F4")))
+                        : ind.Fitness.ToString("F4"))
                     .Select(g => g.First())
                     .ToList();
                 if (obs.ObjectiveNames != null)
@@ -319,7 +324,7 @@ public static class PromptBuilder
                 }
 
                 sb.AppendLine("Id       | Gen | Fitness    | Objectives");
-                for (var i = 0; i < Math.Min(front.Count, 20); i++)
+                for (var i = 0; i < Math.Min(front.Count, 35); i++)
                 {
                     var ind = front[i];
                     var shortId = ind.Id.ToString().Substring(0, 8);
@@ -384,7 +389,7 @@ public static class PromptBuilder
     private static void AppendSingleObjectiveFeedbackData(StringBuilder sb, EvolutionObserver obs)
     {
         var best = obs.BestFitness;
-        var avg  = obs.AverageFitness;
+        var avg = obs.AverageFitness;
         if (best == null || best.Count == 0) return;
 
         sb.AppendLine("### Fitness Curve (sampled)");
@@ -413,9 +418,9 @@ public static class PromptBuilder
 
     private static void AppendMultiObjectiveFeedbackData(StringBuilder sb, EvolutionObserver obs)
     {
-        var hv          = obs.Hypervolume;
-        var frontSizes  = obs.ParetoFrontSizes;
-        var popSize     = obs.Settings?.PopulationSize ?? 0;
+        var hv = obs.Hypervolume;
+        var frontSizes = obs.ParetoFrontSizes;
+        var popSize = obs.Settings?.PopulationSize ?? 0;
 
         // Hypervolume + front size as the primary progress signal
         if (hv != null && hv.Count > 0 && frontSizes != null && frontSizes.Count > 0)
@@ -429,16 +434,16 @@ public static class PromptBuilder
                 .ToList();
             foreach (var i in indices)
             {
-                var fs   = i < frontSizes.Count ? frontSizes[i] : 0;
-                var pct  = popSize > 0 ? (fs * 100 / popSize) : 0;
+                var fs = i < frontSizes.Count ? frontSizes[i] : 0;
+                var pct = popSize > 0 ? (fs * 100 / popSize) : 0;
                 sb.AppendLine($"{i,3} | {hv[i],12:F4} | {fs,9} | {pct,9}%");
             }
             sb.AppendLine();
 
             // Summarise trend
             var hvFirst = hv[0];
-            var hvLast  = hv[hv.Count - 1];
-            var hvGain  = hvFirst > 0 ? (hvLast - hvFirst) / hvFirst * 100 : double.NaN;
+            var hvLast = hv[hv.Count - 1];
+            var hvGain = hvFirst > 0 ? (hvLast - hvFirst) / hvFirst * 100 : double.NaN;
             sb.Append($"HV trend: {hvFirst:F4} → {hvLast:F4}");
             if (!double.IsNaN(hvGain))
                 sb.Append($"  ({hvGain:+0.#;-0.#;0}% change)");
@@ -470,10 +475,10 @@ public static class PromptBuilder
                 sb.AppendLine("Objective       | Min    | Max    | Spread");
                 for (var m = 0; m < objCount; m++)
                 {
-                    var vals  = front.Select(ind => ind.Objectives[m]).ToArray();
-                    var oMin  = vals.Min();
-                    var oMax  = vals.Max();
-                    var name  = (objNames != null && m < objNames.Length) ? objNames[m] : $"obj[{m}]";
+                    var vals = front.Select(ind => ind.Objectives[m]).ToArray();
+                    var oMin = vals.Min();
+                    var oMax = vals.Max();
+                    var name = (objNames != null && m < objNames.Length) ? objNames[m] : $"obj[{m}]";
                     sb.AppendLine($"{name,-16} | {oMin,6:F3} | {oMax,6:F3} | {oMax - oMin,6:F3}");
                 }
 
@@ -482,7 +487,7 @@ public static class PromptBuilder
                 if (crowding.Length > 0)
                 {
                     var cdMean = crowding.Average();
-                    var cdMin  = crowding.Min();
+                    var cdMin = crowding.Min();
                     sb.AppendLine($"CrowdingDistance (non-∞): mean={cdMean:F3}  min={cdMin:F3}");
                     if (cdMin < 0.01)
                         sb.AppendLine("Note: very low minimum crowding distance — front solutions are clustered in places. Spread may be poor.");
@@ -493,7 +498,7 @@ public static class PromptBuilder
 
         // Constraint violation proxy — avg fitness spikes vs best at gen0
         var best = obs.BestFitness;
-        var avg  = obs.AverageFitness;
+        var avg = obs.AverageFitness;
         if (avg != null && best != null && best.Count > 0)
         {
             var spikes = avg.Count(a => Math.Abs(a) > Math.Abs(best[0]) * 10);

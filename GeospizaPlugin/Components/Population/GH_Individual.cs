@@ -29,7 +29,7 @@ public class GH_Individual : GH_Component
 
     protected override void RegisterOutputParams(GH_OutputParamManager pManager)
     {
-        pManager.AddNumberParameter("Fitness", "F", "The fitness value", GH_ParamAccess.item);
+        pManager.AddNumberParameter("Fitness", "F", "The scalar fitness value. Empty for multi-objective individuals.", GH_ParamAccess.item);
         pManager.AddGenericParameter("Genes", "G", "The genes", GH_ParamAccess.list);
         pManager.AddNumberParameter("Objectives", "Obj",
             "Multi-objective fitness values (obj1, obj2, ...). Empty for single-objective individuals.",
@@ -55,7 +55,6 @@ public class GH_Individual : GH_Component
         var individual = individualWrapper.Value as Individual;
         if (individual == null) return;
 
-        DA.SetData(0, individual.Fitness);
         DA.SetDataList(1, individual.GenePool);
         DA.SetData(5, individual.Generation);
         DA.SetData(6, individual.Id.ToString());
@@ -65,6 +64,10 @@ public class GH_Individual : GH_Component
             DA.SetDataList(2, individual.Objectives);
             DA.SetData(3, individual.ParetoRank);
             DA.SetData(4, individual.CrowdingDistance);
+        }
+        else
+        {
+            DA.SetData(0, individual.Fitness);
         }
     }
 }

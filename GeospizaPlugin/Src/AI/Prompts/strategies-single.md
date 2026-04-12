@@ -1,12 +1,11 @@
-## Available Geospiza Strategies
+## Geospiza Strategies (Single-Objective)
 
-### Algorithm
+### Solvers
 
-- SingleObjective: Standard GA, maximises a single scalar fitness value (higher = better).
-- NSGA2: Multi-objective GA using Pareto rank + crowding distance; good for 2-3 objectives.
-- NSGA3: Multi-objective GA using reference points; scales better for 3+ objectives.
+- Standard Solver: Evaluates individuals sequentially. Good for fast fitness functions.
+- Parallel Solver: Evaluates the population concurrently using multiple threads. Use this when the Grasshopper fitness evaluation is slow or uses heavy geometry.
 
-### Selection (SingleObjective only — NSGA-II and NSGA-III use internal tournament selection, do NOT suggest changing this for multi-objective runs)
+### Selection
 
 - TournamentSelection: Runs small tournaments; increase size for more selection pressure.
 - RouletteWheelSelection: Fitness-proportionate; avoid when fitness values are very similar.
@@ -26,8 +25,7 @@
 
 ### Pairing
 
-- For SingleObjective only: PairingStrategy (Inbreeding) — configurable via InBreedingFactor (negative = similar parents, positive = dissimilar parents).
-- For NSGA-II and NSGA-III: pairing is hardcoded per algorithm. Do NOT suggest changing it.
+- PairingStrategy (Inbreeding): Configurable via InBreedingFactor (negative = similar parents, positive = dissimilar parents).
 
 ### Termination
 
