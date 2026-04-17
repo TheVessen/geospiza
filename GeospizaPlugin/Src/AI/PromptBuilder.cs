@@ -265,7 +265,10 @@ public static class PromptBuilder
             var bestInd = obs.FinalBestIndividual;
             if (bestInd != null && schema != null)
             {
-                sb.AppendLine($"### Best Individual  Fitness={bestInd.Fitness:F4}  Generation={bestInd.Generation}");
+                var pop = obs.FinalPopulationSnapshot;
+                var bestIdx = pop != null ? Array.FindIndex(pop, ind => ind.Id == bestInd.Id) : -1;
+                var indexStr = bestIdx >= 0 ? $"  Index={bestIdx}" : "";
+                sb.AppendLine($"### Best Individual{indexStr}  Fitness={bestInd.Fitness:F4}  Generation={bestInd.Generation}");
                 var pool = bestInd.GenePool;
                 var hasRealValues = schema.Any(s => !double.IsNaN(s.MinValue));
                 sb.AppendLine(hasRealValues ? "Gene values (name[index]: value  [range min..max]):" : "Gene values (name[index]: tick/max):");
@@ -316,22 +319,22 @@ public static class PromptBuilder
                     for (var m = 0; m < objCount; m++)
                     {
                         var best = front.OrderByDescending(ind => ind.Objectives[m]).First();
+                        var bestIdx = front.IndexOf(best);
                         var objName = obs.ObjectiveNames != null && m < obs.ObjectiveNames.Length
                             ? obs.ObjectiveNames[m] : $"obj[{m}]";
-                        sb.Append($" {objName}={best.Objectives[m]:F3}({best.Id.ToString().Substring(0, 8)})");
+                        sb.Append($" {objName}={best.Objectives[m]:F3}(idx:{bestIdx})");
                     }
                     sb.AppendLine();
                 }
 
-                sb.AppendLine("Id       | Gen | Fitness    | Objectives");
+                sb.AppendLine("Idx      | Gen | Fitness    | Objectives");
                 for (var i = 0; i < Math.Min(front.Count, 35); i++)
                 {
                     var ind = front[i];
-                    var shortId = ind.Id.ToString().Substring(0, 8);
                     var objs = ind.Objectives != null
                         ? string.Join(", ", ind.Objectives.Select(o => o.ToString("F3")))
                         : "n/a";
-                    sb.AppendLine($"{shortId} | {ind.Generation,3} | {ind.Fitness,10:F4} | [{objs}]");
+                    sb.AppendLine($"{i,8} | {ind.Generation,3} | {ind.Fitness,10:F4} | [{objs}]");
                 }
                 sb.AppendLine();
             }
