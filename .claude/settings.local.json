@@ -1,8 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(npm install)",
-      "Bash(npx sv add tailwindcss --no-install)"
-    ]
-  }
-}
