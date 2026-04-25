@@ -88,6 +88,15 @@ public class SolverSettings
     public int ReferencePointDivisions { get; set; }
 
     /// <summary>
+    ///     When <c>true</c> (the default), the solver caches fitness results keyed on the
+    ///     genotype's tick-value sequence so that duplicate individuals (common late in a run
+    ///     when diversity collapses) skip the expensive Grasshopper solve. Set to <c>false</c>
+    ///     when the fitness function is stochastic — caching would otherwise mask the
+    ///     per-evaluation variance the algorithm needs to see.
+    /// </summary>
+    public bool UseFitnessCache { get; set; } = true;
+
+    /// <summary>
     ///     Validates that all required strategies are properly set.
     ///     For multi-objective runs, SelectionStrategy is not required — NSGA solvers
     ///     use their own internal tournament selection based on Pareto rank and crowding distance.

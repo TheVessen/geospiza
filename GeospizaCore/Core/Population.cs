@@ -93,6 +93,9 @@ public class Population
     /// <summary>
     ///     Shared evaluation loop: applies genes, solves the document, and delegates fitness assignment to the caller.
     ///     Skips the first <paramref name="skipCount" /> individuals without re-evaluating them.
+    ///     When <see cref="StateManager.FitnessCache" /> is non-null, individuals whose gene-pool
+    ///     tick sequence has already been evaluated reuse the cached result and skip the
+    ///     Grasshopper solve entirely (the dominant per-individual cost).
     /// </summary>
     private void EvaluateIndividuals(StateManager stateManager, EvolutionObserver evolutionObserver,
         int skipCount, Action<Individual> assignFitness)
@@ -100,9 +103,28 @@ public class Population
         var bestFitness = evolutionObserver.BestFitness;
         var max = bestFitness.Count > 0 ? bestFitness[bestFitness.Count - 1] : double.MinValue;
 
+        // Hoist out of the inner loop: these are constant for the whole evaluation pass.
+        var doc = stateManager.GetDocument();
+        if (doc == null) throw new Exception("Document is null");
+        var fitnessComponent = stateManager.FitnessComponent;
+        if (fitnessComponent == null) throw new Exception("Fitness component is null");
+        var cache = stateManager.FitnessCache;
+
         for (var idx = skipCount; idx < Inhabitants.Count; idx++)
         {
             var individual = Inhabitants[idx];
+
+            // Cache hit: apply the stored fitness/objectives and skip the entire GH solve.
+            // Preview updates intentionally don't fire here — the document state need not match
+            // the cached individual, so triggering ExpirePreview would render a stale geometry.
+            if (cache != null && cache.TryGet(individual.GenePool, out var cached))
+            {
+                individual.SetFitness(cached.Fitness);
+                if (cached.Objectives != null)
+                    individual.SetObjectives(cached.Objectives);
+                continue;
+            }
+
             foreach (var gene in individual.GenePool)
             {
                 if (gene.GenePoolIndex >= 0)
@@ -123,19 +145,17 @@ public class Population
                 }
             }
 
-            var doc = stateManager.GetDocument();
-            if (doc == null) throw new Exception("Document is null");
-
             if (stateManager.PreviewLevel == 0)
                 doc.NewSolution(false);
             else
                 doc.NewSolution(false, GH_SolutionMode.Silent);
 
-            var fitnessComponent = stateManager.FitnessComponent;
-            if (fitnessComponent == null) throw new Exception("Fitness component is null");
-
             fitnessComponent.ExpireSolution(false);
             assignFitness(individual);
+
+            // Store the fresh result for future hits. Done after assignFitness so we capture
+            // whatever the action wrote (single-objective Fitness or multi-objective Objectives).
+            cache?.Store(individual.GenePool, individual.Fitness, individual.Objectives);
 
             if (stateManager.PreviewLevel != 2) continue;
             if (!(max < individual.Fitness)) continue;

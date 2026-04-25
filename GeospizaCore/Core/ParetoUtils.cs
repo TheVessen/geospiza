@@ -24,6 +24,29 @@ public static class ParetoUtils
     }
 
     /// <summary>
+    ///     Compares two objective vectors in a single pass and returns:
+    ///     -1 if <paramref name="a" /> dominates <paramref name="b" />,
+    ///     +1 if <paramref name="b" /> dominates <paramref name="a" />,
+    ///      0 otherwise (mutually non-dominated or equal).
+    /// </summary>
+    private static int CompareDominance(double[] a, double[] b)
+    {
+        var aBetter = false;
+        var bBetter = false;
+        for (var i = 0; i < a.Length; i++)
+        {
+            if (a[i] > b[i]) aBetter = true;
+            else if (a[i] < b[i]) bBetter = true;
+            // Early exit: once both directions have a strict edge, neither dominates.
+            if (aBetter && bBetter) return 0;
+        }
+
+        if (aBetter) return -1;
+        if (bBetter) return 1;
+        return 0;
+    }
+
+    /// <summary>
     ///     Fast non-dominated sort (Deb et al. 2002), O(M·N²).
     ///     Assigns <see cref="Individual.ParetoRank" /> on every individual in-place
     ///     and returns the fronts in rank order (fronts[0] = Pareto-optimal).
@@ -36,21 +59,35 @@ public static class ParetoUtils
         var dominatedSets = new List<int>[n];
         for (var i = 0; i < n; i++) dominatedSets[i] = new List<int>();
 
+        // Cache objective array references locally so the inner loop avoids repeated property access.
+        var objectives = new double[n][];
+        for (var i = 0; i < n; i++) objectives[i] = population[i].Objectives!;
+
         var frontIndices = new List<List<int>> { new() };
+
+        // Each unordered pair (i, j) is examined exactly once. CompareDominance fills both
+        // dominatedSets[i]/dominationCount[j] (or vice versa) in a single pass through the
+        // objective vectors, halving the comparisons and avoiding the duplicate Dominates call.
+        for (var i = 0; i < n; i++)
+        {
+            for (var j = i + 1; j < n; j++)
+            {
+                var cmp = CompareDominance(objectives[i], objectives[j]);
+                if (cmp < 0)
+                {
+                    dominatedSets[i].Add(j);
+                    dominationCount[j]++;
+                }
+                else if (cmp > 0)
+                {
+                    dominatedSets[j].Add(i);
+                    dominationCount[i]++;
+                }
+            }
+        }
 
         for (var i = 0; i < n; i++)
         {
-            var oi = population[i].Objectives;
-            for (var j = 0; j < n; j++)
-            {
-                if (i == j) continue;
-                var oj = population[j].Objectives;
-                if (Dominates(oi, oj))
-                    dominatedSets[i].Add(j);
-                else if (Dominates(oj, oi))
-                    dominationCount[i]++;
-            }
-
             if (dominationCount[i] == 0)
             {
                 population[i].SetParetoRank(0);

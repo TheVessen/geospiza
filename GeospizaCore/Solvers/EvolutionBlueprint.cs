@@ -19,6 +19,10 @@ public abstract class EvolutionBlueprint : IEvolutionarySolver
     // Adaptive rate control — base values captured once at algorithm start.
     private double _baseMutationRate;
 
+    // Captured at construction; controls whether a per-run FitnessCache is attached to the
+    // StateManager during Initialize* so duplicate genotypes skip the Grasshopper solve.
+    private readonly bool _useFitnessCache;
+
     /// <summary>
     ///     Initializes the evolutionary algorithm with the given settings.
     /// </summary>
@@ -33,6 +37,28 @@ public abstract class EvolutionBlueprint : IEvolutionarySolver
         MutationStrategy = settings.MutationStrategy;
         PairingStrategy = settings.PairingStrategy;
         TerminationStrategy = settings.TerminationStrategy;
+        _useFitnessCache = settings.UseFitnessCache;
+    }
+
+    /// <summary>
+    ///     Sets up or tears down the per-run fitness cache on <paramref name="stateManager" />
+    ///     according to the solver settings. Called once at the start of each run before the
+    ///     initial population is evaluated, so that even gen-0 results populate the cache for
+    ///     subsequent generations to hit.
+    /// </summary>
+    private void ConfigureFitnessCache(StateManager stateManager)
+    {
+        if (_useFitnessCache)
+        {
+            if (stateManager.FitnessCache == null)
+                stateManager.FitnessCache = new FitnessCache();
+            else
+                stateManager.FitnessCache.Clear();
+        }
+        else
+        {
+            stateManager.FitnessCache = null;
+        }
     }
 
     protected Population Population { get; set; } = new();
@@ -97,6 +123,9 @@ public abstract class EvolutionBlueprint : IEvolutionarySolver
     protected int InitializePopulationMultiObjective(StateManager stateManager,
         EvolutionObserver evolutionObserver)
     {
+        ConfigureFitnessCache(stateManager);
+        var cache = stateManager.FitnessCache;
+
         var fitnessInstance = Fitness.Instance;
         var newPopulation = new Population();
         var objectiveCount = 0;
@@ -117,6 +146,21 @@ public abstract class EvolutionBlueprint : IEvolutionarySolver
                 individual.AddGene(stableGene);
             }
 
+            // Cache hit on the initial sweep is rare but possible (random duplicates); skip the
+            // Grasshopper solve when we already have an answer for this exact tick sequence.
+            if (cache != null && cache.TryGet(individual.GenePool, out var cached))
+            {
+                if (cached.Objectives != null)
+                {
+                    individual.SetObjectives(cached.Objectives);
+                    objectiveCount = cached.Objectives.Length;
+                }
+                individual.SetFitness(cached.Fitness);
+                individual.SetGeneration(0);
+                newPopulation.AddIndividual(individual);
+                continue;
+            }
+
             if (stateManager.PreviewLevel == 0)
                 stateManager.GetDocument().NewSolution(false);
             else
@@ -128,6 +172,10 @@ public abstract class EvolutionBlueprint : IEvolutionarySolver
             if (objectives.Length > 0) individual.SetFitness(objectives[0]);
             individual.SetGeneration(0);
             newPopulation.AddIndividual(individual);
+
+            // Populate the cache so duplicates that re-appear via crossover in subsequent
+            // generations skip the GH solve.
+            cache?.Store(individual.GenePool, individual.Fitness, individual.Objectives);
         }
 
         if (objectiveCount > 0)
@@ -154,6 +202,9 @@ public abstract class EvolutionBlueprint : IEvolutionarySolver
     /// </summary>
     public void InitializePopulation(StateManager stateManager, EvolutionObserver evolutionObserver)
     {
+        ConfigureFitnessCache(stateManager);
+        var cache = stateManager.FitnessCache;
+
         var firstGenBestFitness = 0.0;
         var fitnessInstance = Fitness.Instance;
 
@@ -174,12 +225,25 @@ public abstract class EvolutionBlueprint : IEvolutionarySolver
                 individual.AddGene(stableGene);
             }
 
-            if (stateManager.PreviewLevel == 0)
-                stateManager.GetDocument().NewSolution(false);
+            double currentFitness;
+            // Cache hit on the initial sweep is rare but possible (random duplicates); skip the
+            // Grasshopper solve when we already have an answer for this exact tick sequence.
+            if (cache != null && cache.TryGet(individual.GenePool, out var cached))
+            {
+                currentFitness = cached.Fitness;
+            }
             else
-                stateManager.GetDocument().NewSolution(false, GH_SolutionMode.Silent);
+            {
+                if (stateManager.PreviewLevel == 0)
+                    stateManager.GetDocument().NewSolution(false);
+                else
+                    stateManager.GetDocument().NewSolution(false, GH_SolutionMode.Silent);
 
-            var currentFitness = fitnessInstance.GetFitness();
+                currentFitness = fitnessInstance.GetFitness();
+                // Populate the cache so duplicates that re-appear via crossover in subsequent
+                // generations skip the GH solve.
+                cache?.Store(individual.GenePool, currentFitness, null);
+            }
 
             if (i == 0)
             {

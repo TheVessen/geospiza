@@ -173,60 +173,103 @@ public class NsgaIIISolver : EvolutionBlueprint
         for (var i = 0; i < nextPopulation.Count; i++)
             nicheCounts[refIndices[i]]++;
 
-        // 5. Build working list of candidates from the critical front (indices offset by nextPop count).
+        // 5. Index critical-front candidates by reference point so the niche loop never has to
+        //    scan the full candidate list. Each candidate index is offset by the count of
+        //    already-selected (complete-front) members in nextPopulation.
         var candidateOffset = nextPopulation.Count;
-        var candidates = new List<int>(criticalFront.Count);
+        var candidatesByRef = new Dictionary<int, List<int>>();
         for (var i = 0; i < criticalFront.Count; i++)
-            candidates.Add(candidateOffset + i);
+        {
+            var ci = candidateOffset + i;
+            var r = refIndices[ci];
+            if (!candidatesByRef.TryGetValue(r, out var list))
+            {
+                list = new List<int>();
+                candidatesByRef[r] = list;
+            }
+            list.Add(ci);
+        }
+
+        // Track only reference points that still have at least one candidate. Bucketing them
+        // by current niche count gives O(1) "find a reference point with the minimum niche".
+        var refsByNiche = new Dictionary<int, HashSet<int>>();
+        var minNiche = int.MaxValue;
+        foreach (var r in candidatesByRef.Keys)
+        {
+            var nc = nicheCounts[r];
+            if (!refsByNiche.TryGetValue(nc, out var bucket))
+            {
+                bucket = new HashSet<int>();
+                refsByNiche[nc] = bucket;
+            }
+            bucket.Add(r);
+            if (nc < minNiche) minNiche = nc;
+        }
 
         // 6. Niche-preserving selection: iteratively pick from lowest-niche reference points.
-        for (var added = 0; added < needed && candidates.Count > 0; added++)
+        var totalCandidates = criticalFront.Count;
+        for (var added = 0; added < needed && totalCandidates > 0; added++)
         {
-            // Find the minimum niche count among reference points that have at least one candidate.
-            var minNiche = int.MaxValue;
-            foreach (var ci in candidates)
-            {
-                var rc = nicheCounts[refIndices[ci]];
-                if (rc < minNiche) minNiche = rc;
-            }
+            // Advance minNiche if its bucket has been emptied by previous iterations.
+            while (!refsByNiche.TryGetValue(minNiche, out var bucketAtMin) || bucketAtMin.Count == 0)
+                minNiche++;
 
-            // Collect reference points with that niche count that have candidates.
-            var eligibleRefs = new HashSet<int>();
-            foreach (var ci in candidates)
-                if (nicheCounts[refIndices[ci]] == minNiche)
-                    eligibleRefs.Add(refIndices[ci]);
-
+            var eligible = refsByNiche[minNiche];
             // Pick one reference point at random from the eligible set.
-            var targetRef = eligibleRefs.ElementAt(Random.Next(eligibleRefs.Count));
-
-            // Among candidates associated with targetRef, pick the one with minimum distance
-            // when niche count is 0; otherwise pick randomly.
-            var targetCandidates = candidates.Where(ci => refIndices[ci] == targetRef).ToList();
+            var targetRef = eligible.ElementAt(Random.Next(eligible.Count));
+            var targetCandidates = candidatesByRef[targetRef];
 
             int chosen;
+            int chosenSlot;
             if (minNiche == 0)
             {
                 // Pick candidate with smallest perpendicular distance to the reference point.
-                chosen = targetCandidates[0];
-                var minDist = distances[chosen];
+                chosenSlot = 0;
+                var minDist = distances[targetCandidates[0]];
                 for (var k = 1; k < targetCandidates.Count; k++)
                 {
                     var d = distances[targetCandidates[k]];
                     if (d < minDist)
                     {
                         minDist = d;
-                        chosen = targetCandidates[k];
+                        chosenSlot = k;
                     }
                 }
+                chosen = targetCandidates[chosenSlot];
             }
             else
             {
-                chosen = targetCandidates[Random.Next(targetCandidates.Count)];
+                chosenSlot = Random.Next(targetCandidates.Count);
+                chosen = targetCandidates[chosenSlot];
             }
 
+            // Remove chosen from its candidate bucket in O(1) via swap-with-last.
+            var lastIdx = targetCandidates.Count - 1;
+            targetCandidates[chosenSlot] = targetCandidates[lastIdx];
+            targetCandidates.RemoveAt(lastIdx);
+            totalCandidates--;
+
             nextPopulation.AddIndividual(allMembers[chosen]);
+
+            // Update niche bookkeeping: targetRef just gained one occupant. Move it to the
+            // (minNiche + 1) bucket; if it has no more candidates, drop it from the index.
+            eligible.Remove(targetRef);
             nicheCounts[targetRef]++;
-            candidates.Remove(chosen);
+
+            if (targetCandidates.Count > 0)
+            {
+                var newNiche = nicheCounts[targetRef];
+                if (!refsByNiche.TryGetValue(newNiche, out var newBucket))
+                {
+                    newBucket = new HashSet<int>();
+                    refsByNiche[newNiche] = newBucket;
+                }
+                newBucket.Add(targetRef);
+            }
+            else
+            {
+                candidatesByRef.Remove(targetRef);
+            }
         }
 
         return nextPopulation;

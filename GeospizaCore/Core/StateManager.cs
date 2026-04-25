@@ -94,6 +94,13 @@ public class StateManager
     public Dictionary<Guid, GeneTemplate> Genotype { get; private set; } = new();
 
     /// <summary>
+    ///     Per-run fitness cache. <c>null</c> when caching is disabled in
+    ///     <see cref="Solvers.SolverSettings.UseFitnessCache" />. The solver assigns and clears
+    ///     this at the start of each run; <see cref="Population" /> consults it during evaluation.
+    /// </summary>
+    public FitnessCache? FitnessCache { get; set; }
+
+    /// <summary>
     ///     Returns the instance of StateManager for the given solver.
     /// </summary>
     public static StateManager GetInstance(GH_Component solver, GH_Document document)

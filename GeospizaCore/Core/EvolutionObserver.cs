@@ -45,6 +45,14 @@ public class EvolutionObserver
     private readonly List<double> _hypervolume = new();
     private readonly List<int> _paretoFrontSizes = new();
 
+    // Per-generation fitness-cache activity. Stored as deltas (new hits/misses since the previous
+    // snapshot) so per-generation hit rates are directly computable as hits[g] / (hits[g] + misses[g]).
+    private readonly List<int> _cacheHits = new();
+    private readonly List<int> _cacheMisses = new();
+    // Last cumulative counters seen on the cache; used to derive the next snapshot's delta.
+    private int _lastCumulativeCacheHits;
+    private int _lastCumulativeCacheMisses;
+
     private readonly object _listLock = new();
 
     // Fixed HV reference point — computed once from the initial population's nadir.
@@ -103,6 +111,35 @@ public class EvolutionObserver
     public IReadOnlyList<int> NumberOfUniqueIndividuals => _numberOfUniqueIndividuals;
     public IReadOnlyList<double> Hypervolume => _hypervolume;
     public IReadOnlyList<int> ParetoFrontSizes => _paretoFrontSizes;
+
+    /// <summary>
+    ///     Per-generation count of fitness-cache hits (skipped Grasshopper solves) since the
+    ///     previous snapshot. Empty when <see cref="Solvers.SolverSettings.UseFitnessCache"/>
+    ///     is disabled.
+    /// </summary>
+    public IReadOnlyList<int> CacheHits => _cacheHits;
+
+    /// <summary>
+    ///     Per-generation count of fitness-cache misses (real Grasshopper solves) since the
+    ///     previous snapshot. Empty when caching is disabled.
+    /// </summary>
+    public IReadOnlyList<int> CacheMisses => _cacheMisses;
+
+    /// <summary>
+    ///     Cumulative hit-rate over the whole run so far, in [0, 1]. Returns 0 when caching is
+    ///     disabled or no evaluations have happened yet.
+    ///     A value rising past ~0.7 mid-run is a diversity-collapse signal: the GA is mostly
+    ///     re-evaluating duplicates and exploration has stalled.
+    /// </summary>
+    public double CacheHitRate
+    {
+        get
+        {
+            var hits = _lastCumulativeCacheHits;
+            var total = hits + _lastCumulativeCacheMisses;
+            return total == 0 ? 0.0 : (double)hits / total;
+        }
+    }
 
     /// <summary>
     ///     Gene metadata shared by every individual across all generations.
@@ -173,6 +210,10 @@ public class EvolutionObserver
             _numberOfUniqueIndividuals.Clear();
             _hypervolume.Clear();
             _paretoFrontSizes.Clear();
+            _cacheHits.Clear();
+            _cacheMisses.Clear();
+            _lastCumulativeCacheHits = 0;
+            _lastCumulativeCacheMisses = 0;
             _hvReferencePoint = null;
             CurrentPopulation = null;
             CurrentGenerationIndex = 0;
@@ -222,6 +263,17 @@ public class EvolutionObserver
             _averageFitness.Add(average);
             _fitnessStandardDeviation.Add(Math.Sqrt(sumOfSquares / n));
             _numberOfUniqueIndividuals.Add(currentPopulation.GetDiversity());
+
+            // Record per-generation cache activity as a delta against the last cumulative
+            // reading. When caching is disabled the cache is null and we record zeros, which
+            // keeps the list lengths aligned with the other per-generation series.
+            var cache = stateManager?.FitnessCache;
+            var cumulativeHits = cache?.Hits ?? 0;
+            var cumulativeMisses = cache?.Misses ?? 0;
+            _cacheHits.Add(cumulativeHits - _lastCumulativeCacheHits);
+            _cacheMisses.Add(cumulativeMisses - _lastCumulativeCacheMisses);
+            _lastCumulativeCacheHits = cumulativeHits;
+            _lastCumulativeCacheMisses = cumulativeMisses;
 
             // Extract gene schema once — genes are identical across all generations.
             if (GeneSchema == null && inhabitants[0].GenePool.Count > 0)
@@ -371,6 +423,10 @@ public class EvolutionObserver
             _numberOfUniqueIndividuals.Clear();
             _hypervolume.Clear();
             _paretoFrontSizes.Clear();
+            _cacheHits.Clear();
+            _cacheMisses.Clear();
+            _lastCumulativeCacheHits = 0;
+            _lastCumulativeCacheMisses = 0;
             _hvReferencePoint = null;
             CurrentPopulation = null;
             CurrentGenerationIndex = 0;
