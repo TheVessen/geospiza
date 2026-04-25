@@ -46,9 +46,10 @@ public class NsgaIIISolver : EvolutionBlueprint
 
         _referencePoints = ParetoUtils.GenerateReferencePoints(_objectiveCount, _referencePointDivisions);
 
+        var completedNormally = false;
         try
         {
-            for (var i = 0; i < MaxGenerations - 1; i++)
+            for (var i = 0; i < EvolutionIterationCount; i++)
             {
                 if (cancellationToken.IsCancellationRequested) break;
 
@@ -70,10 +71,26 @@ public class NsgaIIISolver : EvolutionBlueprint
                 foreach (var inhabitant in nextPopulation.Inhabitants)
                     inhabitant.SetGeneration(i + 1);
 
-                // Assign crowding distance per front so the tournament tiebreaker works.
-                var nextFronts = ParetoUtils.FastNonDominatedSort(nextPopulation.Inhabitants);
-                foreach (var front in nextFronts)
+                // Survivors retain the ParetoRank assigned during sort of the combined pool, so
+                // group by rank instead of re-running the O(M·N²) sort. Crowding distance is
+                // (re)assigned per front for the tournament tiebreaker.
+                var survivorFronts = nextPopulation.Inhabitants
+                    .GroupBy(ind => ind.ParetoRank)
+                    .OrderBy(g => g.Key)
+                    .Select(g => g.ToList())
+                    .ToList();
+                foreach (var front in survivorFronts)
                     ParetoUtils.AssignCrowdingDistance(front, _objectiveCount);
+
+                // Refresh ReferencePointIndex/Distance on the rank-0 front against the survivors'
+                // own normalization so Reinstate (and any consumer) reads up-to-date values rather
+                // than stale state from the combined pool's basis.
+                if (survivorFronts.Count > 0)
+                {
+                    var rank0 = survivorFronts[0];
+                    var rank0Norm = ParetoUtils.NormalizeObjectives(rank0, _objectiveCount);
+                    ParetoUtils.AssociateToReferencePoints(rank0, rank0Norm, _referencePoints);
+                }
 
                 Population = nextPopulation;
 
@@ -92,15 +109,17 @@ public class NsgaIIISolver : EvolutionBlueprint
                 }
             }
 
+            completedNormally = !cancellationToken.IsCancellationRequested;
         }
         catch (Exception ex)
         {
             Console.Error.WriteLine($"NSGA-III Solver error: {ex.Message}");
         }
 
-        // Reinstate the best individual whenever the run was not explicitly cancelled by the user.
-        // This covers both normal completion and early termination via a termination strategy.
-        if (!cancellationToken.IsCancellationRequested)
+        // Reinstate the best individual only if the run completed normally (full loop or early
+        // termination via the termination strategy). Skip on cancellation or after an exception,
+        // since Population may then hold partial / stale state.
+        if (completedNormally && Population.Inhabitants.Count > 0)
         {
             // Reinstate the rank-0 individual with the smallest perpendicular distance to its
             // reference point (best-represented point on the Pareto front).
@@ -214,31 +233,42 @@ public class NsgaIIISolver : EvolutionBlueprint
     }
 
     /// <summary>
-    ///     Builds an offspring population using the NSGA-III binary tournament selection
-    ///     (rank first, then crowding distance as tiebreaker for compatibility).
+    ///     Builds an offspring population of exactly <see cref="EvolutionBlueprint.PopulationSize" />
+    ///     individuals using NSGA-III binary tournament selection (rank first, then crowding distance
+    ///     as tiebreaker for compatibility). Children beyond the target size are simply not added,
+    ///     so the result never has to be truncated.
     /// </summary>
     private Population CreateOffspring(CancellationToken cancellationToken)
     {
         var offspring = new Population();
         var selector = new NsgaIIITournamentSelection(Random);
 
+        // Safety limit guards against pathological strategy combinations that fail to produce
+        // any children (e.g. an empty mating pool); under normal use a single iteration suffices.
         var safetyLimit = PopulationSize * 10;
         while (offspring.Count < PopulationSize && !cancellationToken.IsCancellationRequested && safetyLimit-- > 0)
         {
-            var matingPool = selector.Select(Population, PopulationSize);
-            var pairs = PairingStrategy.PairIndividuals(matingPool);
+            var stillNeeded = PopulationSize - offspring.Count;
+            var poolSize = Math.Max(2, stillNeeded);
+            var matingPool = selector.Select(Population, poolSize);
+            // Materialize once: PairIndividuals implementations are typically yield-based,
+            // and we both need a count check and a single-pass enumeration below.
+            var pairs = PairingStrategy.PairIndividuals(matingPool).ToList();
+
+            if (pairs.Count == 0) break;
 
             foreach (var pair in pairs)
             {
+                if (offspring.Count >= PopulationSize) break;
                 var children = PerformCrossover(pair);
                 MutateChildren(children);
-                offspring.AddIndividuals(children);
-                if (offspring.Count >= PopulationSize) break;
+                foreach (var child in children)
+                {
+                    if (offspring.Count >= PopulationSize) break;
+                    offspring.AddIndividual(child);
+                }
             }
         }
-
-        if (offspring.Count > PopulationSize)
-            offspring.Inhabitants.RemoveRange(PopulationSize, offspring.Count - PopulationSize);
 
         return offspring;
     }
@@ -273,11 +303,18 @@ public class NsgaIIISolver : EvolutionBlueprint
         {
             var selected = new List<Individual>(numberOfSelections);
             var inhabitants = population.Inhabitants;
+            var n = inhabitants.Count;
 
             for (var i = 0; i < numberOfSelections; i++)
             {
-                var a = inhabitants[_random.Next(inhabitants.Count)];
-                var b = inhabitants[_random.Next(inhabitants.Count)];
+                var ai = _random.Next(n);
+                var bi = _random.Next(n);
+                // Avoid degenerate self-comparison (which would always pick the same individual)
+                // when the population has at least two distinct slots.
+                if (n > 1)
+                    while (bi == ai) bi = _random.Next(n);
+                var a = inhabitants[ai];
+                var b = inhabitants[bi];
                 selected.Add(IsBetter(a, b) ? a : b);
             }
 

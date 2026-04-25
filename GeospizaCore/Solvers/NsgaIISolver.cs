@@ -38,9 +38,10 @@ public class NsgaIISolver : EvolutionBlueprint
     {
         _objectiveCount = InitializePopulationMultiObjective(StateManager, EvolutionObserver);
         CaptureBaseRates();
+        var completedNormally = false;
         try
         {
-            for (var i = 0; i < MaxGenerations - 1; i++)
+            for (var i = 0; i < EvolutionIterationCount; i++)
             {
                 if (cancellationToken.IsCancellationRequested) break;
 
@@ -82,15 +83,17 @@ public class NsgaIISolver : EvolutionBlueprint
                 }
             }
 
+            completedNormally = !cancellationToken.IsCancellationRequested;
         }
         catch (Exception ex)
         {
             Console.Error.WriteLine($"NSGA-II Solver error: {ex.Message}");
         }
 
-        // Reinstate the best individual whenever the run was not explicitly cancelled by the user.
-        // This covers both normal completion and early termination via a termination strategy.
-        if (!cancellationToken.IsCancellationRequested)
+        // Reinstate the best individual only if the run completed normally (full loop or early
+        // termination via the termination strategy). Skip on cancellation or after an exception,
+        // since Population may then hold partial / stale state.
+        if (completedNormally && Population.Inhabitants.Count > 0)
         {
             // Reinstate best individual from rank-0 front; prefer highest crowding distance for diversity
             var best = Population.Inhabitants
@@ -102,31 +105,44 @@ public class NsgaIISolver : EvolutionBlueprint
     }
 
     /// <summary>
-    ///     Builds an offspring population of size <see cref="EvolutionBlueprint.PopulationSize" />
-    ///     using binary tournament selection (rank / crowding distance), pairing, crossover, and mutation.
+    ///     Builds an offspring population of exactly <see cref="EvolutionBlueprint.PopulationSize" />
+    ///     individuals using binary tournament selection (rank / crowding distance), pairing,
+    ///     crossover, and mutation. Children beyond the target size are simply not added,
+    ///     so the result never has to be truncated.
     /// </summary>
     private Population CreateOffspring(CancellationToken cancellationToken)
     {
         var offspring = new Population();
         var selector = new NsgaIITournamentSelection(Random);
 
+        // Safety limit guards against pathological strategy combinations that fail to produce
+        // any children (e.g. an empty mating pool); under normal use a single iteration suffices.
         var safetyLimit = PopulationSize * 10;
         while (offspring.Count < PopulationSize && !cancellationToken.IsCancellationRequested && safetyLimit-- > 0)
         {
-            var matingPool = selector.Select(Population, PopulationSize);
-            var pairs = PairingStrategy.PairIndividuals(matingPool);
+            var stillNeeded = PopulationSize - offspring.Count;
+            // Each pair produces up to 2 children; keep the pool small enough to avoid wasted work
+            // late in the loop, but never below 2 so PairIndividuals can form at least one pair.
+            var poolSize = Math.Max(2, stillNeeded);
+            var matingPool = selector.Select(Population, poolSize);
+            // Materialize once: PairIndividuals implementations are typically yield-based,
+            // and we both need a count check and a single-pass enumeration below.
+            var pairs = PairingStrategy.PairIndividuals(matingPool).ToList();
+
+            if (pairs.Count == 0) break;
 
             foreach (var pair in pairs)
             {
+                if (offspring.Count >= PopulationSize) break;
                 var children = PerformCrossover(pair);
                 MutateChildren(children);
-                offspring.AddIndividuals(children);
-                if (offspring.Count >= PopulationSize) break;
+                foreach (var child in children)
+                {
+                    if (offspring.Count >= PopulationSize) break;
+                    offspring.AddIndividual(child);
+                }
             }
         }
-
-        if (offspring.Count > PopulationSize)
-            offspring.Inhabitants.RemoveRange(PopulationSize, offspring.Count - PopulationSize);
 
         return offspring;
     }
@@ -192,11 +208,18 @@ public class NsgaIISolver : EvolutionBlueprint
         {
             var selected = new List<Individual>(numberOfSelections);
             var inhabitants = population.Inhabitants;
+            var n = inhabitants.Count;
 
             for (var i = 0; i < numberOfSelections; i++)
             {
-                var a = inhabitants[_random.Next(inhabitants.Count)];
-                var b = inhabitants[_random.Next(inhabitants.Count)];
+                var ai = _random.Next(n);
+                var bi = _random.Next(n);
+                // Avoid degenerate self-comparison (which would always pick the same individual)
+                // when the population has at least two distinct slots.
+                if (n > 1)
+                    while (bi == ai) bi = _random.Next(n);
+                var a = inhabitants[ai];
+                var b = inhabitants[bi];
                 selected.Add(IsBetter(a, b) ? a : b);
             }
 

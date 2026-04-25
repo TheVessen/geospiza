@@ -29,7 +29,7 @@ public class ParallelSolver : EvolutionBlueprint
         try
         {
             // Run the algorithm for the specified number of generations
-            for (var i = 0; i < MaxGenerations - 1; i++)
+            for (var i = 0; i < EvolutionIterationCount; i++)
             {
                 if (cancellationToken.IsCancellationRequested)
                     break;

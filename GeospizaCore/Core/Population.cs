@@ -17,12 +17,17 @@ public class Population
     }
 
     /// <summary>
-    ///     Copy constructor
+    ///     Deep copy constructor. Each <see cref="Individual"/> is cloned via its copy constructor
+    ///     so callers can mutate the new population (genes, fitness, Pareto state) without
+    ///     affecting the source. Selection-pool snapshots in solvers rely on this independence.
     /// </summary>
     /// <param name="population"></param>
     public Population(Population population)
     {
-        Inhabitants = new List<Individual>(population.Inhabitants);
+        if (population == null) throw new ArgumentNullException(nameof(population));
+        Inhabitants = population.Inhabitants
+            .Select(ind => new Individual(ind))
+            .ToList();
     }
 
     /// <summary>

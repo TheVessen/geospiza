@@ -34,9 +34,10 @@ public class BaseSolver : EvolutionBlueprint
     {
         InitializePopulation(StateManager, EvolutionObserver);
         CaptureBaseRates();
+        var completedNormally = false;
         try
         {
-            for (var i = 0; i < MaxGenerations - 1; i++)
+            for (var i = 0; i < EvolutionIterationCount; i++)
             {
                 if (cancellationToken.IsCancellationRequested)
                     break;
@@ -87,15 +88,17 @@ public class BaseSolver : EvolutionBlueprint
                 }
             }
 
+            completedNormally = !cancellationToken.IsCancellationRequested;
         }
         catch (Exception ex)
         {
             Console.Error.WriteLine($"Solver error: {ex.Message}");
         }
 
-        // Reinstate the best individual whenever the run was not explicitly cancelled by the user.
-        // This covers both normal completion and early termination via a termination strategy.
-        if (!cancellationToken.IsCancellationRequested)
+        // Reinstate the best individual only if the run completed normally (full loop or early
+        // termination via the termination strategy). Skip on cancellation or after an exception,
+        // since Population may then hold partial / stale state.
+        if (completedNormally)
         {
             var best = Population.SelectTopIndividuals(1);
             if (best.Count > 0)

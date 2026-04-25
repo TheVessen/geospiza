@@ -45,6 +45,15 @@ public abstract class EvolutionBlueprint : IEvolutionarySolver
     protected int MaxGenerations { get; set; }
 
     /// <summary>
+    ///     Number of evolution iterations the main loop should run. Generation 0 is the initial
+    ///     population produced by <see cref="InitializePopulation"/> /
+    ///     <see cref="InitializePopulationMultiObjective"/>; subsequent iterations produce
+    ///     generations 1 through MaxGenerations - 1, for a total of <see cref="MaxGenerations"/>
+    ///     generations when termination does not fire early.
+    /// </summary>
+    protected int EvolutionIterationCount => Math.Max(0, MaxGenerations - 1);
+
+    /// <summary>
     ///     The number of the best individuals that should be preserved for the next generation.
     /// </summary>
     protected int EliteSize { get; set; }
@@ -231,15 +240,16 @@ public abstract class EvolutionBlueprint : IEvolutionarySolver
     /// </summary>
     protected void AdaptStrategies(EvolutionObserver observer)
     {
-        if (observer.CurrentGenerationIndex < AdaptationWindow + 1) return;
-
         bool isStagnating;
         var isMultiObjective = observer.Algorithm != EvolutionObserver.AlgorithmType.SingleObjective;
 
+        // Guard on the actual signal list length rather than the generation index — they can
+        // diverge if a generation throws before its snapshot is recorded.
         if (isMultiObjective)
         {
             var hv = observer.Hypervolume;
             var count = hv.Count;
+            if (count < AdaptationWindow) return;
             var windowMax = double.MinValue;
             var windowMin = double.MaxValue;
             for (var i = count - AdaptationWindow; i < count; i++)
@@ -254,6 +264,7 @@ public abstract class EvolutionBlueprint : IEvolutionarySolver
         {
             var recentBest = observer.BestFitness;
             var count = recentBest.Count;
+            if (count < AdaptationWindow) return;
             var windowMax = double.MinValue;
             var windowMin = double.MaxValue;
             for (var i = count - AdaptationWindow; i < count; i++)
