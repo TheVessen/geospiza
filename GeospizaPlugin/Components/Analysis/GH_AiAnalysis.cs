@@ -57,6 +57,14 @@ public class GH_AiAnalysis : GH_Component
         pManager.AddParameter(modeParam);
 
         pManager.AddBooleanParameter(
+            "Canvas Context", "C",
+            "When true, scans the Grasshopper canvas and injects a short LLM-generated summary "
+            + "of what the graph computes as extra context. Cached per-canvas-topology so slider "
+            + "tweaks don't re-summarise; the first prompt against a new canvas costs one extra LLM call.",
+            GH_ParamAccess.item,
+            false);
+
+        pManager.AddBooleanParameter(
             "Run", "R",
             "Set to true to trigger analysis",
             GH_ParamAccess.item,
@@ -95,8 +103,11 @@ public class GH_AiAnalysis : GH_Component
         DA.GetData(2, ref modeInt);
         var mode = (AI.AnalysisMode)Math.Max(0, Math.Min(2, modeInt));
 
+        var includeCanvasContext = false;
+        DA.GetData(3, ref includeCanvasContext);
+
         var run = false;
-        DA.GetData(3, ref run);
+        DA.GetData(4, ref run);
 
         if (!run) return;
 
@@ -109,12 +120,17 @@ public class GH_AiAnalysis : GH_Component
         _isRunning = true;
         _statusMessage = "Analysing...";
         Message = "Analysing...";
+        // Provisional debug prompt without canvas context — replaced once the real one is built
+        // inside the background task (which may run a separate LLM call to summarise the canvas).
         _lastPrompt = AI.PromptBuilder.Build(obs, prompt, mode);
         OnDisplayExpired(true);
 
+        // Capture the document on the UI thread; touching it from the background task is unsafe.
+        var capturedDoc = OnPingDocument();
         var capturedObs = obs;
         var capturedPrompt = prompt;
         var capturedMode = mode;
+        var capturedIncludeCanvas = includeCanvasContext;
 
         Task.Run(async () =>
         {
@@ -150,11 +166,28 @@ public class GH_AiAnalysis : GH_Component
                     }
                 }
 
-                _statusMessage = $"Querying {config.SelectedModel}...";
-
-                var fullPrompt = AI.PromptBuilder.Build(capturedObs, capturedPrompt, capturedMode);
-
                 using var cts = new CancellationTokenSource(TimeSpan.FromMinutes(5));
+
+                // Optional canvas summarization step. Cached by topology fingerprint, so this
+                // only triggers an extra LLM call the first time we see a given graph layout.
+                string? canvasSummary = null;
+                if (capturedIncludeCanvas && capturedDoc != null)
+                {
+                    var alreadyCached = AI.CanvasSummarizer.IsCached(capturedDoc);
+                    _statusMessage = alreadyCached
+                        ? "Loading cached canvas summary..."
+                        : $"Summarising canvas with {config.SelectedModel}...";
+                    RhinoApp.InvokeOnUiThread(() => Message = alreadyCached ? "Canvas..." : "Canvas (new)...");
+
+                    canvasSummary = await AI.CanvasSummarizer.GetSummaryAsync(capturedDoc, config.SelectedModel, cts.Token);
+                }
+
+                _statusMessage = $"Querying {config.SelectedModel}...";
+                RhinoApp.InvokeOnUiThread(() => Message = "Analysing...");
+
+                var fullPrompt = AI.PromptBuilder.Build(capturedObs, capturedPrompt, capturedMode, canvasSummary);
+                _lastPrompt = fullPrompt;
+
                 var result = await AI.OllamaService.GenerateAsync(config.SelectedModel, fullPrompt, cts.Token);
 
                 _analysisResult = result;

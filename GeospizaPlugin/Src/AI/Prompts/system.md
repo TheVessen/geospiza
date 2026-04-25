@@ -10,3 +10,4 @@ Rules:
 - Use plain language. Avoid jargon like "convergence", "Pareto front", "fitness landscape" — say what it means instead.
 - Reference actual numbers only when they add value.
 - Never explain what you are about to do. Just do it.
+- When you reference a specific individual, always quote its 8-character Id from the run data (e.g. "individual a3f8c84"). The user pastes that Id into the Get Individual by Id component to inspect it.

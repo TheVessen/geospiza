@@ -22,13 +22,23 @@ public static class PromptBuilder
         return reader.ReadToEnd();
     }
 
-    public static string Build(EvolutionObserver obs, string userPrompt, AnalysisMode mode)
+    public static string Build(EvolutionObserver obs, string userPrompt, AnalysisMode mode, string? canvasSummary = null)
     {
         var sb = new StringBuilder();
         var isMultiObjective = obs != null && obs.Algorithm != EvolutionObserver.AlgorithmType.SingleObjective;
 
         sb.AppendLine(LoadPrompt("system.md"));
         sb.AppendLine(LoadPrompt($"mode-{ModeFileName(mode)}.md"));
+
+        // Canvas context is optional; injected up-front so the model frames the rest of the
+        // run data against an understanding of what the GH graph is actually computing.
+        if (!string.IsNullOrWhiteSpace(canvasSummary))
+        {
+            sb.AppendLine("## Canvas Context");
+            sb.AppendLine("(LLM-generated summary of the Grasshopper canvas — treat as approximate, not authoritative.)");
+            sb.AppendLine(canvasSummary.Trim());
+            sb.AppendLine();
+        }
 
         if (mode != AnalysisMode.Explanation)
         {
@@ -268,7 +278,8 @@ public static class PromptBuilder
                 var pop = obs.FinalPopulationSnapshot;
                 var bestIdx = pop != null ? Array.FindIndex(pop, ind => ind.Id == bestInd.Id) : -1;
                 var indexStr = bestIdx >= 0 ? $"  Index={bestIdx}" : "";
-                sb.AppendLine($"### Best Individual{indexStr}  Fitness={bestInd.Fitness:F4}  Generation={bestInd.Generation}");
+                var idShort = bestInd.Id.ToString("N").Substring(0, 8);
+                sb.AppendLine($"### Best Individual{indexStr}  Id={idShort}  Fitness={bestInd.Fitness:F4}  Generation={bestInd.Generation}");
                 var pool = bestInd.GenePool;
                 var hasRealValues = schema.Any(s => !double.IsNaN(s.MinValue));
                 sb.AppendLine(hasRealValues ? "Gene values (name[index]: value  [range min..max]):" : "Gene values (name[index]: tick/max):");
@@ -311,7 +322,8 @@ public static class PromptBuilder
 
                 sb.AppendLine($"Pareto front size: {front.Count}");
 
-                // Pre-compute per-objective best so the AI doesn't have to scan the table itself
+                // Pre-compute per-objective best so the AI doesn't have to scan the table itself.
+                // Reference each by short Id so the user can paste it into Get Individual by Id.
                 if (front.Count > 0 && front[0].Objectives != null)
                 {
                     var objCount = front[0].Objectives.Length;
@@ -319,22 +331,23 @@ public static class PromptBuilder
                     for (var m = 0; m < objCount; m++)
                     {
                         var best = front.OrderByDescending(ind => ind.Objectives[m]).First();
-                        var bestIdx = front.IndexOf(best);
+                        var idShort = best.Id.ToString("N").Substring(0, 8);
                         var objName = obs.ObjectiveNames != null && m < obs.ObjectiveNames.Length
                             ? obs.ObjectiveNames[m] : $"obj[{m}]";
-                        sb.Append($" {objName}={best.Objectives[m]:F3}(idx:{bestIdx})");
+                        sb.Append($" {objName}={best.Objectives[m]:F3}(id:{idShort})");
                     }
                     sb.AppendLine();
                 }
 
-                sb.AppendLine("Idx      | Gen | Fitness    | Objectives");
+                sb.AppendLine("Idx | Id        | Gen | Fitness    | Objectives");
                 for (var i = 0; i < Math.Min(front.Count, 35); i++)
                 {
                     var ind = front[i];
+                    var idShort = ind.Id.ToString("N").Substring(0, 8);
                     var objs = ind.Objectives != null
                         ? string.Join(", ", ind.Objectives.Select(o => o.ToString("F3")))
                         : "n/a";
-                    sb.AppendLine($"{i,8} | {ind.Generation,3} | {ind.Fitness,10:F4} | [{objs}]");
+                    sb.AppendLine($"{i,3} | {idShort} | {ind.Generation,3} | {ind.Fitness,10:F4} | [{objs}]");
                 }
                 sb.AppendLine();
             }
