@@ -196,6 +196,44 @@ public class Population
     }
 
     /// <summary>
+    ///     Calculates genotypic diversity as the mean pairwise gene distance, normalized to [0, 1].
+    ///     Per gene the distance is |tickA - tickB| / tickCount, averaged over all genes and all
+    ///     pairs of individuals. Unlike <see cref="GetDiversity" /> (unique count) this stays
+    ///     informative when individuals are all slightly different: 0 means a fully converged
+    ///     population, higher values mean broader spread across the search space.
+    /// </summary>
+    public double GetGenotypicDiversity()
+    {
+        var n = Inhabitants.Count;
+        if (n < 2) return 0.0;
+        var geneCount = Inhabitants[0].GenePool.Count;
+        if (geneCount == 0) return 0.0;
+
+        var sum = 0.0;
+        var pairs = 0;
+        for (var i = 0; i < n; i++)
+        {
+            var poolA = Inhabitants[i].GenePool;
+            for (var j = i + 1; j < n; j++)
+            {
+                var poolB = Inhabitants[j].GenePool;
+                var distance = 0.0;
+                for (var g = 0; g < geneCount; g++)
+                {
+                    var range = poolA[g].TickCount;
+                    if (range > 0)
+                        distance += Math.Abs(poolA[g].TickValue - poolB[g].TickValue) / (double)range;
+                }
+
+                sum += distance / geneCount;
+                pairs++;
+            }
+        }
+
+        return sum / pairs;
+    }
+
+    /// <summary>
     ///     Selects the top individuals in the population based on their fitness values.
     /// </summary>
     /// <param name="eliteSize">Number of elite individuals to return</param>

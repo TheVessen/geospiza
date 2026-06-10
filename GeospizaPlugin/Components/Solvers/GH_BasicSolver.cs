@@ -22,6 +22,7 @@ public class GH_BasicSolver : GH_Component
 {
     private bool _isLocked;
     private bool _isRunning;
+    private string _lastRunError;
     private Guid _lastSolutionId;
     private SolverSettings _privateSettings;
     private Guid _solutionId = Guid.NewGuid();
@@ -100,10 +101,26 @@ public class GH_BasicSolver : GH_Component
         ClearRuntimeMessages();
         if (_isLocked && _isRunning)
         {
-            AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "Solver is currently running. Please wait.");
+            // The solver pumps the UI loop while running, so this re-solve is the user's only
+            // channel to request cancellation: Run toggled to false cancels the run.
+            var keepRunning = true;
+            if (DA.GetData(3, ref keepRunning) && !keepRunning)
+            {
+                StateManager?.RunCts?.Cancel();
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Warning,
+                    "Cancellation requested. The solver stops after the current generation.");
+            }
+            else
+            {
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "Solver is currently running. Please wait.");
+            }
+
             return;
         }
         _isLocked = false;
+
+        if (!string.IsNullOrEmpty(_lastRunError))
+            AddRuntimeMessage(GH_RuntimeMessageLevel.Error, _lastRunError);
 
         var geneIds = new List<string>();
         if (!DA.GetDataList(0, geneIds)) return;
@@ -141,12 +158,14 @@ public class GH_BasicSolver : GH_Component
             return;
 
         StateManager ??= StateManager.GetInstance(this, OnPingDocument());
+        if (StateManager == null) return; // GetInstance already reported the missing fitness component
         EvolutionObserver ??= EvolutionObserver.GetInstance(this);
         StateManager.SetGenes(geneIds);
         StateManager.PreviewLevel = previewLevel;
 
         if (runButton)
         {
+            _lastRunError = null;
             DA.SetData(0, null);
             _isRunning = true;
             _isLocked = true;
@@ -168,6 +187,7 @@ public class GH_BasicSolver : GH_Component
         try
         {
             StateManager.RunCts = new CancellationTokenSource();
+            StateManager.IsRunning = true;
             _solutionId = Guid.NewGuid();
 
             EvolutionObserver.Reset();
@@ -185,21 +205,26 @@ public class GH_BasicSolver : GH_Component
             foreach (var slider in StateManager.AllSliders.Values)
                 slider.ExpireSolutionTopLevel(false);
 
-            Message = "Done";
-            _lastSolutionId = _solutionId;
+            Message = StateManager.RunCts.Token.IsCancellationRequested ? "Canceled" : "Done";
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            // Record instead of rethrowing: a throw from a scheduled callback destabilizes GH,
+            // and SolveInstance re-surfaces the message on the follow-up solve.
+            _lastRunError = $"Solver run failed: {ex.Message}";
             Message = "Error";
-            throw;
         }
         finally
         {
             // Unlock before returning so GH's SolveInstance call (in the same solve cycle,
             // immediately after this callback) sees _isLocked = false and writes outputs cleanly.
+            // _lastSolutionId is synced even on failure, otherwise the guard in SolveInstance
+            // would permanently block any further run.
+            _lastSolutionId = _solutionId;
             EvolutionObserver.GenerationCompleted -= OnGenerationCompleted;
             StateManager.RunCts?.Dispose();
             StateManager.RunCts = null;
+            StateManager.IsRunning = false;
             _isRunning = false;
             _isLocked = false;
             ClearRuntimeMessages();

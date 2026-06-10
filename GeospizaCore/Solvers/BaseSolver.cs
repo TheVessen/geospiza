@@ -90,9 +90,11 @@ public class BaseSolver : EvolutionBlueprint
 
             completedNormally = !cancellationToken.IsCancellationRequested;
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Console.Error.WriteLine($"Solver error: {ex.Message}");
+            // Propagate so the calling component can report the failure to the user;
+            // completedNormally stays false, so partial state is never reinstated.
+            throw;
         }
 
         // Reinstate the best individual only if the run completed normally (full loop or early

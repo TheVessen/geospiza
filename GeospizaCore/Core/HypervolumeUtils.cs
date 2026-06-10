@@ -94,11 +94,13 @@ public static class HypervolumeUtils
         var sorted = points.OrderByDescending(p => p[m - 1]).ToList();
 
         var hv = 0.0;
-        var prevBound = refPoint[m - 1];
 
+        // Slice i spans the last objective from the next-lower point value (or the reference
+        // point below the last one) up to sorted[i]; within it exactly points 0..i contribute.
         for (var i = 0; i < sorted.Count; i++)
         {
-            var sliceHeight = sorted[i][m - 1] - prevBound;
+            var lowerBound = i + 1 < sorted.Count ? sorted[i + 1][m - 1] : refPoint[m - 1];
+            var sliceHeight = sorted[i][m - 1] - lowerBound;
             if (sliceHeight > 0)
             {
                 // Project first (i+1) points onto (m-1) dimensions.
@@ -118,8 +120,6 @@ public static class HypervolumeUtils
 
                 hv += sliceHeight * ComputeND(projected, subRef, m - 1);
             }
-
-            prevBound = sorted[i][m - 1];
         }
 
         return hv;

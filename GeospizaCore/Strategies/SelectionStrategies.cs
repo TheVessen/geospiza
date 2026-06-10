@@ -224,6 +224,9 @@ public class PoolSelection : SelectionStrategy
         for (var i = 0; i < inhabitants.Count; i++)
             totalFitness += inhabitants[i].Fitness + offset;
 
+        if (totalFitness == 0)
+            throw new InvalidOperationException("Total fitness is zero, selection cannot be performed");
+
         // Compute shifted probabilities
         var probabilities = new double[inhabitants.Count];
         for (var i = 0; i < inhabitants.Count; i++)
@@ -403,6 +406,9 @@ public class StochasticUniversalSampling : SelectionStrategy
         var totalFitness = 0.0;
         for (var i = 0; i < inhabitants.Count; i++)
             totalFitness += inhabitants[i].Fitness + offset;
+
+        if (totalFitness == 0)
+            throw new InvalidOperationException("Total fitness is zero, selection cannot be performed");
 
         var distance = 1.0 / numberOfSelections;
         var start = Random.NextDouble() * distance;

@@ -37,6 +37,10 @@ public class NsgaIISolver : EvolutionBlueprint
     public override void RunAlgorithm(CancellationToken cancellationToken)
     {
         _objectiveCount = InitializePopulationMultiObjective(StateManager, EvolutionObserver);
+        if (_objectiveCount == 0)
+            throw new InvalidOperationException(
+                "The initial population produced no objective values. " +
+                "Connect a Multi-Objective Fitness component with at least one objective.");
         CaptureBaseRates();
         var completedNormally = false;
         try
@@ -85,9 +89,11 @@ public class NsgaIISolver : EvolutionBlueprint
 
             completedNormally = !cancellationToken.IsCancellationRequested;
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Console.Error.WriteLine($"NSGA-II Solver error: {ex.Message}");
+            // Propagate so the calling component can report the failure to the user;
+            // completedNormally stays false, so partial state is never reinstated.
+            throw;
         }
 
         // Reinstate the best individual only if the run completed normally (full loop or early

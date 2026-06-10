@@ -48,7 +48,8 @@ public class FixedValueMutation : MutationStrategy
         {
             if (Random.NextDouble() >= MutationRate) continue;
 
-            var newValue = t.TickValue + Random.Next(-MutationValue, MutationValue);
+            // Upper bound is exclusive; +1 keeps the delta symmetric over [-MutationValue, +MutationValue].
+            var newValue = t.TickValue + Random.Next(-MutationValue, MutationValue + 1);
             newValue = Math.Min(Math.Max(newValue, 0), t.TickCount);
             t.MutatedValue(newValue);
             mutated = true;

@@ -17,7 +17,7 @@ public class ObserverServerSnapshot
     {
         CurrentGenerationIndex = observer.CurrentGenerationIndex;
         Inhabitants = observer.CurrentPopulation.Inhabitants;
-        RequestId = new Guid().ToString();
+        RequestId = Guid.NewGuid().ToString();
     }
 
     public int CurrentGenerationIndex { get; set; }
