@@ -105,6 +105,60 @@ public class SinglePointCrossover : CrossoverStrategy
 }
 
 /// <summary>
+///     Uniform crossover: every gene is inherited independently from either parent with equal
+///     probability; the second child receives the complementary gene at each position.
+///     Carries no positional bias, unlike single-/two-point crossover — the right default when
+///     gene order is arbitrary, as it is for Grasshopper slider/gene-pool lists.
+/// </summary>
+/// <remarks>
+///     Reference: G. Syswerda, "Uniform Crossover in Genetic Algorithms," Proceedings of the
+///     Third International Conference on Genetic Algorithms, pp. 2–9, 1989.
+/// </remarks>
+public class UniformCrossover : CrossoverStrategy
+{
+    /// <summary>
+    ///     Initializes a new instance of the <see cref="UniformCrossover" /> class.
+    /// </summary>
+    /// <param name="crossoverRate">The crossover rate.</param>
+    public UniformCrossover(double crossoverRate)
+    {
+        CrossoverRate = crossoverRate;
+        InitialCrossoverRate = crossoverRate;
+    }
+
+    /// <summary>
+    ///     Performs a uniform crossover between two parents.
+    /// </summary>
+    /// <param name="parent1">The first parent.</param>
+    /// <param name="parent2">The second parent.</param>
+    /// <returns>A list of offspring resulting from the crossover.</returns>
+    /// <exception cref="System.ArgumentException">Thrown when the parents have genomes of different lengths.</exception>
+    public override List<Individual> Crossover(Individual parent1, Individual parent2)
+    {
+        if (parent1.GenePool.Count != parent2.GenePool.Count)
+            throw new ArgumentException("Parents must have genomes of the same length");
+
+        var genomeLength = parent1.GenePool.Count;
+        var child1Genome = new List<Gene>(genomeLength);
+        var child2Genome = new List<Gene>(genomeLength);
+
+        for (var i = 0; i < genomeLength; i++)
+            if (Random.Next(2) == 0)
+            {
+                child1Genome.Add(parent1.GenePool[i]);
+                child2Genome.Add(parent2.GenePool[i]);
+            }
+            else
+            {
+                child1Genome.Add(parent2.GenePool[i]);
+                child2Genome.Add(parent1.GenePool[i]);
+            }
+
+        return new List<Individual> { new Individual(child1Genome), new Individual(child2Genome) };
+    }
+}
+
+/// <summary>
 ///     Two-point crossover: selects two random positions in the gene sequence and
 ///     swaps the middle segment of two parents to produce two offspring.
 ///     Preserves more gene linkage structure than single-point crossover.

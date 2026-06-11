@@ -52,6 +52,11 @@ public class NsgaIISolver : EvolutionBlueprint
                 // Create and test offspring
                 var offspring = CreateOffspring(cancellationToken);
                 if (cancellationToken.IsCancellationRequested) break;
+
+                // On diversity collapse, swap trailing offspring for random immigrants; the
+                // combined-pool sort below culls them again unless they open new regions.
+                InjectImmigrantsIfDiversityLow(offspring, StateManager, EvolutionObserver);
+
                 offspring.TestPopulationMultiObjective(StateManager, EvolutionObserver);
 
                 // Combine parent + offspring

@@ -40,6 +40,7 @@ public class EvolutionObserver
     private readonly List<double> _worstFitness = new();
     private readonly List<double> _fitnessStandardDeviation = new();
     private readonly List<int> _numberOfUniqueIndividuals = new();
+    private readonly List<double> _genotypicDiversity = new();
 
     // Multi-objective per-generation stats
     private readonly List<double> _hypervolume = new();
@@ -109,6 +110,13 @@ public class EvolutionObserver
     public IReadOnlyList<double> WorstFitness => _worstFitness;
     public IReadOnlyList<double> FitnessStandardDeviation => _fitnessStandardDeviation;
     public IReadOnlyList<int> NumberOfUniqueIndividuals => _numberOfUniqueIndividuals;
+
+    /// <summary>
+    ///     Per-generation genotypic diversity: mean pairwise gene distance normalized to [0, 1]
+    ///     (see <see cref="Population.GetGenotypicDiversity" />). 0 = fully converged population.
+    /// </summary>
+    public IReadOnlyList<double> GenotypicDiversity => _genotypicDiversity;
+
     public IReadOnlyList<double> Hypervolume => _hypervolume;
     public IReadOnlyList<int> ParetoFrontSizes => _paretoFrontSizes;
 
@@ -208,6 +216,7 @@ public class EvolutionObserver
             _worstFitness.Clear();
             _fitnessStandardDeviation.Clear();
             _numberOfUniqueIndividuals.Clear();
+            _genotypicDiversity.Clear();
             _hypervolume.Clear();
             _paretoFrontSizes.Clear();
             _cacheHits.Clear();
@@ -263,6 +272,7 @@ public class EvolutionObserver
             _averageFitness.Add(average);
             _fitnessStandardDeviation.Add(Math.Sqrt(sumOfSquares / n));
             _numberOfUniqueIndividuals.Add(currentPopulation.GetDiversity());
+            _genotypicDiversity.Add(currentPopulation.GetGenotypicDiversity());
 
             // Record per-generation cache activity as a delta against the last cumulative
             // reading. When caching is disabled the cache is null and we record zeros, which
@@ -421,6 +431,7 @@ public class EvolutionObserver
             _worstFitness.Clear();
             _fitnessStandardDeviation.Clear();
             _numberOfUniqueIndividuals.Clear();
+            _genotypicDiversity.Clear();
             _hypervolume.Clear();
             _paretoFrontSizes.Clear();
             _cacheHits.Clear();
@@ -458,6 +469,7 @@ public class EvolutionObserver
                 WorstFitness = _worstFitness,
                 FitnessStandardDeviation = _fitnessStandardDeviation,
                 NumberOfUniqueIndividuals = _numberOfUniqueIndividuals,
+                GenotypicDiversity = _genotypicDiversity,
                 ParetoFrontSizes = isMultiObjective ? _paretoFrontSizes : null,
                 Hypervolume = isMultiObjective ? _hypervolume : null,
                 FinalBestIndividual,
@@ -585,6 +597,7 @@ public class EvolutionObserver
         obs._worstFitness.AddRange(dto.WorstFitness);
         obs._fitnessStandardDeviation.AddRange(dto.FitnessStandardDeviation);
         obs._numberOfUniqueIndividuals.AddRange(dto.NumberOfUniqueIndividuals);
+        obs._genotypicDiversity.AddRange(dto.GenotypicDiversity);
         obs._paretoFrontSizes.AddRange(dto.ParetoFrontSizes);
         obs._hypervolume.AddRange(dto.Hypervolume);
 
@@ -626,6 +639,7 @@ public class EvolutionObserver
         public List<double> WorstFitness { get; } = new();
         public List<double> FitnessStandardDeviation { get; } = new();
         public List<int> NumberOfUniqueIndividuals { get; } = new();
+        public List<double> GenotypicDiversity { get; } = new();
         public List<int> ParetoFrontSizes { get; } = new();
         public List<double> Hypervolume { get; } = new();
     }

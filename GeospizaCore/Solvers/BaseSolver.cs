@@ -64,6 +64,10 @@ public class BaseSolver : EvolutionBlueprint
                 if (newPopulation.Count > PopulationSize)
                     newPopulation.Inhabitants.RemoveRange(PopulationSize, newPopulation.Count - PopulationSize);
 
+                // On diversity collapse, swap trailing children for random immigrants (elites are
+                // protected); they are evaluated below along with the rest of the generation.
+                InjectImmigrantsIfDiversityLow(newPopulation, StateManager, EvolutionObserver, elite.Count);
+
                 foreach (var inhabitant in newPopulation.Inhabitants)
                     inhabitant.SetGeneration(i + 1);
 

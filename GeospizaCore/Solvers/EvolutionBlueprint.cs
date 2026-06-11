@@ -13,6 +13,16 @@ public abstract class EvolutionBlueprint : IEvolutionarySolver
     private const double RecoveryDecay = 0.9;
     private const double LowDiversityFractionSingleObjective = 0.3;
     private const double LowDiversityFractionMultiObjective = 0.6;
+
+    // Mutation schedule: the scheduled base rate decays linearly from the user-configured rate
+    // down to this fraction of it by the final generation (exploration early, refinement late).
+    private const double MutationScheduleFloorFraction = 0.3;
+
+    // Random immigrants: when the previous generation's genotypic diversity (mean pairwise
+    // normalized gene distance) falls below the threshold, this fraction of the next
+    // generation is replaced with fresh random individuals.
+    private const double LowGenotypicDiversityThreshold = 0.10;
+    private const double ImmigrantFraction = 0.10;
     protected readonly Random Random = new();
     private double _baseCrossoverRate;
 
@@ -344,16 +354,26 @@ public abstract class EvolutionBlueprint : IEvolutionarySolver
         var diversityThreshold = isMultiObjective
             ? LowDiversityFractionMultiObjective
             : LowDiversityFractionSingleObjective;
-        var isDiversityLow = lastUniq < PopulationSize * diversityThreshold;
+        // Genotypic diversity collapses before the unique count does (individuals stay distinct
+        // while clustering ever tighter), so it is checked alongside the unique-count fraction.
+        var genoDiv = observer.GenotypicDiversity;
+        var lastGenoDiv = genoDiv.Count > 0 ? genoDiv[genoDiv.Count - 1] : double.MaxValue;
+        var isDiversityLow = lastUniq < PopulationSize * diversityThreshold
+                             || lastGenoDiv < LowGenotypicDiversityThreshold;
+
+        // The boost/decay anchors follow a decaying schedule rather than the flat base rate:
+        // large mutation steps early in the run (exploration), smaller ones near the end
+        // (refinement). Stagnation/diversity boosts apply on top of the scheduled level.
+        var scheduledMutationRate = _baseMutationRate * ScheduleFactor(observer);
 
         if (isStagnating || isDiversityLow)
             MutationStrategy.MutationRate = Math.Min(
                 MutationStrategy.MutationRate * StagnationBoost,
-                Math.Min(_baseMutationRate * MaxMutationMultiplier, 1.0));
+                Math.Min(scheduledMutationRate * MaxMutationMultiplier, 1.0));
         else
             MutationStrategy.MutationRate = Math.Max(
                 MutationStrategy.MutationRate * RecoveryDecay,
-                _baseMutationRate);
+                scheduledMutationRate);
 
         // Also adapt crossover rate: boost on stagnation or low diversity, decay otherwise.
         if (isStagnating || isDiversityLow)
@@ -364,5 +384,57 @@ public abstract class EvolutionBlueprint : IEvolutionarySolver
             CrossoverStrategy.CrossoverRate = Math.Max(
                 CrossoverStrategy.CrossoverRate * RecoveryDecay,
                 _baseCrossoverRate);
+    }
+
+    /// <summary>
+    ///     Linear decay factor for the mutation schedule: 1.0 at generation 0 down to
+    ///     <see cref="MutationScheduleFloorFraction" /> at the final generation.
+    /// </summary>
+    private double ScheduleFactor(EvolutionObserver observer)
+    {
+        if (MaxGenerations <= 1) return 1.0;
+        var progress = Math.Min(1.0, observer.CurrentGenerationIndex / (double)(MaxGenerations - 1));
+        return 1.0 - (1.0 - MutationScheduleFloorFraction) * progress;
+    }
+
+    /// <summary>
+    ///     Replaces the trailing <see cref="ImmigrantFraction" /> of <paramref name="population" />
+    ///     with fresh random individuals when the previous generation's genotypic diversity fell
+    ///     below <see cref="LowGenotypicDiversityThreshold" />. The first
+    ///     <paramref name="protectedCount" /> individuals (elites) are never replaced.
+    ///     Must be called before the population is evaluated, so the immigrants get tested
+    ///     along with the rest of the generation.
+    /// </summary>
+    protected void InjectImmigrantsIfDiversityLow(Population population, StateManager stateManager,
+        EvolutionObserver observer, int protectedCount = 0)
+    {
+        var diversity = observer.GenotypicDiversity;
+        if (diversity.Count == 0 || diversity[diversity.Count - 1] >= LowGenotypicDiversityThreshold)
+            return;
+
+        var immigrantCount = Math.Max(1, (int)(PopulationSize * ImmigrantFraction));
+        var inhabitants = population.Inhabitants;
+        for (var idx = inhabitants.Count - 1;
+             idx >= protectedCount && immigrantCount > 0;
+             idx--, immigrantCount--)
+            inhabitants[idx] = CreateRandomIndividual(stateManager);
+    }
+
+    /// <summary>
+    ///     Builds an unevaluated individual with uniformly random tick values drawn from the
+    ///     genotype templates. The Grasshopper document is not touched — evaluation happens
+    ///     later through the normal population test.
+    /// </summary>
+    private Individual CreateRandomIndividual(StateManager stateManager)
+    {
+        var individual = new Individual();
+        foreach (var geneTemplate in stateManager.Genotype)
+        {
+            var ctg = geneTemplate.Value;
+            individual.AddGene(new Gene(Random.Next(ctg.TickCount + 1), ctg.GeneGuid,
+                ctg.TickCount, ctg.Name, ctg.GhInstanceGuid, ctg.GenePoolIndex));
+        }
+
+        return individual;
     }
 }
