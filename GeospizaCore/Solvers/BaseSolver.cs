@@ -66,7 +66,7 @@ public class BaseSolver : EvolutionBlueprint
 
                 // On diversity collapse, swap trailing children for random immigrants (elites are
                 // protected); they are evaluated below along with the rest of the generation.
-                InjectImmigrantsIfDiversityLow(newPopulation, StateManager, EvolutionObserver, elite.Count);
+                InjectImmigrantsIfAdvised(newPopulation, StateManager, EvolutionObserver, elite.Count);
 
                 foreach (var inhabitant in newPopulation.Inhabitants)
                     inhabitant.SetGeneration(i + 1);
@@ -75,7 +75,7 @@ public class BaseSolver : EvolutionBlueprint
 
                 StateManager.GetDocument().ExpirePreview(false);
                 EvolutionObserver.Snapshot(newPopulation, StateManager);
-                AdaptStrategies(EvolutionObserver);
+                AdaptStrategies(EvolutionObserver, cancellationToken);
 
                 //TODO: For multi processing here would be the point to send the observer to the main thread
 

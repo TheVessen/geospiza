@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using GeospizaCore.Core;
+using GeospizaPlugin.AI;
 using GeospizaPlugin.Properties;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Data;
@@ -14,15 +15,20 @@ namespace GeospizaPlugin.Components.Analysis;
 
 public class GH_AiAnalysis : GH_Component
 {
+    private static readonly TimeSpan RequestTimeout = TimeSpan.FromMinutes(5);
+
     private bool _isRunning;
     private bool _runInputWasTrue;
+    private CancellationTokenSource _analysisCts;
+    private bool _cancelRequested;
     private string _analysisResult = string.Empty;
     private string _statusMessage = "Ready";
     private string _lastPrompt = string.Empty;
 
     public GH_AiAnalysis()
         : base("AI Analysis", "AI",
-            "Analyses an evolutionary run using a local Gemma model via Ollama",
+            "Analyses an evolutionary run with the text model chosen in AI Settings (right-click): " +
+            "a local Ollama model by default, or any OpenAI-compatible endpoint.",
             "Geospiza", "Analysis")
     {
     }
@@ -67,7 +73,7 @@ public class GH_AiAnalysis : GH_Component
 
         pManager.AddBooleanParameter(
             "Run", "R",
-            "Set to true to trigger analysis",
+            "Starts an analysis when it turns true. Right-click the component to cancel a running one.",
             GH_ParamAccess.item,
             false);
     }
@@ -82,11 +88,20 @@ public class GH_AiAnalysis : GH_Component
 
     protected override void SolveInstance(IGH_DataAccess DA)
     {
+        // Start only when Run turns true: the analysis' closing ExpireSolution re-solves with a
+        // toggle still true, which would otherwise query the model again immediately.
+        var run = false;
+        DA.GetData(4, ref run);
+        var startRun = run && !_runInputWasTrue;
+        _runInputWasTrue = run;
+
         if (_isRunning)
         {
-            AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "Analysis is in progress...");
+            AddRuntimeMessage(GH_RuntimeMessageLevel.Remark, "Analysis is in progress. Right-click to cancel.");
             return;
         }
+
+        if (!startRun) return;
 
         GH_ObjectWrapper observerWrapper = null;
         if (!DA.GetData(0, ref observerWrapper)) return;
@@ -102,45 +117,28 @@ public class GH_AiAnalysis : GH_Component
 
         var modeInt = 1;
         DA.GetData(2, ref modeInt);
-        var mode = (AI.AnalysisMode)Math.Max(0, Math.Min(2, modeInt));
+        var mode = (AnalysisMode)Math.Max(0, Math.Min(2, modeInt));
 
         var includeCanvasContext = false;
         DA.GetData(3, ref includeCanvasContext);
 
-        var run = false;
-        DA.GetData(4, ref run);
-
-        // Start only when Run turns true: the analysis' closing ExpireSolution re-solves with a
-        // toggle still true, which would otherwise query the model again immediately.
-        var startRun = run && !_runInputWasTrue;
-        _runInputWasTrue = run;
-        if (!startRun) return;
-
-        if (mode != AI.AnalysisMode.Explanation && obs.CurrentGenerationIndex == 0)
+        if (mode != AnalysisMode.Explanation && obs.CurrentGenerationIndex == 0)
         {
             AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "Observer has no data yet. Run a solver first.");
             return;
         }
 
-        _isRunning = true;
-        _statusMessage = "Analysing...";
-        Message = "Analysing...";
-        // Provisional debug prompt without canvas context — replaced once the real one is built
-        // inside the background task (which may run a separate LLM call to summarise the canvas).
-        _lastPrompt = AI.PromptBuilder.Build(obs, prompt, mode);
-        OnDisplayExpired(true);
-
         // Read the canvas here on the UI thread: walking doc.Objects from the background task
         // races user edits ("Collection was modified").
-        string? canvasFingerprint = null;
-        string? canvasDescription = null;
+        string canvasFingerprint = null;
+        string canvasDescription = null;
         var doc = includeCanvasContext ? OnPingDocument() : null;
         if (doc != null)
         {
             try
             {
-                canvasFingerprint = AI.CanvasFingerprint.Compute(doc);
-                canvasDescription = AI.CanvasExtractor.Extract(doc);
+                canvasFingerprint = CanvasFingerprint.Compute(doc);
+                canvasDescription = CanvasExtractor.Extract(doc);
             }
             catch (Exception ex)
             {
@@ -150,97 +148,99 @@ public class GH_AiAnalysis : GH_Component
             }
         }
 
-        var capturedObs = obs;
-        var capturedPrompt = prompt;
-        var capturedMode = mode;
+        _isRunning = true;
+        _cancelRequested = false;
+        _statusMessage = "Analysing...";
+        Message = "Analysing...";
+        // Provisional debug prompt without canvas context; replaced once the background task builds
+        // the real one (which may first summarise the canvas).
+        _lastPrompt = FormatPrompt(PromptBuilder.Build(obs, prompt, mode));
+        OnDisplayExpired(true);
 
-        Task.Run(async () =>
+        var cts = new CancellationTokenSource(RequestTimeout);
+        _analysisCts = cts;
+        Task.Run(() => AnalyseAsync(obs, prompt, mode, canvasFingerprint, canvasDescription, cts));
+    }
+
+    private async Task AnalyseAsync(EvolutionObserver obs, string prompt, AnalysisMode mode,
+        string canvasFingerprint, string canvasDescription, CancellationTokenSource cts)
+    {
+        var token = cts.Token;
+        try
         {
-            try
+            var model = AiProviders.CreateTextModel(AiConfig.Load());
+            var status = await model.CheckAsync(token).ConfigureAwait(false);
+            if (status.State == ProviderState.NeedsSetup)
             {
-                // Check Ollama availability
-                if (!await AI.OllamaService.IsAvailableAsync())
+                SetStatus("Waiting for AI Settings...", "Setup...");
+                if (!await AiSettingsDialog.ShowOnUiThreadAsync(status.Message).ConfigureAwait(false))
                 {
-                    _analysisResult = string.Empty;
-                    _statusMessage = "Ollama is not running. Install and start Ollama from https://ollama.com";
+                    SetStatus($"AI setup was cancelled. {status.Message}", "Setup needed");
                     return;
                 }
 
-                // Load or create config
-                var config = AI.AiConfig.Load();
-
-                if (!config.SetupComplete || !await AI.OllamaService.HasModelAsync(config.SelectedModel))
-                {
-                    // InvokeOnUiThread only queues the dialog; wait for it to close before re-reading the config.
-                    var dialogClosed = new TaskCompletionSource<bool>();
-                    RhinoApp.InvokeOnUiThread(() =>
-                    {
-                        try
-                        {
-                            new AI.ModelSetupDialog().ShowModal();
-                            dialogClosed.TrySetResult(true);
-                        }
-                        catch (Exception ex)
-                        {
-                            dialogClosed.TrySetException(ex);
-                        }
-                    });
-                    await dialogClosed.Task;
-
-                    config = AI.AiConfig.Load();
-                    if (!config.SetupComplete)
-                    {
-                        _statusMessage = "Model setup was cancelled. Select a model to continue.";
-                        return;
-                    }
-                }
-
-                using var cts = new CancellationTokenSource(TimeSpan.FromMinutes(5));
-
-                // Optional canvas summarization step. Cached per topology + model, so this only
-                // triggers an extra LLM call the first time a model sees a given graph layout.
-                string? canvasSummary = null;
-                if (canvasFingerprint != null && canvasDescription != null)
-                {
-                    var alreadyCached = AI.CanvasSummarizer.IsCached(canvasFingerprint, config.SelectedModel);
-                    _statusMessage = alreadyCached
-                        ? "Loading cached canvas summary..."
-                        : $"Summarising canvas with {config.SelectedModel}...";
-                    RhinoApp.InvokeOnUiThread(() => Message = alreadyCached ? "Canvas..." : "Canvas (new)...");
-
-                    canvasSummary = await AI.CanvasSummarizer.GetSummaryAsync(
-                        canvasFingerprint, canvasDescription, config.SelectedModel, cts.Token);
-                }
-
-                _statusMessage = $"Querying {config.SelectedModel}...";
-                RhinoApp.InvokeOnUiThread(() => Message = "Analysing...");
-
-                var fullPrompt = AI.PromptBuilder.Build(capturedObs, capturedPrompt, capturedMode, canvasSummary);
-                _lastPrompt = fullPrompt;
-
-                var result = await AI.OllamaService.GenerateAsync(config.SelectedModel, fullPrompt, cts.Token);
-
-                _analysisResult = result;
-                _statusMessage = "Done";
-                RhinoApp.InvokeOnUiThread(() => Message = "Done");
+                model = AiProviders.CreateTextModel(AiConfig.Load());
+                status = await model.CheckAsync(token).ConfigureAwait(false);
             }
-            catch (OperationCanceledException)
+
+            if (!status.IsReady)
             {
-                _statusMessage = "Request timed out (5 min limit).";
-                RhinoApp.InvokeOnUiThread(() => Message = "Timeout");
+                SetStatus(status.Message, "Unavailable");
+                return;
             }
-            catch (Exception ex)
+
+            // Optional canvas summarization step. Cached per topology + model, so this only
+            // triggers an extra LLM call the first time a model sees a given graph layout.
+            string canvasSummary = null;
+            if (canvasFingerprint != null && canvasDescription != null)
             {
-                _statusMessage = $"Error: {ex.Message}";
-                RhinoApp.InvokeOnUiThread(() => Message = "Error");
+                var alreadyCached = CanvasSummarizer.IsCached(canvasFingerprint, model.Id);
+                SetStatus(alreadyCached ? "Loading cached canvas summary..." : $"Summarising canvas with {model.Id}...",
+                    alreadyCached ? "Canvas..." : "Canvas (new)...");
+                canvasSummary = await CanvasSummarizer.GetSummaryAsync(canvasFingerprint, canvasDescription, model, token)
+                    .ConfigureAwait(false);
             }
-            finally
-            {
-                _isRunning = false;
-                RhinoApp.InvokeOnUiThread(() => ExpireSolution(true));
-            }
+
+            SetStatus($"Querying {model.Id}...", "Analysing...");
+            var userPrompt = PromptBuilder.Build(obs, prompt, mode, canvasSummary);
+            _lastPrompt = FormatPrompt(userPrompt);
+
+            _analysisResult = await model.GenerateAsync(PromptBuilder.SystemPrompt, userPrompt, false, token)
+                .ConfigureAwait(false);
+            SetStatus("Done", "Done");
+        }
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
+        {
+            SetStatus(_cancelRequested
+                    ? "Cancelled."
+                    : $"Request timed out ({RequestTimeout.TotalMinutes:0} min limit).",
+                _cancelRequested ? "Cancelled" : "Timeout");
+        }
+        catch (Exception ex)
+        {
+            SetStatus($"Error: {ex.GetBaseException().Message}", "Error");
+        }
+        finally
+        {
+            _isRunning = false;
+            if (ReferenceEquals(_analysisCts, cts)) _analysisCts = null;
+            cts.Dispose();
+            RhinoApp.InvokeOnUiThread(() => ExpireSolution(true));
+        }
+    }
+
+    private void SetStatus(string status, string message)
+    {
+        _statusMessage = status;
+        RhinoApp.InvokeOnUiThread(() =>
+        {
+            Message = message;
+            OnDisplayExpired(true);
         });
     }
+
+    private static string FormatPrompt(string userPrompt)
+        => $"[system]\n{PromptBuilder.SystemPrompt}\n[user]\n{userPrompt}";
 
     protected override void AfterSolveInstance()
     {
@@ -264,20 +264,28 @@ public class GH_AiAnalysis : GH_Component
         base.AppendAdditionalMenuItems(menu);
         Menu_AppendSeparator(menu);
 
-        var config = AI.AiConfig.Load();
-        var item = Menu_AppendItem(menu, $"Change AI Model (current: {config.SelectedModel})...", OnChangeModelClicked);
-        item.ToolTipText = "Opens the model setup dialog to download or switch to a different Gemma model.";
+        Menu_AppendItem(menu, "Cancel Analysis", OnCancelClicked, _isRunning);
+
+        var model = AiProviders.CreateTextModel(AiConfig.Load());
+        var item = Menu_AppendItem(menu, $"AI Settings (text model: {model.Id})...", OnSettingsClicked, !_isRunning);
+        item.ToolTipText = "Choose Ollama or an OpenAI-compatible endpoint, download models, and set up decision models.";
     }
 
-    private void OnChangeModelClicked(object sender, EventArgs e)
+    private void OnCancelClicked(object sender, EventArgs e)
     {
-        if (_isRunning)
+        _cancelRequested = true;
+        try
         {
-            Rhino.UI.Dialogs.ShowMessage("Analysis is currently in progress. Wait for it to finish before changing the model.", "Geospiza AI");
-            return;
+            _analysisCts?.Cancel();
         }
+        catch (ObjectDisposedException)
+        {
+            // The analysis finished between the menu opening and the click.
+        }
+    }
 
-        var dialog = new AI.ModelSetupDialog();
-        dialog.ShowModal();
+    private void OnSettingsClicked(object sender, EventArgs e)
+    {
+        new AiSettingsDialog().ShowModal();
     }
 }

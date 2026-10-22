@@ -1,9 +1,13 @@
+// Annotations only: the run-data formatting relies on checks flow analysis cannot follow.
+#nullable enable annotations
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using GeospizaCore.Advisor;
 using GeospizaCore.Core;
 using GeospizaCore.Strategies;
 
@@ -12,22 +16,25 @@ namespace GeospizaPlugin.AI;
 public static class PromptBuilder
 {
     private static readonly Assembly _assembly = Assembly.GetExecutingAssembly();
+    private static readonly ConcurrentDictionary<string, string> _prompts = new();
 
-    private static string LoadPrompt(string filename)
+    private static string LoadPrompt(string filename) => _prompts.GetOrAdd(filename, name =>
     {
-        var resourceName = $"GeospizaPlugin.Src.AI.Prompts.{filename}";
+        var resourceName = $"GeospizaPlugin.Src.AI.Prompts.{name}";
         using var stream = _assembly.GetManifestResourceStream(resourceName);
-        if (stream == null) return $"[Missing prompt file: {filename}]";
+        if (stream == null) return $"[Missing prompt file: {name}]";
         using var reader = new StreamReader(stream);
         return reader.ReadToEnd();
-    }
+    });
+
+    /// <summary>Sent as the system message; <see cref="Build" /> returns the user message.</summary>
+    public static string SystemPrompt => LoadPrompt("system.md");
 
     public static string Build(EvolutionObserver obs, string userPrompt, AnalysisMode mode, string? canvasSummary = null)
     {
         var sb = new StringBuilder();
         var isMultiObjective = obs != null && obs.Algorithm != EvolutionObserver.AlgorithmType.SingleObjective;
 
-        sb.AppendLine(LoadPrompt("system.md"));
         sb.AppendLine(LoadPrompt($"mode-{ModeFileName(mode)}.md"));
 
         // Canvas context is optional; injected up-front so the model frames the rest of the
@@ -49,6 +56,7 @@ public static class PromptBuilder
             }
             sb.AppendLine("## Run Data");
             AppendSettings(sb, obs);
+            AppendAdvisorSummary(sb, obs);
 
             switch (mode)
             {
@@ -68,10 +76,6 @@ public static class PromptBuilder
 
         return sb.ToString();
     }
-
-    // Keep old signature working for the debug prompt output
-    public static string Build(EvolutionObserver obs, string userPrompt)
-        => Build(obs, userPrompt, AnalysisMode.SettingsFeedback);
 
     private static string ModeFileName(AnalysisMode mode) => mode switch
     {
@@ -180,6 +184,41 @@ public static class PromptBuilder
             }
         }
         sb.AppendLine();
+    }
+
+    /// <summary>
+    /// Summarises what a model-driven run advisor decided, so the analysis can judge whether it helped.
+    /// Nothing is emitted for runs that used the built-in thresholds.
+    /// </summary>
+    private static void AppendAdvisorSummary(StringBuilder sb, EvolutionObserver obs)
+    {
+        var log = obs?.AdvisorLog;
+        if (log == null || log.Count == 0) return;
+
+        var byModel = log.Where(r => r.Source != ThresholdAdvisor.SourceName).ToList();
+        var models = string.Join(", ", byModel.Select(r => r.Source).Distinct());
+        sb.AppendLine($"Run advisor: {(models.Length > 0 ? models : "model never answered")}  |  " +
+                      $"Generations advised: {log.Count}  |  Decided by model: {byModel.Count}");
+        if (byModel.Count > 0)
+        {
+            var counts = byModel.GroupBy(r => r.Pressure)
+                .Select(g => $"{RunStateDescriber.Describe(g.Key)}={g.Count()}");
+            sb.AppendLine($"Model decisions: {string.Join(", ", counts)}  |  " +
+                          $"Immigrant injections: {byModel.Count(r => r.InjectImmigrants)}  |  " +
+                          $"Median latency: {Median(byModel.Select(r => r.LatencyMs))} ms");
+        }
+
+        var failures = log.Where(r => r.FellBack).ToList();
+        if (failures.Count > 0)
+            sb.AppendLine($"Advisor failures (thresholds used instead): {failures.Count}, " +
+                          $"latest: {failures[failures.Count - 1].Note}");
+        sb.AppendLine();
+    }
+
+    private static long Median(IEnumerable<long> values)
+    {
+        var sorted = values.OrderBy(v => v).ToList();
+        return sorted.Count == 0 ? 0 : sorted[sorted.Count / 2];
     }
 
     /// <summary>

@@ -1,4 +1,6 @@
-﻿using GeospizaCore.Core;
+﻿using System.Diagnostics;
+using GeospizaCore.Advisor;
+using GeospizaCore.Core;
 using GeospizaCore.Strategies;
 using Grasshopper.Kernel;
 using Rhino;
@@ -23,6 +25,10 @@ public abstract class EvolutionBlueprint : IEvolutionarySolver
     // generation is replaced with fresh random individuals.
     private const double LowGenotypicDiversityThreshold = 0.10;
     private const double ImmigrantFraction = 0.10;
+
+    // Number of earlier advisor decisions handed to the advisor as context.
+    private const int AdvisorHistoryLength = 3;
+
     protected readonly Random Random = new();
     private double _baseCrossoverRate;
 
@@ -36,6 +42,11 @@ public abstract class EvolutionBlueprint : IEvolutionarySolver
     // Captured at construction; controls whether a per-run FitnessCache is attached to the
     // StateManager during Initialize* so duplicate genotypes skip the Grasshopper solve.
     private readonly bool _useFitnessCache;
+
+    private readonly IRunAdvisor _advisor;
+
+    // Latest advisor decision of the current run; its immigrant flag applies to the next generation.
+    private AdvisorDecision? _lastDecision;
 
     /// <summary>
     ///     Initializes the evolutionary algorithm with the given settings.
@@ -52,6 +63,7 @@ public abstract class EvolutionBlueprint : IEvolutionarySolver
         PairingStrategy = settings.PairingStrategy;
         TerminationStrategy = settings.TerminationStrategy;
         _useFitnessCache = settings.UseFitnessCache;
+        _advisor = settings.Advisor ?? ThresholdAdvisor.Instance;
     }
 
     /// <summary>
@@ -334,52 +346,34 @@ public abstract class EvolutionBlueprint : IEvolutionarySolver
         _baseMutationRate = initialMutation;
         _baseCrossoverRate = initialCrossover;
         _mutationBoost = 1.0;
+        _lastDecision = null;
     }
 
     /// <summary>
-    ///     Adjusts mutation and crossover rates based on stagnation and diversity signals from
-    ///     <paramref name="observer" />. Boosts rates when the population is stagnating or diversity
-    ///     is low (unique-individual fraction or genotypic diversity); decays them back toward the
-    ///     base rates otherwise. Mutation follows a decaying schedule (see <see cref="ScheduleProgress" />).
-    ///     For multi-objective runs, stagnation is detected via hypervolume (Pareto front not growing);
-    ///     for single-objective runs, stagnation is detected via best fitness flatness.
+    ///     Asks the run advisor how exploration should change after the generation just snapshotted on
+    ///     <paramref name="observer" />, then applies the answer to the mutation and crossover rates.
+    ///     The immigrant part of the decision is applied by <see cref="InjectImmigrantsIfAdvised" />
+    ///     when the next generation is built.
     /// </summary>
-    protected void AdaptStrategies(EvolutionObserver observer)
+    protected void AdaptStrategies(EvolutionObserver observer, CancellationToken cancellationToken)
     {
-        bool isStagnating;
+        var signals = BuildSignals(observer);
+        var decision = ConsultAdvisor(signals, observer, cancellationToken);
+        _lastDecision = decision;
+        ApplyPressure(decision.Pressure, signals.Progress);
+    }
+
+    private RunSignals BuildSignals(EvolutionObserver observer)
+    {
         var isMultiObjective = observer.Algorithm != EvolutionObserver.AlgorithmType.SingleObjective;
+
+        // Multi-objective progress is the hypervolume (Pareto front growing); single-objective is best fitness.
+        var progressSignal = isMultiObjective ? observer.Hypervolume : observer.BestFitness;
 
         // Guard on the actual signal list length rather than the generation index — they can
         // diverge if a generation throws before its snapshot is recorded.
-        if (isMultiObjective)
-        {
-            var hv = observer.Hypervolume;
-            var count = hv.Count;
-            if (count < AdaptationWindow) return;
-            var windowMax = double.MinValue;
-            var windowMin = double.MaxValue;
-            for (var i = count - AdaptationWindow; i < count; i++)
-            {
-                if (hv[i] > windowMax) windowMax = hv[i];
-                if (hv[i] < windowMin) windowMin = hv[i];
-            }
-            // Stagnating if hypervolume hasn't grown by at least a relative 0.1% over the window.
-            isStagnating = windowMax <= 0 || (windowMax - windowMin) / windowMax < 1e-3;
-        }
-        else
-        {
-            var recentBest = observer.BestFitness;
-            var count = recentBest.Count;
-            if (count < AdaptationWindow) return;
-            var windowMax = double.MinValue;
-            var windowMin = double.MaxValue;
-            for (var i = count - AdaptationWindow; i < count; i++)
-            {
-                if (recentBest[i] > windowMax) windowMax = recentBest[i];
-                if (recentBest[i] < windowMin) windowMin = recentBest[i];
-            }
-            isStagnating = windowMax - windowMin < 1e-9;
-        }
+        var windowReady = progressSignal.Count >= AdaptationWindow;
+        var isStagnating = windowReady && IsWindowFlat(progressSignal, isMultiObjective);
 
         var uniq = observer.NumberOfUniqueIndividuals;
         var lastUniq = uniq.Count > 0 ? uniq[uniq.Count - 1] : PopulationSize;
@@ -389,34 +383,142 @@ public abstract class EvolutionBlueprint : IEvolutionarySolver
         // Genotypic diversity collapses before the unique count does (individuals stay distinct
         // while clustering ever tighter), so it is checked alongside the unique-count fraction.
         var genoDiv = observer.GenotypicDiversity;
-        var lastGenoDiv = genoDiv.Count > 0 ? genoDiv[genoDiv.Count - 1] : double.MaxValue;
-        var isDiversityLow = lastUniq < PopulationSize * diversityThreshold
-                             || lastGenoDiv < LowGenotypicDiversityThreshold;
+        double? lastGenoDiv = genoDiv.Count > 0 ? genoDiv[genoDiv.Count - 1] : null;
+        var isCollapsed = lastGenoDiv < LowGenotypicDiversityThreshold;
+        var isDiversityLow = lastUniq < PopulationSize * diversityThreshold || isCollapsed;
+
+        var progress = ScheduleProgress(observer);
+        return new RunSignals(
+            Math.Max(0, observer.CurrentGenerationIndex - 1), MaxGenerations, progress, isMultiObjective,
+            windowReady, isStagnating, GenerationsWithoutImprovement(progressSignal, isMultiObjective),
+            PopulationSize > 0 ? Math.Min(1.0, lastUniq / (double)PopulationSize) : 1.0,
+            lastGenoDiv, isDiversityLow, isCollapsed,
+            MutationStrategy.MutationRate, _baseMutationRate, _mutationBoost, MaxBoost(progress),
+            CrossoverStrategy.CrossoverRate, _baseCrossoverRate, observer.CacheHitRate,
+            observer.GetRecentAdvisorRecords(AdvisorHistoryLength));
+    }
+
+    /// <summary>
+    ///     Multi-objective: hypervolume grew by less than a relative 0.1% over the window.
+    ///     Single-objective: best fitness did not move over the window.
+    /// </summary>
+    private static bool IsWindowFlat(IReadOnlyList<double> values, bool relative)
+    {
+        var count = values.Count;
+        var windowMax = double.MinValue;
+        var windowMin = double.MaxValue;
+        for (var i = count - AdaptationWindow; i < count; i++)
+        {
+            if (values[i] > windowMax) windowMax = values[i];
+            if (values[i] < windowMin) windowMin = values[i];
+        }
+
+        return relative
+            ? windowMax <= 0 || (windowMax - windowMin) / windowMax < 1e-3
+            : windowMax - windowMin < 1e-9;
+    }
+
+    /// <summary>
+    ///     Generations since the progress signal last beat its previous best by the same margin
+    ///     <see cref="IsWindowFlat" /> uses, so slow creep below that margin does not count.
+    /// </summary>
+    private static int GenerationsWithoutImprovement(IReadOnlyList<double> values, bool relative)
+    {
+        if (values.Count == 0) return 0;
+        var best = values[0];
+        var lastImprovement = 0;
+        for (var i = 1; i < values.Count; i++)
+        {
+            var margin = relative ? Math.Abs(best) * 1e-3 : 1e-9;
+            if (values[i] <= best + margin) continue;
+            best = values[i];
+            lastImprovement = i;
+        }
+
+        return values.Count - 1 - lastImprovement;
+    }
+
+    /// <summary>
+    ///     Gets the configured advisor's decision, falling back to <see cref="ThresholdAdvisor" /> when it
+    ///     throws, exceeds its timeout or the run is cancelled. Non-default advisors are logged on the observer.
+    /// </summary>
+    private AdvisorDecision ConsultAdvisor(RunSignals signals, EvolutionObserver observer,
+        CancellationToken cancellationToken)
+    {
+        if (_advisor is ThresholdAdvisor) return ThresholdAdvisor.Decide(signals);
+
+        var stopwatch = Stopwatch.StartNew();
+        AdvisorDecision decision;
+        var fellBack = false;
+        using (var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken))
+        {
+            cts.CancelAfter(_advisor.Timeout);
+            var task = Task.Run(() => _advisor.AdviseAsync(signals, cts.Token), cts.Token);
+
+            // The solver runs on the UI thread: pump Rhino's message loop so the UI stays responsive
+            // and Run=false can cancel. The deadline is enforced here too, in case the advisor ignores its token.
+            while (!task.IsCompleted && stopwatch.Elapsed < _advisor.Timeout &&
+                   !cancellationToken.IsCancellationRequested)
+            {
+                RhinoApp.Wait();
+                Thread.Sleep(5);
+            }
+
+            if (task.Status == TaskStatus.RanToCompletion)
+            {
+                decision = task.Result;
+            }
+            else
+            {
+                _ = task.ContinueWith(t => t.Exception, TaskContinuationOptions.OnlyOnFaulted);
+                var reason = cancellationToken.IsCancellationRequested ? "run cancelled"
+                    : task.IsFaulted ? task.Exception?.GetBaseException().Message ?? "failed"
+                    : $"no answer within {_advisor.Timeout.TotalSeconds:0.#} s";
+                decision = ThresholdAdvisor.Decide(signals, $"{_advisor.Name}: {reason}");
+                fellBack = true;
+            }
+        }
+
+        observer.RecordAdvisorDecision(new AdvisorRecord
+        {
+            Generation = signals.Generation,
+            Source = decision.Source,
+            Pressure = decision.Pressure,
+            InjectImmigrants = decision.InjectImmigrants,
+            Confidence = decision.Confidence,
+            FellBack = fellBack,
+            Note = decision.Note,
+            LatencyMs = stopwatch.ElapsedMilliseconds
+        });
+        return decision;
+    }
+
+    private void ApplyPressure(ExplorationPressure pressure, double progress)
+    {
+        if (pressure == ExplorationPressure.Hold) return;
+        var raise = pressure == ExplorationPressure.Raise;
 
         // Mutation follows a decaying schedule rather than the flat base rate: large steps early
         // (exploration), smaller ones near the end (refinement). Boosts multiply the scheduled level.
-        var progress = ScheduleProgress(observer);
         var scheduledMutationRate = _baseMutationRate * (1.0 - (1.0 - MutationScheduleFloorFraction) * progress);
-
-        // Boost headroom shrinks to none by the final generation, otherwise persistent stagnation
-        // would pin the rate at the maximum multiple and override the late-run refinement.
-        var maxBoost = 1.0 + (MaxMutationMultiplier - 1.0) * (1.0 - progress);
-        var boost = isStagnating || isDiversityLow
+        var boost = raise
             ? _mutationBoost * StagnationBoost
             : Math.Max(_mutationBoost * RecoveryDecay, 1.0);
-        _mutationBoost = Math.Min(boost, maxBoost);
+        _mutationBoost = Math.Min(boost, MaxBoost(progress));
         MutationStrategy.MutationRate = Math.Min(scheduledMutationRate * _mutationBoost, 1.0);
 
-        // Also adapt crossover rate: boost on stagnation or low diversity, decay otherwise.
-        if (isStagnating || isDiversityLow)
-            CrossoverStrategy.CrossoverRate = Math.Min(
-                CrossoverStrategy.CrossoverRate * StagnationBoost,
-                1.0);
+        if (raise)
+            CrossoverStrategy.CrossoverRate = Math.Min(CrossoverStrategy.CrossoverRate * StagnationBoost, 1.0);
         else
-            CrossoverStrategy.CrossoverRate = Math.Max(
-                CrossoverStrategy.CrossoverRate * RecoveryDecay,
+            CrossoverStrategy.CrossoverRate = Math.Max(CrossoverStrategy.CrossoverRate * RecoveryDecay,
                 _baseCrossoverRate);
     }
+
+    /// <summary>
+    ///     Boost headroom shrinks to none by the final generation, otherwise persistent stagnation
+    ///     would pin the rate at the maximum multiple and override the late-run refinement.
+    /// </summary>
+    private static double MaxBoost(double progress) => 1.0 + (MaxMutationMultiplier - 1.0) * (1.0 - progress);
 
     /// <summary>
     ///     Run progress for the mutation schedule: 0 at generation 0 up to 1 at the final generation.
@@ -431,18 +533,19 @@ public abstract class EvolutionBlueprint : IEvolutionarySolver
 
     /// <summary>
     ///     Replaces the trailing <see cref="ImmigrantFraction" /> of <paramref name="population" />
-    ///     with fresh random individuals when the previous generation's genotypic diversity fell
-    ///     below <see cref="LowGenotypicDiversityThreshold" />. The first
-    ///     <paramref name="protectedCount" /> individuals (elites) are never replaced.
-    ///     Must be called before the population is evaluated, so the immigrants get tested
-    ///     along with the rest of the generation.
+    ///     with fresh random individuals when the latest advisor decision asks for it (before the
+    ///     first decision of a run: when genotypic diversity is below
+    ///     <see cref="LowGenotypicDiversityThreshold" />). The first <paramref name="protectedCount" />
+    ///     individuals (elites) are never replaced. Must be called before the population is evaluated,
+    ///     so the immigrants get tested along with the rest of the generation.
     /// </summary>
-    protected void InjectImmigrantsIfDiversityLow(Population population, StateManager stateManager,
+    protected void InjectImmigrantsIfAdvised(Population population, StateManager stateManager,
         EvolutionObserver observer, int protectedCount = 0)
     {
         var diversity = observer.GenotypicDiversity;
-        if (diversity.Count == 0 || diversity[diversity.Count - 1] >= LowGenotypicDiversityThreshold)
-            return;
+        var inject = _lastDecision?.InjectImmigrants
+                     ?? (diversity.Count > 0 && diversity[diversity.Count - 1] < LowGenotypicDiversityThreshold);
+        if (!inject) return;
 
         var immigrantCount = Math.Max(1, (int)(PopulationSize * ImmigrantFraction));
         var inhabitants = population.Inhabitants;

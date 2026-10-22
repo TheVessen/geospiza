@@ -1,3 +1,4 @@
+#nullable enable
 namespace GeospizaPlugin.AI;
 
 public enum AnalysisMode

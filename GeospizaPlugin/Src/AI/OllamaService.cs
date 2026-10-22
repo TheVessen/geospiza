@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -107,7 +108,7 @@ public class OllamaService
             var completed = obj["completed"]?.ToObject<long?>() ?? 0;
             var total = obj["total"]?.ToObject<long?>() ?? 0;
 
-            if (!string.IsNullOrEmpty(digest) && total > 0)
+            if (digest is { Length: > 0 } && total > 0)
             {
                 layerCompleted[digest] = completed;
                 layerTotal[digest] = total;
@@ -126,9 +127,14 @@ public class OllamaService
             throw new IOException($"Download of '{model}' ended before Ollama reported success.");
     }
 
-    public static async Task<string> GenerateAsync(string model, string prompt, CancellationToken ct = default)
+    /// <param name="jsonOutput">Constrains the reply to a JSON object (Ollama's "format": "json").</param>
+    public static async Task<string> GenerateAsync(string model, string prompt, CancellationToken ct = default,
+        string? system = null, bool jsonOutput = false)
     {
-        var body = JsonConvert.SerializeObject(new { model, prompt, stream = false });
+        var request = new JObject { ["model"] = model, ["prompt"] = prompt, ["stream"] = false };
+        if (!string.IsNullOrEmpty(system)) request["system"] = system;
+        if (jsonOutput) request["format"] = "json";
+        var body = request.ToString(Formatting.None);
         using var content = new StringContent(body, Encoding.UTF8, "application/json");
         using var resp = await _http.PostAsync("/api/generate", content, ct).ConfigureAwait(false);
         await EnsureSuccessAsync(resp).ConfigureAwait(false);

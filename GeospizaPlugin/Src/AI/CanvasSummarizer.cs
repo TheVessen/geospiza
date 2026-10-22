@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.IO;
 using System.Reflection;
@@ -23,19 +24,19 @@ public static class CanvasSummarizer
     ///     Returns a cached or freshly-generated canvas summary, or null when there is nothing
     ///     to summarise or summarisation fails. Only cancellation of <paramref name="ct"/> propagates.
     /// </summary>
-    public static async Task<string?> GetSummaryAsync(string canvasFingerprint, string? canvasDescription, string model,
-        CancellationToken ct = default)
+    public static async Task<string?> GetSummaryAsync(string canvasFingerprint, string? canvasDescription,
+        ITextModel model, CancellationToken ct = default)
     {
         if (string.IsNullOrEmpty(canvasFingerprint) || string.IsNullOrEmpty(canvasDescription)) return null;
 
         try
         {
-            var key = CacheKey(canvasFingerprint, model);
+            var key = CacheKey(canvasFingerprint, model.Id);
             var cached = CanvasSummaryCache.TryGet(key);
             if (cached != null) return cached;
 
             var prompt = $"{_summaryPrompt.Value}\n\n# Canvas data\n\n{canvasDescription}\n";
-            var summary = await OllamaService.GenerateAsync(model, prompt, ct).ConfigureAwait(false);
+            var summary = await model.GenerateAsync(null, prompt, false, ct).ConfigureAwait(false);
             summary = summary?.Trim() ?? string.Empty;
             if (summary.Length == 0) return null;
 
@@ -57,12 +58,12 @@ public static class CanvasSummarizer
     ///     Checks whether a summary is already cached, so the UI can say "ready" vs.
     ///     "summarising..." without making an LLM call.
     /// </summary>
-    public static bool IsCached(string canvasFingerprint, string model)
+    public static bool IsCached(string canvasFingerprint, string modelId)
     {
         if (string.IsNullOrEmpty(canvasFingerprint)) return false;
         try
         {
-            return CanvasSummaryCache.TryGet(CacheKey(canvasFingerprint, model)) != null;
+            return CanvasSummaryCache.TryGet(CacheKey(canvasFingerprint, modelId)) != null;
         }
         catch
         {
@@ -70,10 +71,10 @@ public static class CanvasSummarizer
         }
     }
 
-    private static string CacheKey(string canvasFingerprint, string model)
+    private static string CacheKey(string canvasFingerprint, string modelId)
     {
         var promptHash = CanvasFingerprint.Sha256Hex(_summaryPrompt.Value);
-        return CanvasFingerprint.Sha256Hex($"{canvasFingerprint}\n{model}\n{promptHash}");
+        return CanvasFingerprint.Sha256Hex($"{canvasFingerprint}\n{modelId}\n{promptHash}");
     }
 
     private static string LoadPrompt(string filename)

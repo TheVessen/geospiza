@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using GeospizaCore.Advisor;
 using GeospizaCore.Solvers;
 using Grasshopper.Kernel;
 using Newtonsoft.Json;
@@ -50,6 +51,8 @@ public class EvolutionObserver
     // snapshot) so per-generation hit rates are directly computable as hits[g] / (hits[g] + misses[g]).
     private readonly List<int> _cacheHits = new();
     private readonly List<int> _cacheMisses = new();
+
+    private readonly List<AdvisorRecord> _advisorLog = new();
     // Last cumulative counters seen on the cache; used to derive the next snapshot's delta.
     private int _lastCumulativeCacheHits;
     private int _lastCumulativeCacheMisses;
@@ -126,6 +129,33 @@ public class EvolutionObserver
     ///     is disabled.
     /// </summary>
     public IReadOnlyList<int> CacheHits => _cacheHits;
+
+    /// <summary>
+    ///     Decisions of a non-default run advisor, one per generation. Empty when the solver used
+    ///     <see cref="ThresholdAdvisor" />.
+    /// </summary>
+    public IReadOnlyList<AdvisorRecord> AdvisorLog
+    {
+        get
+        {
+            lock (_listLock) return _advisorLog.ToArray();
+        }
+    }
+
+    public void RecordAdvisorDecision(AdvisorRecord record)
+    {
+        lock (_listLock) _advisorLog.Add(record);
+    }
+
+    /// <summary>The last <paramref name="count" /> advisor records, oldest first.</summary>
+    public IReadOnlyList<AdvisorRecord> GetRecentAdvisorRecords(int count)
+    {
+        lock (_listLock)
+        {
+            var skip = Math.Max(0, _advisorLog.Count - count);
+            return _advisorLog.Skip(skip).ToArray();
+        }
+    }
 
     /// <summary>
     ///     Per-generation count of fitness-cache misses (real Grasshopper solves) since the
@@ -221,6 +251,7 @@ public class EvolutionObserver
             _paretoFrontSizes.Clear();
             _cacheHits.Clear();
             _cacheMisses.Clear();
+            _advisorLog.Clear();
             _lastCumulativeCacheHits = 0;
             _lastCumulativeCacheMisses = 0;
             _hvReferencePoint = null;
@@ -436,6 +467,7 @@ public class EvolutionObserver
             _paretoFrontSizes.Clear();
             _cacheHits.Clear();
             _cacheMisses.Clear();
+            _advisorLog.Clear();
             _lastCumulativeCacheHits = 0;
             _lastCumulativeCacheMisses = 0;
             _hvReferencePoint = null;
@@ -472,6 +504,7 @@ public class EvolutionObserver
                 GenotypicDiversity = _genotypicDiversity,
                 ParetoFrontSizes = isMultiObjective ? _paretoFrontSizes : null,
                 Hypervolume = isMultiObjective ? _hypervolume : null,
+                AdvisorLog = _advisorLog.Count > 0 ? _advisorLog : null,
                 FinalBestIndividual,
                 FinalPopulation = _finalPopulationSnapshot
             };
@@ -600,6 +633,7 @@ public class EvolutionObserver
         obs._genotypicDiversity.AddRange(dto.GenotypicDiversity);
         obs._paretoFrontSizes.AddRange(dto.ParetoFrontSizes);
         obs._hypervolume.AddRange(dto.Hypervolume);
+        obs._advisorLog.AddRange(dto.AdvisorLog);
 
         // Rebuild CurrentPopulation from the final population snapshot.
         if (dto.GeneSchema is { Length: > 0 } && dto.FinalPopulation is { Count: > 0 })
@@ -642,6 +676,7 @@ public class EvolutionObserver
         public List<double> GenotypicDiversity { get; } = new();
         public List<int> ParetoFrontSizes { get; } = new();
         public List<double> Hypervolume { get; } = new();
+        public List<AdvisorRecord> AdvisorLog { get; } = new();
     }
 
     public class GenerationCompletedEventArgs(int generationIndex, Population population) : EventArgs

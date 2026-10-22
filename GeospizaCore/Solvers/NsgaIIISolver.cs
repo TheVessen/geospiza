@@ -68,7 +68,7 @@ public class NsgaIIISolver : EvolutionBlueprint
 
                 // On diversity collapse, swap trailing offspring for random immigrants; the
                 // combined-pool sort below culls them again unless they open new regions.
-                InjectImmigrantsIfDiversityLow(offspring, StateManager, EvolutionObserver);
+                InjectImmigrantsIfAdvised(offspring, StateManager, EvolutionObserver);
 
                 offspring.TestPopulationMultiObjective(StateManager, EvolutionObserver);
 
@@ -102,7 +102,7 @@ public class NsgaIIISolver : EvolutionBlueprint
 
                 StateManager.GetDocument().ExpirePreview(false);
                 EvolutionObserver.Snapshot(nextPopulation, StateManager);
-                AdaptStrategies(EvolutionObserver);
+                AdaptStrategies(EvolutionObserver, cancellationToken);
 
                 if (i > TerminationEvaluationThreshold)
                     if (TerminationStrategy.Evaluate(EvolutionObserver))

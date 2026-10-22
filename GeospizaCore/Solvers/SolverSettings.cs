@@ -1,4 +1,5 @@
-﻿using GeospizaCore.Strategies;
+﻿using GeospizaCore.Advisor;
+using GeospizaCore.Strategies;
 using GeospizaCore.Utils;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -96,6 +97,24 @@ public class SolverSettings
     ///     per-evaluation variance the algorithm needs to see.
     /// </summary>
     public bool UseFitnessCache { get; set; } = true;
+
+    /// <summary>
+    ///     Decides how exploration adapts after each generation; null means <see cref="ThresholdAdvisor" />.
+    ///     Runtime-only: it holds model connections, so it is never serialized.
+    /// </summary>
+    [JsonIgnore]
+    public IRunAdvisor? Advisor { get; set; }
+
+    /// <summary>
+    ///     Copy of these settings with <paramref name="advisor" /> attached. Strategy objects are shared,
+    ///     as they are between any components that receive the same settings.
+    /// </summary>
+    public SolverSettings WithAdvisor(IRunAdvisor? advisor)
+    {
+        var copy = (SolverSettings)MemberwiseClone();
+        copy.Advisor = advisor;
+        return copy;
+    }
 
     /// <summary>
     ///     Validates that all required strategies are properly set.
