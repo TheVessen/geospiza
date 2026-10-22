@@ -1,17 +1,19 @@
 using System;
 using System.IO;
+using System.Linq;
 
 namespace GeospizaPlugin.AI;
 
 /// <summary>
-///     Disk-backed cache of LLM-generated canvas summaries, keyed on the topology
-///     fingerprint produced by <see cref="CanvasFingerprint"/>. Survives Rhino restarts so
-///     opening a familiar file doesn't re-run the summarization pass.
-///     Entries are tiny (~a few KB each) so no eviction policy is implemented; if a user's
-///     cache directory ever gets unwieldy they can wipe the folder by hand.
+///     Disk-backed cache of LLM-generated canvas summaries, keyed on a hex SHA-256 key built by
+///     <see cref="CanvasSummarizer"/>. Survives Rhino restarts so opening a familiar file doesn't
+///     re-run the summarization pass. Capped at <see cref="MaxEntries"/>; least recently used
+///     entries are evicted first.
 /// </summary>
 public static class CanvasSummaryCache
 {
+    private const int MaxEntries = 200;
+
     private static string CacheDir
     {
         get
@@ -24,16 +26,20 @@ public static class CanvasSummaryCache
     }
 
     /// <summary>
-    ///     Returns the cached summary for <paramref name="fingerprint"/>, or null on miss
+    ///     Returns the cached summary for <paramref name="key"/>, or null on miss
     ///     (or any I/O error — caching is best-effort).
     /// </summary>
-    public static string? TryGet(string fingerprint)
+    public static string? TryGet(string key)
     {
-        if (string.IsNullOrEmpty(fingerprint)) return null;
+        if (string.IsNullOrEmpty(key)) return null;
         try
         {
-            var path = PathFor(fingerprint);
-            return File.Exists(path) ? File.ReadAllText(path) : null;
+            var path = PathFor(key);
+            if (!File.Exists(path)) return null;
+            var summary = File.ReadAllText(path);
+            // Write time doubles as last-use time for eviction.
+            File.SetLastWriteTimeUtc(path, DateTime.UtcNow);
+            return summary;
         }
         catch
         {
@@ -42,15 +48,16 @@ public static class CanvasSummaryCache
     }
 
     /// <summary>
-    ///     Stores <paramref name="summary"/> under <paramref name="fingerprint"/>. Best-effort:
+    ///     Stores <paramref name="summary"/> under <paramref name="key"/>. Best-effort:
     ///     I/O errors are swallowed so a transient disk problem can't break the analysis path.
     /// </summary>
-    public static void Store(string fingerprint, string summary)
+    public static void Store(string key, string summary)
     {
-        if (string.IsNullOrEmpty(fingerprint) || summary == null) return;
+        if (string.IsNullOrEmpty(key) || summary == null) return;
         try
         {
-            File.WriteAllText(PathFor(fingerprint), summary);
+            File.WriteAllText(PathFor(key), summary);
+            Evict();
         }
         catch
         {
@@ -58,9 +65,22 @@ public static class CanvasSummaryCache
         }
     }
 
-    private static string PathFor(string fingerprint)
+    private static void Evict()
     {
-        // Fingerprints from CanvasFingerprint are already hex SHA-256, so they're safe as filenames.
-        return Path.Combine(CacheDir, $"{fingerprint}.txt");
+        var stale = new DirectoryInfo(CacheDir)
+            .GetFiles("*.txt")
+            .OrderByDescending(f => f.LastWriteTimeUtc)
+            .Skip(MaxEntries);
+        foreach (var file in stale)
+        {
+            try { file.Delete(); }
+            catch { /* Another Rhino instance may hold it; retry on the next store. */ }
+        }
+    }
+
+    private static string PathFor(string key)
+    {
+        // Keys are hex SHA-256, so they're safe as filenames.
+        return Path.Combine(CacheDir, $"{key}.txt");
     }
 }

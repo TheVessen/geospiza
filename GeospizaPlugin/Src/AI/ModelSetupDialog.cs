@@ -150,11 +150,13 @@ public class ModelSetupDialog : Dialog
         }
         catch (OperationCanceledException)
         {
+            _progressBar.Visible = false;
             _statusLabel.Text = "Cancelled.";
         }
         catch (Exception ex)
         {
-            _statusLabel.Text = $"Error: {ex.Message}";
+            _progressBar.Visible = false;
+            _statusLabel.Text = $"Download failed: {ex.Message}";
         }
         finally
         {

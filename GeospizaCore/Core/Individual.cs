@@ -69,16 +69,18 @@ public class Individual : IEquatable<Individual>
     /// </summary>
     /// <param name="json"></param>
     /// <exception cref="ArgumentException"></exception>
-    public Individual(string json)
+    public Individual(string json) : this(FromJson(json))
     {
-        var parsed = FromJson(json) ??
-                     throw new ArgumentException("Failed to parse individual from JSON.", nameof(json));
-        Id = parsed.Id;
-        _genePool = new List<Gene>(parsed.GenePool);
+    }
+
+    // GenePool is get-only, so Json.NET must hand the genes in through a constructor.
+    // Older JSON without an Id still gets a fresh one.
+    [JsonConstructor]
+    private Individual(Guid? id, IEnumerable<Gene>? genePool)
+    {
+        Id = id ?? Guid.NewGuid();
+        _genePool = genePool?.Where(g => g != null).ToList() ?? new List<Gene>();
         GenePool = _genePool.AsReadOnly();
-        Fitness = parsed.Fitness;
-        Probability = parsed.Probability;
-        Generation = parsed.Generation;
     }
 
     /// <summary>

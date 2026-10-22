@@ -15,6 +15,7 @@ namespace GeospizaPlugin.Components.Analysis;
 public class GH_AiAnalysis : GH_Component
 {
     private bool _isRunning;
+    private bool _runInputWasTrue;
     private string _analysisResult = string.Empty;
     private string _statusMessage = "Ready";
     private string _lastPrompt = string.Empty;
@@ -109,7 +110,11 @@ public class GH_AiAnalysis : GH_Component
         var run = false;
         DA.GetData(4, ref run);
 
-        if (!run) return;
+        // Start only when Run turns true: the analysis' closing ExpireSolution re-solves with a
+        // toggle still true, which would otherwise query the model again immediately.
+        var startRun = run && !_runInputWasTrue;
+        _runInputWasTrue = run;
+        if (!startRun) return;
 
         if (mode != AI.AnalysisMode.Explanation && obs.CurrentGenerationIndex == 0)
         {
@@ -125,12 +130,29 @@ public class GH_AiAnalysis : GH_Component
         _lastPrompt = AI.PromptBuilder.Build(obs, prompt, mode);
         OnDisplayExpired(true);
 
-        // Capture the document on the UI thread; touching it from the background task is unsafe.
-        var capturedDoc = OnPingDocument();
+        // Read the canvas here on the UI thread: walking doc.Objects from the background task
+        // races user edits ("Collection was modified").
+        string? canvasFingerprint = null;
+        string? canvasDescription = null;
+        var doc = includeCanvasContext ? OnPingDocument() : null;
+        if (doc != null)
+        {
+            try
+            {
+                canvasFingerprint = AI.CanvasFingerprint.Compute(doc);
+                canvasDescription = AI.CanvasExtractor.Extract(doc);
+            }
+            catch (Exception ex)
+            {
+                canvasFingerprint = null;
+                canvasDescription = null;
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, $"Canvas context skipped: {ex.Message}");
+            }
+        }
+
         var capturedObs = obs;
         var capturedPrompt = prompt;
         var capturedMode = mode;
-        var capturedIncludeCanvas = includeCanvasContext;
 
         Task.Run(async () =>
         {
@@ -149,14 +171,21 @@ public class GH_AiAnalysis : GH_Component
 
                 if (!config.SetupComplete || !await AI.OllamaService.HasModelAsync(config.SelectedModel))
                 {
-                    // Show setup dialog on the UI thread
-                    string? chosen = null;
+                    // InvokeOnUiThread only queues the dialog; wait for it to close before re-reading the config.
+                    var dialogClosed = new TaskCompletionSource<bool>();
                     RhinoApp.InvokeOnUiThread(() =>
                     {
-                        var dialog = new AI.ModelSetupDialog();
-                        dialog.ShowModal();
-                        chosen = dialog.SelectedModel;
+                        try
+                        {
+                            new AI.ModelSetupDialog().ShowModal();
+                            dialogClosed.TrySetResult(true);
+                        }
+                        catch (Exception ex)
+                        {
+                            dialogClosed.TrySetException(ex);
+                        }
                     });
+                    await dialogClosed.Task;
 
                     config = AI.AiConfig.Load();
                     if (!config.SetupComplete)
@@ -168,18 +197,19 @@ public class GH_AiAnalysis : GH_Component
 
                 using var cts = new CancellationTokenSource(TimeSpan.FromMinutes(5));
 
-                // Optional canvas summarization step. Cached by topology fingerprint, so this
-                // only triggers an extra LLM call the first time we see a given graph layout.
+                // Optional canvas summarization step. Cached per topology + model, so this only
+                // triggers an extra LLM call the first time a model sees a given graph layout.
                 string? canvasSummary = null;
-                if (capturedIncludeCanvas && capturedDoc != null)
+                if (canvasFingerprint != null && canvasDescription != null)
                 {
-                    var alreadyCached = AI.CanvasSummarizer.IsCached(capturedDoc);
+                    var alreadyCached = AI.CanvasSummarizer.IsCached(canvasFingerprint, config.SelectedModel);
                     _statusMessage = alreadyCached
                         ? "Loading cached canvas summary..."
                         : $"Summarising canvas with {config.SelectedModel}...";
                     RhinoApp.InvokeOnUiThread(() => Message = alreadyCached ? "Canvas..." : "Canvas (new)...");
 
-                    canvasSummary = await AI.CanvasSummarizer.GetSummaryAsync(capturedDoc, config.SelectedModel, cts.Token);
+                    canvasSummary = await AI.CanvasSummarizer.GetSummaryAsync(
+                        canvasFingerprint, canvasDescription, config.SelectedModel, cts.Token);
                 }
 
                 _statusMessage = $"Querying {config.SelectedModel}...";

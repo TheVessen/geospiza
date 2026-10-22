@@ -60,7 +60,8 @@ public class StateManager
 
     /// <summary>
     ///     CancellationTokenSource for the current solver run.
-    ///     Created fresh each run; external components can call Cancel() on it.
+    ///     Set by the solver component when it schedules a run and cleared when the run ends;
+    ///     external components can call Cancel() on it.
     /// </summary>
     public CancellationTokenSource RunCts { get; set; }
 
@@ -212,10 +213,18 @@ public class StateManager
         var genes = new Dictionary<Guid, GeneTemplate>();
         var genePools = new Dictionary<Guid, dynamic>();
         var numberSliders = new Dictionary<Guid, GH_NumberSlider>();
+        var missing = 0;
+        var unsupported = new List<string>();
 
         foreach (var id in geneIds)
         {
-            var currentParam = _document.FindObject(new Guid(id), true);
+            var currentParam = Guid.TryParse(id, out var parsedId) ? _document.FindObject(parsedId, true) : null;
+            if (currentParam == null)
+            {
+                missing++;
+                continue;
+            }
+
             var currentType = currentParam.GetType().ToString();
             var guid = currentParam.InstanceGuid;
 
@@ -247,8 +256,19 @@ public class StateManager
 
                         break;
                     }
+                default:
+                    unsupported.Add(currentParam.NickName);
+                    break;
             }
         }
+
+        if (missing > 0)
+            SolverComponent.AddRuntimeMessage(GH_RuntimeMessageLevel.Warning,
+                $"{missing} gene id{(missing == 1 ? "" : "s")} did not match any object in the document and " +
+                $"{(missing == 1 ? "was" : "were")} skipped. Search the document again or reconnect the Gene Collector.");
+        if (unsupported.Count > 0)
+            SolverComponent.AddRuntimeMessage(GH_RuntimeMessageLevel.Warning,
+                $"Skipped gene ids that are not a number slider or gene pool: {string.Join(", ", unsupported)}");
 
         Genotype = genes;
         AllSliders = numberSliders;

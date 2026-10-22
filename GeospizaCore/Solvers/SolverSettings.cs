@@ -1,4 +1,5 @@
 ﻿using GeospizaCore.Strategies;
+using GeospizaCore.Utils;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -144,6 +145,13 @@ public class SolverSettings
 /// </summary>
 public class EvoSettingsConverter : JsonConverter
 {
+    // Private setters must be writable so InitialMutationRate/InitialCrossoverRate (the user-configured
+    // baselines behind ConfiguredMutationRate/ConfiguredCrossoverRate) survive a round-trip.
+    private static readonly JsonSerializer _strategySerializer = JsonSerializer.Create(new JsonSerializerSettings
+    {
+        ContractResolver = new PrivateSetterContractResolver()
+    });
+
     public override bool CanConvert(Type objectType)
     {
         return objectType == typeof(SolverSettings);
@@ -154,23 +162,13 @@ public class EvoSettingsConverter : JsonConverter
         if (value is not SolverSettings settings)
             throw new ArgumentException("Value must be of type SolverSettings", nameof(value));
 
-        var strategyProperties = new Dictionary<string, object>
-        {
-            { nameof(settings.SelectionStrategy), settings.SelectionStrategy },
-            { nameof(settings.CrossoverStrategy), settings.CrossoverStrategy },
-            { nameof(settings.MutationStrategy), settings.MutationStrategy },
-            { nameof(settings.PairingStrategy), settings.PairingStrategy },
-            { nameof(settings.TerminationStrategy), settings.TerminationStrategy }
-        };
-
         writer.WriteStartObject();
 
-        foreach (var kvp in strategyProperties)
-        {
-            var propertyName = kvp.Key;
-            var strategy = kvp.Value;
-            WriteStrategy(writer, propertyName, strategy, serializer);
-        }
+        WriteStrategy(writer, nameof(settings.SelectionStrategy), settings.SelectionStrategy);
+        WriteStrategy(writer, nameof(settings.CrossoverStrategy), settings.CrossoverStrategy);
+        WriteStrategy(writer, nameof(settings.MutationStrategy), settings.MutationStrategy);
+        WriteStrategy(writer, nameof(settings.PairingStrategy), settings.PairingStrategy);
+        WriteStrategy(writer, nameof(settings.TerminationStrategy), settings.TerminationStrategy);
 
         writer.WritePropertyName(nameof(settings.PopulationSize));
         writer.WriteValue(settings.PopulationSize);
@@ -178,6 +176,12 @@ public class EvoSettingsConverter : JsonConverter
         writer.WriteValue(settings.MaxGenerations);
         writer.WritePropertyName(nameof(settings.EliteSize));
         writer.WriteValue(settings.EliteSize);
+        writer.WritePropertyName(nameof(settings.IsMultiObjective));
+        writer.WriteValue(settings.IsMultiObjective);
+        writer.WritePropertyName(nameof(settings.ReferencePointDivisions));
+        writer.WriteValue(settings.ReferencePointDivisions);
+        writer.WritePropertyName(nameof(settings.UseFitnessCache));
+        writer.WriteValue(settings.UseFitnessCache);
         writer.WriteEndObject();
     }
 
@@ -185,46 +189,91 @@ public class EvoSettingsConverter : JsonConverter
         JsonSerializer serializer)
     {
         var jObject = JObject.Load(reader);
+
+        // Absent fields keep the SolverSettings defaults so JSON from older versions still loads.
         var settings = new SolverSettings
         {
-            SelectionStrategy =
-                GetStrategy<ISelectionStrategy>(jObject, nameof(SolverSettings.SelectionStrategy), serializer),
-            CrossoverStrategy =
-                GetStrategy<ICrossoverStrategy>(jObject, nameof(SolverSettings.CrossoverStrategy), serializer),
-            MutationStrategy =
-                GetStrategy<IMutationStrategy>(jObject, nameof(SolverSettings.MutationStrategy), serializer),
-            PairingStrategy =
-                GetStrategy<IPairingStrategy>(jObject, nameof(SolverSettings.PairingStrategy), serializer),
+            SelectionStrategy = GetStrategy<ISelectionStrategy>(jObject, nameof(SolverSettings.SelectionStrategy)),
+            CrossoverStrategy = GetStrategy<ICrossoverStrategy>(jObject, nameof(SolverSettings.CrossoverStrategy)),
+            MutationStrategy = GetStrategy<IMutationStrategy>(jObject, nameof(SolverSettings.MutationStrategy)),
+            PairingStrategy = GetStrategy<IPairingStrategy>(jObject, nameof(SolverSettings.PairingStrategy)),
             TerminationStrategy =
-                GetStrategy<ITerminationStrategy>(jObject, nameof(SolverSettings.TerminationStrategy), serializer),
-            PopulationSize = jObject[nameof(SolverSettings.PopulationSize)]!.Value<int>(),
-            MaxGenerations = jObject[nameof(SolverSettings.MaxGenerations)]!.Value<int>(),
-            EliteSize = jObject[nameof(SolverSettings.EliteSize)]!.Value<int>()
+                GetStrategy<ITerminationStrategy>(jObject, nameof(SolverSettings.TerminationStrategy))
         };
+
+        // PopulationSize before EliteSize: the EliteSize setter validates against it.
+        if (TryGetValue<int>(jObject, nameof(SolverSettings.PopulationSize), out var populationSize))
+            settings.PopulationSize = populationSize;
+        if (TryGetValue<int>(jObject, nameof(SolverSettings.MaxGenerations), out var maxGenerations))
+            settings.MaxGenerations = maxGenerations;
+        if (TryGetValue<int>(jObject, nameof(SolverSettings.EliteSize), out var eliteSize))
+            settings.EliteSize = eliteSize;
+        if (TryGetValue<bool>(jObject, nameof(SolverSettings.IsMultiObjective), out var isMultiObjective))
+            settings.IsMultiObjective = isMultiObjective;
+        if (TryGetValue<int>(jObject, nameof(SolverSettings.ReferencePointDivisions), out var divisions))
+            settings.ReferencePointDivisions = divisions;
+        if (TryGetValue<bool>(jObject, nameof(SolverSettings.UseFitnessCache), out var useFitnessCache))
+            settings.UseFitnessCache = useFitnessCache;
 
         settings.Validate();
         return settings;
     }
 
-    private static void WriteStrategy(JsonWriter writer, string propertyName, object strategy,
-        JsonSerializer serializer)
+    private static void WriteStrategy(JsonWriter writer, string propertyName, object? strategy)
     {
         writer.WritePropertyName(propertyName);
+        WriteTyped(writer, strategy, _strategySerializer);
+    }
+
+    private static T GetStrategy<T>(JObject jObject, string strategyName) where T : class
+    {
+        return ReadTyped<T>(jObject[strategyName], _strategySerializer)!;
+    }
+
+    private static bool TryGetValue<T>(JObject jObject, string name, out T value)
+    {
+        var token = jObject[name];
+        if (token == null || token.Type == JTokenType.Null)
+        {
+            value = default!;
+            return false;
+        }
+
+        value = token.Value<T>()!;
+        return true;
+    }
+
+    /// <summary>
+    ///     Writes <paramref name="value" /> as a <c>{ "Type": assembly-qualified name, "Value": ... }</c> envelope,
+    ///     or as JSON null when it is null.
+    /// </summary>
+    internal static void WriteTyped(JsonWriter writer, object? value, JsonSerializer serializer)
+    {
+        if (value == null)
+        {
+            writer.WriteNull();
+            return;
+        }
+
         writer.WriteStartObject();
         writer.WritePropertyName("Type");
-        writer.WriteValue(strategy.GetType().AssemblyQualifiedName);
+        writer.WriteValue(value.GetType().AssemblyQualifiedName);
         writer.WritePropertyName("Value");
-        serializer.Serialize(writer, strategy);
+        serializer.Serialize(writer, value);
         writer.WriteEndObject();
     }
 
-    private static T GetStrategy<T>(JObject jObject, string strategyName, JsonSerializer serializer)
+    /// <summary>
+    ///     Reads an envelope written by <see cref="WriteTyped" />; a missing or null token yields null.
+    /// </summary>
+    internal static T? ReadTyped<T>(JToken? token, JsonSerializer serializer) where T : class
     {
-        var strategyJObject = (JObject)jObject[strategyName]!;
-        var strategyType = strategyJObject["Type"]!.Value<string>();
-        var type = Type.GetType(strategyType!) ??
-                   throw new TypeLoadException($"Cannot find type '{strategyType}'");
+        if (token == null || token.Type == JTokenType.Null) return null;
 
-        return (T)strategyJObject["Value"]!.ToObject(type, serializer)!;
+        var typeName = token["Type"]?.Value<string>();
+        var type = Type.GetType(typeName ?? string.Empty) ??
+                   throw new TypeLoadException($"Cannot find type '{typeName}'");
+
+        return (T?)token["Value"]?.ToObject(type, serializer);
     }
 }

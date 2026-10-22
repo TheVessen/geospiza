@@ -69,8 +69,12 @@ public class Population
     /// <exception cref="System.Exception">Thrown if the document or fitness component is null.</exception>
     public void TestPopulation(StateManager stateManager, EvolutionObserver evolutionObserver, int skipCount = 0)
     {
-        EvaluateIndividuals(stateManager, evolutionObserver, skipCount,
-            individual => { individual.SetFitness(Fitness.Instance.GetFitness()); });
+        EvaluateIndividuals(stateManager, evolutionObserver, skipCount, individual =>
+        {
+            if (!Fitness.Instance.TryGetFitness(out var fitness)) return false;
+            individual.SetFitness(fitness);
+            return true;
+        });
     }
 
     /// <summary>
@@ -83,22 +87,24 @@ public class Population
     {
         EvaluateIndividuals(stateManager, evolutionObserver, skipCount, individual =>
         {
-            var objectives = Fitness.Instance.GetObjectives();
+            if (!Fitness.Instance.TryGetObjectives(out var objectives)) return false;
             individual.SetObjectives(objectives);
-            if (objectives.Length > 0)
-                individual.SetFitness(objectives[0]);
+            individual.SetFitness(objectives[0]);
+            return true;
         });
     }
 
     /// <summary>
     ///     Shared evaluation loop: applies genes, solves the document, and delegates fitness assignment to the caller.
+    ///     <paramref name="assignFitness" /> returns false when the solve produced no usable value; those
+    ///     individuals are not cached and get <see cref="PenalizeFailedEvaluations" />.
     ///     Skips the first <paramref name="skipCount" /> individuals without re-evaluating them.
     ///     When <see cref="StateManager.FitnessCache" /> is non-null, individuals whose gene-pool
     ///     tick sequence has already been evaluated reuse the cached result and skip the
     ///     Grasshopper solve entirely (the dominant per-individual cost).
     /// </summary>
     private void EvaluateIndividuals(StateManager stateManager, EvolutionObserver evolutionObserver,
-        int skipCount, Action<Individual> assignFitness)
+        int skipCount, Func<Individual, bool> assignFitness)
     {
         var bestFitness = evolutionObserver.BestFitness;
         var max = bestFitness.Count > 0 ? bestFitness[bestFitness.Count - 1] : double.MinValue;
@@ -109,6 +115,7 @@ public class Population
         var fitnessComponent = stateManager.FitnessComponent;
         if (fitnessComponent == null) throw new Exception("Fitness component is null");
         var cache = stateManager.FitnessCache;
+        var failed = new HashSet<int>();
 
         for (var idx = skipCount; idx < Inhabitants.Count; idx++)
         {
@@ -145,13 +152,18 @@ public class Population
                 }
             }
 
+            fitnessComponent.ExpireSolution(false);
+            Fitness.Instance.BeginEvaluation();
             if (stateManager.PreviewLevel == 0)
                 doc.NewSolution(false);
             else
                 doc.NewSolution(false, GH_SolutionMode.Silent);
 
-            fitnessComponent.ExpireSolution(false);
-            assignFitness(individual);
+            if (!assignFitness(individual))
+            {
+                failed.Add(idx);
+                continue;
+            }
 
             // Store the fresh result for future hits. Done after assignFitness so we capture
             // whatever the action wrote (single-objective Fitness or multi-objective Objectives).
@@ -163,6 +175,46 @@ public class Population
             doc.ExpirePreview(true);
             RhinoApp.Wait();
             max = individual.Fitness;
+        }
+
+        PenalizeFailedEvaluations(failed);
+    }
+
+    /// <summary>
+    ///     Gives each individual at <paramref name="failedIndices" /> the worst fitness and the per-objective
+    ///     worst objectives of the remaining inhabitants, so it loses selection and lands in the last Pareto
+    ///     front. Falls back to 0 (and no objectives) when every inhabitant failed.
+    /// </summary>
+    public void PenalizeFailedEvaluations(ICollection<int> failedIndices)
+    {
+        if (failedIndices.Count == 0) return;
+
+        var worstFitness = 0.0;
+        var anyValid = false;
+        double[]? worstObjectives = null;
+        for (var i = 0; i < Inhabitants.Count; i++)
+        {
+            if (failedIndices.Contains(i)) continue;
+            var individual = Inhabitants[i];
+            worstFitness = anyValid ? Math.Min(worstFitness, individual.Fitness) : individual.Fitness;
+            anyValid = true;
+
+            if (individual.Objectives is not { Length: > 0 } objectives) continue;
+            if (worstObjectives == null)
+            {
+                worstObjectives = (double[])objectives.Clone();
+                continue;
+            }
+
+            for (var k = 0; k < Math.Min(worstObjectives.Length, objectives.Length); k++)
+                worstObjectives[k] = Math.Min(worstObjectives[k], objectives[k]);
+        }
+
+        foreach (var idx in failedIndices)
+        {
+            Inhabitants[idx].SetFitness(worstFitness);
+            if (worstObjectives != null)
+                Inhabitants[idx].SetObjectives((double[])worstObjectives.Clone());
         }
     }
 

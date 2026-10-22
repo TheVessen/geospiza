@@ -28,6 +28,10 @@ public class NsgaIIISolver : EvolutionBlueprint
     public NsgaIIISolver(SolverSettings settings, StateManager stateManager,
         EvolutionObserver evolutionObserver, int referencePointDivisions = 12) : base(settings)
     {
+        // Validated here as well as in GenerateReferencePoints so a bad value fails before gen 0 is evaluated.
+        if (referencePointDivisions < 1)
+            throw new ArgumentOutOfRangeException(nameof(referencePointDivisions), referencePointDivisions,
+                "Reference point divisions must be at least 1.");
         StateManager = stateManager;
         EvolutionObserver = evolutionObserver;
         _referencePointDivisions = referencePointDivisions;
@@ -49,6 +53,7 @@ public class NsgaIIISolver : EvolutionBlueprint
         CaptureBaseRates();
 
         _referencePoints = ParetoUtils.GenerateReferencePoints(_objectiveCount, _referencePointDivisions);
+        AssociatePopulationToReferencePoints(Population);
 
         var completedNormally = false;
         try
@@ -91,15 +96,7 @@ public class NsgaIIISolver : EvolutionBlueprint
                 foreach (var front in survivorFronts)
                     ParetoUtils.AssignCrowdingDistance(front, _objectiveCount);
 
-                // Refresh ReferencePointIndex/Distance on the rank-0 front against the survivors'
-                // own normalization so Reinstate (and any consumer) reads up-to-date values rather
-                // than stale state from the combined pool's basis.
-                if (survivorFronts.Count > 0)
-                {
-                    var rank0 = survivorFronts[0];
-                    var rank0Norm = ParetoUtils.NormalizeObjectives(rank0, _objectiveCount);
-                    ParetoUtils.AssociateToReferencePoints(rank0, rank0Norm, _referencePoints);
-                }
+                AssociatePopulationToReferencePoints(nextPopulation);
 
                 Population = nextPopulation;
 
@@ -140,6 +137,20 @@ public class NsgaIIISolver : EvolutionBlueprint
                 .FirstOrDefault() ?? Population.Inhabitants[0];
             best.Reinstate(StateManager);
         }
+    }
+
+    /// <summary>
+    ///     Sets ReferencePointIndex/Distance on every member of <paramref name="population" />
+    ///     against that population's own normalization. Survivor selection leaves members with no
+    ///     index or one computed against the previous combined pool, and both the niche pairing and
+    ///     the final reinstatement read these values.
+    /// </summary>
+    private void AssociatePopulationToReferencePoints(Population population)
+    {
+        var members = population.Inhabitants;
+        if (members.Count == 0) return;
+        var normalized = ParetoUtils.NormalizeObjectives(members, _objectiveCount);
+        ParetoUtils.AssociateToReferencePoints(members, normalized, _referencePoints);
     }
 
     /// <summary>

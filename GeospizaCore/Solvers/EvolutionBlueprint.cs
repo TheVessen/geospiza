@@ -29,6 +29,10 @@ public abstract class EvolutionBlueprint : IEvolutionarySolver
     // Adaptive rate control — base values captured once at algorithm start.
     private double _baseMutationRate;
 
+    // Stagnation boost as a multiple of the scheduled mutation rate. Held apart from the rate so
+    // the boost rides on the decaying schedule instead of compounding off an already-boosted rate.
+    private double _mutationBoost = 1.0;
+
     // Captured at construction; controls whether a per-run FitnessCache is attached to the
     // StateManager during Initialize* so duplicate genotypes skip the Grasshopper solve.
     private readonly bool _useFitnessCache;
@@ -139,6 +143,7 @@ public abstract class EvolutionBlueprint : IEvolutionarySolver
         var fitnessInstance = Fitness.Instance;
         var newPopulation = new Population();
         var objectiveCount = 0;
+        var failed = new List<int>();
 
         for (var i = 0; i < PopulationSize; i++)
         {
@@ -171,22 +176,32 @@ public abstract class EvolutionBlueprint : IEvolutionarySolver
                 continue;
             }
 
+            stateManager.FitnessComponent.ExpireSolution(false);
+            fitnessInstance.BeginEvaluation();
             if (stateManager.PreviewLevel == 0)
                 stateManager.GetDocument().NewSolution(false);
             else
                 stateManager.GetDocument().NewSolution(false, GH_SolutionMode.Silent);
 
-            var objectives = fitnessInstance.GetObjectives();
+            individual.SetGeneration(0);
+            if (!fitnessInstance.TryGetObjectives(out var objectives))
+            {
+                failed.Add(newPopulation.Count);
+                newPopulation.AddIndividual(individual);
+                continue;
+            }
+
             objectiveCount = objectives.Length;
             individual.SetObjectives(objectives);
-            if (objectives.Length > 0) individual.SetFitness(objectives[0]);
-            individual.SetGeneration(0);
+            individual.SetFitness(objectives[0]);
             newPopulation.AddIndividual(individual);
 
             // Populate the cache so duplicates that re-appear via crossover in subsequent
             // generations skip the GH solve.
             cache?.Store(individual.GenePool, individual.Fitness, individual.Objectives);
         }
+
+        newPopulation.PenalizeFailedEvaluations(failed);
 
         if (objectiveCount > 0)
         {
@@ -217,6 +232,7 @@ public abstract class EvolutionBlueprint : IEvolutionarySolver
 
         var firstGenBestFitness = 0.0;
         var fitnessInstance = Fitness.Instance;
+        var failed = new List<int>();
 
         var newPopulation = new Population();
         for (var i = 0; i < PopulationSize; i++)
@@ -244,18 +260,27 @@ public abstract class EvolutionBlueprint : IEvolutionarySolver
             }
             else
             {
+                stateManager.FitnessComponent.ExpireSolution(false);
+                fitnessInstance.BeginEvaluation();
                 if (stateManager.PreviewLevel == 0)
                     stateManager.GetDocument().NewSolution(false);
                 else
                     stateManager.GetDocument().NewSolution(false, GH_SolutionMode.Silent);
 
-                currentFitness = fitnessInstance.GetFitness();
+                if (!fitnessInstance.TryGetFitness(out currentFitness))
+                {
+                    individual.SetGeneration(0);
+                    failed.Add(newPopulation.Count);
+                    newPopulation.AddIndividual(individual);
+                    continue;
+                }
+
                 // Populate the cache so duplicates that re-appear via crossover in subsequent
                 // generations skip the GH solve.
                 cache?.Store(individual.GenePool, currentFitness, null);
             }
 
-            if (i == 0)
+            if (newPopulation.Count == failed.Count)
             {
                 firstGenBestFitness = currentFitness;
             }
@@ -273,6 +298,12 @@ public abstract class EvolutionBlueprint : IEvolutionarySolver
             individual.SetGeneration(0);
             newPopulation.AddIndividual(individual);
         }
+
+        if (failed.Count == PopulationSize)
+            throw new InvalidOperationException(
+                "The Fitness component produced no value for any individual of the initial population. " +
+                "Check that a Fitness component is connected and its input is not empty or NaN.");
+        newPopulation.PenalizeFailedEvaluations(failed);
 
         evolutionObserver.Snapshot(newPopulation, stateManager);
         Population = newPopulation;
@@ -302,13 +333,14 @@ public abstract class EvolutionBlueprint : IEvolutionarySolver
         CrossoverStrategy.CrossoverRate = initialCrossover;
         _baseMutationRate = initialMutation;
         _baseCrossoverRate = initialCrossover;
+        _mutationBoost = 1.0;
     }
 
     /// <summary>
     ///     Adjusts mutation and crossover rates based on stagnation and diversity signals from
-    ///     <paramref name="observer" />. Boosts rates when the population is stagnating or unique
-    ///     individuals fall below <see cref="LowDiversityFraction" /> of population size;
-    ///     decays them back toward the base rates otherwise.
+    ///     <paramref name="observer" />. Boosts rates when the population is stagnating or diversity
+    ///     is low (unique-individual fraction or genotypic diversity); decays them back toward the
+    ///     base rates otherwise. Mutation follows a decaying schedule (see <see cref="ScheduleProgress" />).
     ///     For multi-objective runs, stagnation is detected via hypervolume (Pareto front not growing);
     ///     for single-objective runs, stagnation is detected via best fitness flatness.
     /// </summary>
@@ -361,19 +393,19 @@ public abstract class EvolutionBlueprint : IEvolutionarySolver
         var isDiversityLow = lastUniq < PopulationSize * diversityThreshold
                              || lastGenoDiv < LowGenotypicDiversityThreshold;
 
-        // The boost/decay anchors follow a decaying schedule rather than the flat base rate:
-        // large mutation steps early in the run (exploration), smaller ones near the end
-        // (refinement). Stagnation/diversity boosts apply on top of the scheduled level.
-        var scheduledMutationRate = _baseMutationRate * ScheduleFactor(observer);
+        // Mutation follows a decaying schedule rather than the flat base rate: large steps early
+        // (exploration), smaller ones near the end (refinement). Boosts multiply the scheduled level.
+        var progress = ScheduleProgress(observer);
+        var scheduledMutationRate = _baseMutationRate * (1.0 - (1.0 - MutationScheduleFloorFraction) * progress);
 
-        if (isStagnating || isDiversityLow)
-            MutationStrategy.MutationRate = Math.Min(
-                MutationStrategy.MutationRate * StagnationBoost,
-                Math.Min(scheduledMutationRate * MaxMutationMultiplier, 1.0));
-        else
-            MutationStrategy.MutationRate = Math.Max(
-                MutationStrategy.MutationRate * RecoveryDecay,
-                scheduledMutationRate);
+        // Boost headroom shrinks to none by the final generation, otherwise persistent stagnation
+        // would pin the rate at the maximum multiple and override the late-run refinement.
+        var maxBoost = 1.0 + (MaxMutationMultiplier - 1.0) * (1.0 - progress);
+        var boost = isStagnating || isDiversityLow
+            ? _mutationBoost * StagnationBoost
+            : Math.Max(_mutationBoost * RecoveryDecay, 1.0);
+        _mutationBoost = Math.Min(boost, maxBoost);
+        MutationStrategy.MutationRate = Math.Min(scheduledMutationRate * _mutationBoost, 1.0);
 
         // Also adapt crossover rate: boost on stagnation or low diversity, decay otherwise.
         if (isStagnating || isDiversityLow)
@@ -387,14 +419,14 @@ public abstract class EvolutionBlueprint : IEvolutionarySolver
     }
 
     /// <summary>
-    ///     Linear decay factor for the mutation schedule: 1.0 at generation 0 down to
-    ///     <see cref="MutationScheduleFloorFraction" /> at the final generation.
+    ///     Run progress for the mutation schedule: 0 at generation 0 up to 1 at the final generation.
+    ///     The scheduled rate decays linearly to <see cref="MutationScheduleFloorFraction" /> of the
+    ///     base rate over this range.
     /// </summary>
-    private double ScheduleFactor(EvolutionObserver observer)
+    private double ScheduleProgress(EvolutionObserver observer)
     {
-        if (MaxGenerations <= 1) return 1.0;
-        var progress = Math.Min(1.0, observer.CurrentGenerationIndex / (double)(MaxGenerations - 1));
-        return 1.0 - (1.0 - MutationScheduleFloorFraction) * progress;
+        if (MaxGenerations <= 1) return 0.0;
+        return Math.Min(1.0, observer.CurrentGenerationIndex / (double)(MaxGenerations - 1));
     }
 
     /// <summary>

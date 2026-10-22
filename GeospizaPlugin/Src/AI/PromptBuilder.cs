@@ -190,12 +190,8 @@ public static class PromptBuilder
         if (t is CompositeTermination ct)
         {
             sb.AppendLine($"{indent}Termination: CompositeTermination (fires when any sub-strategy triggers)");
-            // Reflect into the private _strategies list to enumerate components
-            var field = ct.GetType().GetField("_strategies",
-                BindingFlags.NonPublic | BindingFlags.Instance);
-            if (field?.GetValue(ct) is List<ITerminationStrategy> inner)
-                foreach (var s in inner)
-                    AppendTerminationParams(sb, s, indent + "  ");
+            foreach (var s in ct.Strategies)
+                AppendTerminationParams(sb, s, indent + "  ");
             return;
         }
 
@@ -220,11 +216,8 @@ public static class PromptBuilder
         var result = new List<string>();
         if (t is CompositeTermination ct)
         {
-            var field = ct.GetType().GetField("_strategies",
-                BindingFlags.NonPublic | BindingFlags.Instance);
-            if (field?.GetValue(ct) is List<ITerminationStrategy> inner)
-                foreach (var s in inner)
-                    result.AddRange(GetScalarTerminatorNames(s));
+            foreach (var s in ct.Strategies)
+                result.AddRange(GetScalarTerminatorNames(s));
             return result;
         }
         if (t is ProgressConvergence || t is BestFitnessStagnation)

@@ -88,7 +88,10 @@ public class GH_MultiObjectiveFitness : GH_Component, IGH_VariableParameterCompo
         for (var i = 0; i < count; i++)
         {
             double val = 0;
-            DA.GetData(i, ref val);
+            // A wired input that delivers nothing means the geometry failed for this individual;
+            // NaN makes the solver score it as a failed evaluation instead of a real 0.
+            if (!DA.GetData(i, ref val) && Params.Input[i].SourceCount > 0)
+                val = double.NaN;
             objectives[i] = val;
             // Use NickName as the label — it's what users rename in the GH canvas.
             // Fall back to Name if NickName is empty.

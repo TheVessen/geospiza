@@ -17,8 +17,9 @@ public static class CanvasFingerprint
 {
     /// <summary>
     ///     Returns a hex SHA-256 digest of the canvas's topology: each object's type,
-    ///     nickname, and the InstanceGuids of its input sources. Objects are sorted by their
-    ///     own InstanceGuid so the result is deterministic regardless of canvas-object order.
+    ///     nickname, and the InstanceGuids of its input sources tagged with the input they feed.
+    ///     Objects are sorted by their own InstanceGuid so the result is deterministic regardless
+    ///     of canvas-object order. Walks the document, so call it on the UI thread.
     /// </summary>
     public static string Compute(GH_Document doc)
     {
@@ -44,9 +45,9 @@ public static class CanvasFingerprint
         // Components have multiple input params, each with multiple sources.
         if (obj is IGH_Component component)
         {
+            // Tag each source with its input index so moving a wire between inputs changes the hash.
             return component.Params.Input
-                .SelectMany(p => p.Sources)
-                .Select(s => s.InstanceGuid.ToString())
+                .SelectMany((p, i) => p.Sources.Select(s => $"{i}:{s.InstanceGuid}"))
                 .OrderBy(s => s, StringComparer.Ordinal);
         }
 
@@ -61,7 +62,7 @@ public static class CanvasFingerprint
         return Array.Empty<string>();
     }
 
-    private static string Sha256Hex(string input)
+    internal static string Sha256Hex(string input)
     {
         using var sha = SHA256.Create();
         var bytes = sha.ComputeHash(Encoding.UTF8.GetBytes(input));

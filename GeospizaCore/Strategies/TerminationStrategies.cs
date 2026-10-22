@@ -1,4 +1,7 @@
 ﻿using GeospizaCore.Core;
+using GeospizaCore.Solvers;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace GeospizaCore.Strategies;
 
@@ -11,20 +14,64 @@ public interface ITerminationStrategy
 /// <summary>
 ///     Combines multiple termination strategies and fires when any one of them triggers.
 /// </summary>
+[JsonConverter(typeof(CompositeTerminationConverter))]
 public class CompositeTermination : ITerminationStrategy
 {
     private readonly List<ITerminationStrategy> _strategies;
 
-    public CompositeTermination(IEnumerable<ITerminationStrategy> strategies)
+    public CompositeTermination(IEnumerable<ITerminationStrategy>? strategies)
     {
-        _strategies = new List<ITerminationStrategy>(strategies);
+        _strategies = strategies?.Where(s => s != null).ToList() ?? new List<ITerminationStrategy>();
     }
+
+    public IReadOnlyList<ITerminationStrategy> Strategies => _strategies;
 
     // Not meaningful for composite — individual strategies have their own thresholds.
     public double TerminationThreshold { get; set; }
 
     public bool Evaluate(EvolutionObserver evolutionObserver)
         => _strategies.Any(s => s.Evaluate(evolutionObserver));
+
+    /// <summary>
+    ///     Writes each sub-strategy in the same Type/Value envelope <see cref="EvoSettingsConverter" /> uses,
+    ///     since the interface-typed list cannot be deserialized without per-item type information.
+    /// </summary>
+    public sealed class CompositeTerminationConverter : JsonConverter<CompositeTermination>
+    {
+        public override void WriteJson(JsonWriter writer, CompositeTermination? value, JsonSerializer serializer)
+        {
+            if (value == null)
+            {
+                writer.WriteNull();
+                return;
+            }
+
+            writer.WriteStartObject();
+            writer.WritePropertyName(nameof(TerminationThreshold));
+            writer.WriteValue(value.TerminationThreshold);
+            writer.WritePropertyName(nameof(Strategies));
+            writer.WriteStartArray();
+            foreach (var strategy in value._strategies)
+                EvoSettingsConverter.WriteTyped(writer, strategy, serializer);
+            writer.WriteEndArray();
+            writer.WriteEndObject();
+        }
+
+        public override CompositeTermination? ReadJson(JsonReader reader, Type objectType,
+            CompositeTermination? existingValue, bool hasExistingValue, JsonSerializer serializer)
+        {
+            if (reader.TokenType == JsonToken.Null) return null;
+
+            var obj = JObject.Load(reader);
+            var strategies = (obj[nameof(Strategies)] as JArray ?? new JArray())
+                .Select(t => EvoSettingsConverter.ReadTyped<ITerminationStrategy>(t, serializer)!);
+
+            return new CompositeTermination(strategies)
+            {
+                TerminationThreshold = obj[nameof(TerminationThreshold)]?.Value<double>() ?? 0
+            };
+        }
+    }
 }
 
 public abstract class TerminationStrategy : ITerminationStrategy

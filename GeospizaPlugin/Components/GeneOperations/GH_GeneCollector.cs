@@ -76,13 +76,28 @@ public class GH_GeneCollector : GH_Component, IGH_VariableParameterComponent
     protected override void SolveInstance(IGH_DataAccess DA)
     {
         var geneIds = new List<string>();
+        var ignored = new List<string>();
 
         for (var i = 0; i < Params.Input.Count; i++)
         {
             var sources = Params.Input[i].Sources;
             foreach (var src in sources)
-                geneIds.Add(src.InstanceGuid.ToString());
+            {
+                // Only top-level sliders and gene pools can be driven by the solver; a component
+                // output param is not a top-level object, so the StateManager could not find it.
+                var srcType = src.GetType().ToString();
+                if (srcType == "Grasshopper.Kernel.Special.GH_NumberSlider" ||
+                    srcType == "GalapagosComponents.GalapagosGeneListObject")
+                    geneIds.Add(src.InstanceGuid.ToString());
+                else
+                    ignored.Add(src.NickName);
+            }
         }
+
+        if (ignored.Count > 0)
+            AddRuntimeMessage(GH_RuntimeMessageLevel.Warning,
+                $"Ignored {ignored.Count} source{(ignored.Count == 1 ? "" : "s")} that " +
+                $"{(ignored.Count == 1 ? "is" : "are")} not a number slider or gene pool: {string.Join(", ", ignored)}");
 
         if (geneIds.Count == 0)
         {

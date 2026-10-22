@@ -23,8 +23,8 @@ public class GH_InbreedingPairing : GH_Component
     protected override void RegisterInputParams(GH_InputParamManager pManager)
     {
         pManager.AddNumberParameter("In Breeding Factor", "IBF",
-            "Inbreeding Factor, a value between 0 and 1. A value of 0 promotes pairing between individuals with high genetic similarity, " +
-            "while a value of 1 encourages pairing between individuals with high genetic dissimilarity.",
+            "Inbreeding Factor, a value between -1 and 1. A value of -1 pairs each individual with its most genetically similar mate, " +
+            "1 with its most dissimilar mate, and 0 with a mate of median genetic distance.",
             GH_ParamAccess.item,
             0.2);
         pManager.AddNumberParameter("Distance Function", "DF",
@@ -44,13 +44,16 @@ public class GH_InbreedingPairing : GH_Component
         if (!DA.GetData(1, ref distanceFunction)) return;
         var distanceFunctionInt = Convert.ToInt32(distanceFunction);
         if (distanceFunctionInt is > 1 or < 0)
+        {
             AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Distance function must be 0 or 1");
+            return;
+        }
 
-        DistanceFunctionType df;
-        if (distanceFunction == 0)
-            df = DistanceFunctionType.Euclidean;
-        else
-            df = DistanceFunctionType.Manhattan;
+        if (inBreedingFactor is < -1 or > 1)
+            AddRuntimeMessage(GH_RuntimeMessageLevel.Warning,
+                $"In Breeding Factor {inBreedingFactor} is outside [-1, 1] and was clamped");
+
+        var df = distanceFunctionInt == 0 ? DistanceFunctionType.Euclidean : DistanceFunctionType.Manhattan;
 
         var pairing = new PairingStrategy(inBreedingFactor, df);
 

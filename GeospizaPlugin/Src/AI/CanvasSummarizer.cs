@@ -3,51 +3,46 @@ using System.IO;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using Grasshopper.Kernel;
 
 namespace GeospizaPlugin.AI;
 
 /// <summary>
-///     Two-layer pipeline that turns a Grasshopper canvas into a short natural-language
-///     description for use as extra context in the AI analysis prompt.
-///     <list type="number">
-///         <item>Topology fingerprint via <see cref="CanvasFingerprint"/>; on a hit the cached summary is returned and no LLM call is made.</item>
-///         <item>On a miss, <see cref="CanvasExtractor"/> produces structured text, the LLM summarises it under a focused system prompt, and the result is cached to disk for next time.</item>
-///     </list>
-///     Slider tweaks don't invalidate the cache (only topology changes do), so this is
-///     usually free after the first prompt against a given canvas.
+///     Turns a Grasshopper canvas into a short natural-language description for use as extra
+///     context in the AI analysis prompt. The caller reads the canvas on the UI thread
+///     (<see cref="CanvasFingerprint"/> and <see cref="CanvasExtractor"/>) and passes the
+///     resulting strings in, so nothing here touches the live document.
+///     Summaries are cached on topology fingerprint + model + summary prompt, so slider tweaks
+///     don't re-summarise; only rewiring, switching models or editing the prompt does.
 /// </summary>
 public static class CanvasSummarizer
 {
     private static readonly Assembly _assembly = Assembly.GetExecutingAssembly();
+    private static readonly Lazy<string> _summaryPrompt = new(() => LoadPrompt("canvas-summary.md"));
 
     /// <summary>
-    ///     Returns a cached or freshly-generated canvas summary, or null when the canvas
-    ///     has no fitness component (nothing to summarise) or the LLM call fails.
+    ///     Returns a cached or freshly-generated canvas summary, or null when there is nothing
+    ///     to summarise or summarisation fails. Only cancellation of <paramref name="ct"/> propagates.
     /// </summary>
-    public static async Task<string?> GetSummaryAsync(GH_Document doc, string model, CancellationToken ct = default)
+    public static async Task<string?> GetSummaryAsync(string canvasFingerprint, string? canvasDescription, string model,
+        CancellationToken ct = default)
     {
-        if (doc == null) throw new ArgumentNullException(nameof(doc));
-
-        var fingerprint = CanvasFingerprint.Compute(doc);
-        var cached = CanvasSummaryCache.TryGet(fingerprint);
-        if (cached != null) return cached;
-
-        var extracted = CanvasExtractor.Extract(doc);
-        if (extracted == null) return null;
-
-        var prompt = BuildSummaryPrompt(extracted);
+        if (string.IsNullOrEmpty(canvasFingerprint) || string.IsNullOrEmpty(canvasDescription)) return null;
 
         try
         {
+            var key = CacheKey(canvasFingerprint, model);
+            var cached = CanvasSummaryCache.TryGet(key);
+            if (cached != null) return cached;
+
+            var prompt = $"{_summaryPrompt.Value}\n\n# Canvas data\n\n{canvasDescription}\n";
             var summary = await OllamaService.GenerateAsync(model, prompt, ct).ConfigureAwait(false);
             summary = summary?.Trim() ?? string.Empty;
             if (summary.Length == 0) return null;
 
-            CanvasSummaryCache.Store(fingerprint, summary);
+            CanvasSummaryCache.Store(key, summary);
             return summary;
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
             throw;
         }
@@ -59,20 +54,26 @@ public static class CanvasSummarizer
     }
 
     /// <summary>
-    ///     Synchronously checks whether a summary is already cached for the current canvas.
-    ///     Lets the UI layer say "ready" vs. "summarising..." without making an LLM call.
+    ///     Checks whether a summary is already cached, so the UI can say "ready" vs.
+    ///     "summarising..." without making an LLM call.
     /// </summary>
-    public static bool IsCached(GH_Document doc)
+    public static bool IsCached(string canvasFingerprint, string model)
     {
-        if (doc == null) return false;
-        var fingerprint = CanvasFingerprint.Compute(doc);
-        return CanvasSummaryCache.TryGet(fingerprint) != null;
+        if (string.IsNullOrEmpty(canvasFingerprint)) return false;
+        try
+        {
+            return CanvasSummaryCache.TryGet(CacheKey(canvasFingerprint, model)) != null;
+        }
+        catch
+        {
+            return false;
+        }
     }
 
-    private static string BuildSummaryPrompt(string extractedCanvas)
+    private static string CacheKey(string canvasFingerprint, string model)
     {
-        var system = LoadPrompt("canvas-summary.md");
-        return $"{system}\n\n# Canvas data\n\n{extractedCanvas}\n";
+        var promptHash = CanvasFingerprint.Sha256Hex(_summaryPrompt.Value);
+        return CanvasFingerprint.Sha256Hex($"{canvasFingerprint}\n{model}\n{promptHash}");
     }
 
     private static string LoadPrompt(string filename)

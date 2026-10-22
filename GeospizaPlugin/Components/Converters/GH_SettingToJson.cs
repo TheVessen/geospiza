@@ -41,6 +41,17 @@ public class GH_SettingToJson : GH_Component
             return;
         }
 
-        DA.SetData(0, setting.ToJson());
+        string json;
+        try
+        {
+            json = setting.ToJson();
+        }
+        catch (Exception ex)
+        {
+            AddRuntimeMessage(GH_RuntimeMessageLevel.Error, $"Failed to serialize settings: {ex.Message}");
+            return;
+        }
+
+        DA.SetData(0, json);
     }
 }

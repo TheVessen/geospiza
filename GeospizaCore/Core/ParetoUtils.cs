@@ -139,8 +139,18 @@ public static class ParetoUtils
     ///     SIAM Journal on Optimization, vol. 8, no. 3, pp. 631–657, Aug. 1998,
     ///     doi: 10.1137/S1052623496307510.
     /// </summary>
+    /// <exception cref="ArgumentOutOfRangeException">
+    ///     <paramref name="objectiveCount" /> or <paramref name="divisions" /> is less than 1.
+    /// </exception>
     public static List<double[]> GenerateReferencePoints(int objectiveCount, int divisions)
     {
+        if (objectiveCount < 1)
+            throw new ArgumentOutOfRangeException(nameof(objectiveCount), objectiveCount,
+                "At least one objective is required to generate reference points.");
+        if (divisions < 1)
+            throw new ArgumentOutOfRangeException(nameof(divisions), divisions,
+                "Reference point divisions must be at least 1.");
+
         var points = new List<double[]>();
         GenerateRefPointsRecursive(new double[objectiveCount], 0, divisions, divisions, points);
         return points;

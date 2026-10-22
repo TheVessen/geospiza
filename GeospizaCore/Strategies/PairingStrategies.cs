@@ -35,10 +35,17 @@ public class PairingStrategy : IPairingStrategy
         _distanceFn = distanceFunction == DistanceFunctionType.Euclidean ? EuclideanDistance : ManhattanDistance;
     }
 
+    private double _inBreedingFactor;
+
     /// <summary>
     ///     Controls mate similarity preference (−1 to 1): negative favours similar mates, positive favours dissimilar ones.
+    ///     Values outside the range are clamped, since they map to a mate index outside the sorted pool.
     /// </summary>
-    public double InBreedingFactor { get; set; }
+    public double InBreedingFactor
+    {
+        get => _inBreedingFactor;
+        set => _inBreedingFactor = Math.Max(-1.0, Math.Min(1.0, value));
+    }
 
     public DistanceFunctionType DistanceFunction { get; }
 

@@ -26,6 +26,10 @@ public class GH_NsgaIISolver : GH_Component
     private bool _isRunning;
     private string _lastRunError;
     private Guid _lastSolutionId;
+    private bool _runInputWasTrue;
+    private CancellationTokenSource _runCts;
+    private bool _callbackActive;
+    private bool _releasePending;
     private SolverSettings _privateSettings;
     private Guid _solutionId = Guid.NewGuid();
 
@@ -111,7 +115,7 @@ public class GH_NsgaIISolver : GH_Component
             var keepRunning = true;
             if (DA.GetData(3, ref keepRunning) && !keepRunning)
             {
-                StateManager?.RunCts?.Cancel();
+                _runCts?.Cancel();
                 AddRuntimeMessage(GH_RuntimeMessageLevel.Warning,
                     "Cancellation requested. The solver stops after the current generation.");
             }
@@ -173,36 +177,36 @@ public class GH_NsgaIISolver : GH_Component
         StateManager.SetGenes(geneIds);
         StateManager.PreviewLevel = previewLevel;
 
-        if (runButton)
+        // Start only when Run turns true: the run's closing ExpireSolution re-solves with a
+        // toggle still true, which would otherwise launch the next run immediately.
+        var startRun = runButton && !_runInputWasTrue;
+        _runInputWasTrue = runButton;
+        if (startRun)
         {
             _lastRunError = null;
             DA.SetData(0, null);
             _isRunning = true;
             _isLocked = true;
-            OnPingDocument().ScheduleSolution(100, ScheduleCallback);
+            // Created here rather than in the callback so a cancel that arrives before the
+            // callback starts is not lost.
+            var cts = new CancellationTokenSource();
+            _runCts = cts;
+            StateManager.RunCts = cts;
+            OnPingDocument().ScheduleSolution(100, d => ScheduleCallback(d, cts));
         }
     }
 
-    private void ScheduleCallback(GH_Document doc)
+    private void ScheduleCallback(GH_Document doc, CancellationTokenSource cts)
     {
-        // Validate MOF by scanning the canvas — more reliable than checking the Fitness
-        // singleton, which may be wiped by StateManager.Reset() during the same solve cycle.
-        var hasMof = doc.Objects
-            .OfType<Grasshopper.Kernel.IGH_Component>()
-            .Any(c => c.GetType().Name == "GH_MultiObjectiveFitness");
-        if (!hasMof)
-        {
-            AddRuntimeMessage(GH_RuntimeMessageLevel.Error,
-                "No multi-objective fitness found. " +
-                "Connect a Multi-Objective Fitness (MOF) component with at least one objective. " +
-                "The single-objective Fitness component does not work with NSGA-II.");
-            _isRunning = false;
-            _isLocked = false;
-            OnDisplayExpired(true);
-            return;
-        }
+        // A run abandoned before its callback fired has already been released.
+        if (!ReferenceEquals(cts, _runCts)) return;
 
+        // Captured because removal or document close can happen while the run pumps the UI;
+        // those defer releasing the instances to the finally below.
+        var stateManager = StateManager;
+        var observer = EvolutionObserver;
         var maxGenerations = _privateSettings.MaxGenerations;
+        _callbackActive = true;
 
         void OnGenerationCompleted(object sender, EvolutionObserver.GenerationCompletedEventArgs e)
         {
@@ -213,26 +217,45 @@ public class GH_NsgaIISolver : GH_Component
 
         try
         {
-            StateManager.RunCts = new CancellationTokenSource();
-            StateManager.IsRunning = true;
+            if (cts.IsCancellationRequested)
+            {
+                Message = "Canceled";
+                return;
+            }
+
+            // Validate MOF by scanning the canvas — more reliable than checking the Fitness
+            // singleton, which may be wiped by StateManager.Reset() during the same solve cycle.
+            var hasMof = doc.Objects
+                .OfType<Grasshopper.Kernel.IGH_Component>()
+                .Any(c => c.GetType().Name == "GH_MultiObjectiveFitness");
+            if (!hasMof)
+            {
+                _lastRunError = "No multi-objective fitness found. " +
+                                "Connect a Multi-Objective Fitness (MOF) component with at least one objective. " +
+                                "The single-objective Fitness component does not work with NSGA-II.";
+                Message = "Error";
+                return;
+            }
+
+            stateManager.IsRunning = true;
             _solutionId = Guid.NewGuid();
 
-            EvolutionObserver.Reset();
-            EvolutionObserver.GenerationCompleted += OnGenerationCompleted;
+            observer.Reset();
+            observer.GenerationCompleted += OnGenerationCompleted;
 
             Message = "Running...";
             OnDisplayExpired(true);
             RhinoApp.Wait();
 
-            var solver = new NsgaIISolver(_privateSettings, StateManager, EvolutionObserver);
-            solver.RunAlgorithm(StateManager.RunCts.Token);
+            var solver = new NsgaIISolver(_privateSettings, stateManager, observer);
+            solver.RunAlgorithm(cts.Token);
 
-            foreach (var genePool in StateManager.AllGenePools.Values)
+            foreach (var genePool in stateManager.AllGenePools.Values)
                 genePool.ExpireSolutionTopLevel(false);
-            foreach (var slider in StateManager.AllSliders.Values)
+            foreach (var slider in stateManager.AllSliders.Values)
                 slider.ExpireSolutionTopLevel(false);
 
-            Message = StateManager.RunCts.Token.IsCancellationRequested ? "Canceled" : "Done";
+            Message = cts.IsCancellationRequested ? "Canceled" : "Done";
         }
         catch (Exception ex)
         {
@@ -246,25 +269,74 @@ public class GH_NsgaIISolver : GH_Component
             // _lastSolutionId is synced even on failure, otherwise the guard in SolveInstance
             // would permanently block any further run.
             _lastSolutionId = _solutionId;
-            EvolutionObserver.GenerationCompleted -= OnGenerationCompleted;
-            StateManager.RunCts?.Dispose();
-            StateManager.RunCts = null;
-            StateManager.IsRunning = false;
+            observer.GenerationCompleted -= OnGenerationCompleted;
+            if (ReferenceEquals(stateManager.RunCts, cts)) stateManager.RunCts = null;
+            _runCts = null;
+            cts.Dispose();
+            stateManager.IsRunning = false;
             _isRunning = false;
             _isLocked = false;
+            _callbackActive = false;
             ClearRuntimeMessages();
-            EvolutionObserver.NotifyRunCompleted();
-            ExpireSolution(true);
+            observer.NotifyRunCompleted();
+            if (_releasePending)
+            {
+                _releasePending = false;
+                ReleaseInstances();
+            }
+            else if (OnPingDocument() != null)
+            {
+                ExpireSolution(true);
+            }
         }
     }
 
     public override void RemovedFromDocument(GH_Document document)
     {
+        CancelRunAndRelease();
+        base.RemovedFromDocument(document);
+    }
+
+    public override void DocumentContextChanged(GH_Document document, GH_DocumentContext context)
+    {
+        base.DocumentContextChanged(document, context);
+        // Only Close frees the document; Unloaded just means the canvas switched to another one.
+        if (context == GH_DocumentContext.Close)
+            CancelRunAndRelease();
+    }
+
+    /// <summary>
+    ///     Cancels any run and drops this component's cached StateManager and EvolutionObserver.
+    ///     A run already executing still uses both, so its callback releases them when it unwinds.
+    /// </summary>
+    private void CancelRunAndRelease()
+    {
+        _runCts?.Cancel();
+        if (_callbackActive)
+        {
+            _releasePending = true;
+            return;
+        }
+
+        if (_runCts != null)
+        {
+            if (StateManager != null && ReferenceEquals(StateManager.RunCts, _runCts))
+                StateManager.RunCts = null;
+            _runCts.Dispose();
+            _runCts = null;
+        }
+
+        _isRunning = false;
+        _isLocked = false;
+        ReleaseInstances();
+    }
+
+    private void ReleaseInstances()
+    {
         EvolutionObserver.RemoveInstance(this);
         EvolutionObserver = null;
         StateManager.RemoveInstance(this);
         StateManager = null;
-        base.RemovedFromDocument(document);
     }
 
     protected override void AfterSolveInstance()

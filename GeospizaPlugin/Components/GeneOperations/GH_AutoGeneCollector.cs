@@ -46,22 +46,31 @@ public class GH_AutoGeneCollector : GH_Component
         DA.GetData(0, ref clear);
 
 
-        if (searchDocument)
-            foreach (var ghobject in OnPingDocument().Objects)
+        var doc = OnPingDocument();
+        if (doc == null) return;
+
+        if (clear)
+        {
+            docParams.Clear();
+            Message = "Cleared";
+        }
+        else if (searchDocument)
+        {
+            // Rebuilt from scratch so deleted or renamed GP_ objects drop out.
+            docParams.Clear();
+            foreach (var ghobject in doc.Objects)
             {
                 var currentType = ghobject.GetType().ToString();
 
                 var isRightType = currentType == "Grasshopper.Kernel.Special.GH_NumberSlider" ||
                                   currentType == "GalapagosComponents.GalapagosGeneListObject";
                 if (ghobject.NickName.StartsWith("GP_") && isRightType)
-                    if (!docParams.Contains(ghobject.InstanceGuid.ToString()))
-                        docParams.Add(ghobject.InstanceGuid.ToString());
+                    docParams.Add(ghobject.InstanceGuid.ToString());
             }
-
-        if (clear)
+        }
+        else
         {
-            docParams.Clear();
-            Message = "Cleared";
+            docParams.RemoveAll(id => doc.FindObject(new Guid(id), true) == null);
         }
 
         geneIds.AddRange(docParams);

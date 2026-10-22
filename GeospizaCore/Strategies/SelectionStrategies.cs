@@ -11,6 +11,36 @@ public abstract class SelectionStrategy : ISelectionStrategy
 {
     protected readonly Random Random = new();
     public abstract List<Individual> Select(Population population, int numberOfSelections);
+
+    /// <summary>
+    ///     Fitness-proportionate selection weights. When any fitness is negative, all values are shifted
+    ///     so the minimum weight becomes 1; otherwise fitness is used as-is, so a zero-fitness individual
+    ///     is never picked. If the total weight is not positive (every fitness zero), all weights are 1
+    ///     and selection degrades to uniform instead of failing.
+    /// </summary>
+    protected static double[] ProportionalWeights(List<Individual> inhabitants, out double totalWeight)
+    {
+        var minFitness = inhabitants[0].Fitness;
+        for (var i = 1; i < inhabitants.Count; i++)
+            if (inhabitants[i].Fitness < minFitness)
+                minFitness = inhabitants[i].Fitness;
+
+        var offset = minFitness < 0 ? -minFitness + 1.0 : 0.0;
+
+        var weights = new double[inhabitants.Count];
+        totalWeight = 0.0;
+        for (var i = 0; i < inhabitants.Count; i++)
+        {
+            weights[i] = inhabitants[i].Fitness + offset;
+            totalWeight += weights[i];
+        }
+
+        if (totalWeight > 0) return weights;
+
+        for (var i = 0; i < weights.Length; i++) weights[i] = 1.0;
+        totalWeight = weights.Length;
+        return weights;
+    }
 }
 
 /// <summary>
@@ -122,27 +152,11 @@ public class RouletteWheelSelection : SelectionStrategy
     /// <param name="population"></param>
     /// <param name="numberOfSelections"></param>
     /// <returns></returns>
-    /// <exception cref="System.InvalidOperationException"></exception>
     public override List<Individual> Select(Population population, int numberOfSelections)
     {
         var selectedIndividuals = new List<Individual>();
         var inhabitants = population.Inhabitants;
-
-        // Shift fitness values so the minimum becomes positive
-        var minFitness = inhabitants[0].Fitness;
-        for (var i = 1; i < inhabitants.Count; i++)
-            if (inhabitants[i].Fitness < minFitness)
-                minFitness = inhabitants[i].Fitness;
-
-        // Offset ensures all values are > 0 (small epsilon avoids zero probability)
-        var offset = minFitness < 0 ? -minFitness + 1.0 : 0.0;
-
-        var totalFitness = 0.0;
-        for (var i = 0; i < inhabitants.Count; i++)
-            totalFitness += inhabitants[i].Fitness + offset;
-
-        if (totalFitness == 0)
-            throw new InvalidOperationException("Total fitness is zero, selection cannot be performed");
+        var weights = ProportionalWeights(inhabitants, out var totalFitness);
 
         for (var i = 0; i < numberOfSelections; i++)
         {
@@ -150,12 +164,12 @@ public class RouletteWheelSelection : SelectionStrategy
             double runningSum = 0;
             var selected = inhabitants[inhabitants.Count - 1];
 
-            foreach (var individual in inhabitants)
+            for (var j = 0; j < inhabitants.Count; j++)
             {
-                runningSum += individual.Fitness + offset;
+                runningSum += weights[j];
                 if (runningSum >= randomFitness)
                 {
-                    selected = individual;
+                    selected = inhabitants[j];
                     break;
                 }
             }
@@ -211,26 +225,9 @@ public class PoolSelection : SelectionStrategy
             throw new ArgumentException("Number of selections must be greater than 0");
 
         var inhabitants = population.Inhabitants;
-
-        // Shift fitness values so the minimum becomes positive
-        var minFitness = inhabitants[0].Fitness;
-        for (var i = 1; i < inhabitants.Count; i++)
-            if (inhabitants[i].Fitness < minFitness)
-                minFitness = inhabitants[i].Fitness;
-
-        var offset = minFitness < 0 ? -minFitness + 1.0 : 0.0;
-
-        var totalFitness = 0.0;
-        for (var i = 0; i < inhabitants.Count; i++)
-            totalFitness += inhabitants[i].Fitness + offset;
-
-        if (totalFitness == 0)
-            throw new InvalidOperationException("Total fitness is zero, selection cannot be performed");
-
-        // Compute shifted probabilities
-        var probabilities = new double[inhabitants.Count];
-        for (var i = 0; i < inhabitants.Count; i++)
-            probabilities[i] = (inhabitants[i].Fitness + offset) / totalFitness;
+        var probabilities = ProportionalWeights(inhabitants, out var totalFitness);
+        for (var i = 0; i < probabilities.Length; i++)
+            probabilities[i] /= totalFitness;
 
         var selectedIndividuals = new List<Individual>();
         for (var sel = 0; sel < numberOfSelections; sel++)
@@ -394,21 +391,7 @@ public class StochasticUniversalSampling : SelectionStrategy
     {
         var selectedIndividuals = new List<Individual>();
         var inhabitants = population.Inhabitants;
-
-        // Shift fitness values so the minimum becomes positive
-        var minFitness = inhabitants[0].Fitness;
-        for (var i = 1; i < inhabitants.Count; i++)
-            if (inhabitants[i].Fitness < minFitness)
-                minFitness = inhabitants[i].Fitness;
-
-        var offset = minFitness < 0 ? -minFitness + 1.0 : 0.0;
-
-        var totalFitness = 0.0;
-        for (var i = 0; i < inhabitants.Count; i++)
-            totalFitness += inhabitants[i].Fitness + offset;
-
-        if (totalFitness == 0)
-            throw new InvalidOperationException("Total fitness is zero, selection cannot be performed");
+        var weights = ProportionalWeights(inhabitants, out var totalFitness);
 
         var distance = 1.0 / numberOfSelections;
         var start = Random.NextDouble() * distance;
@@ -419,12 +402,12 @@ public class StochasticUniversalSampling : SelectionStrategy
             double runningSum = 0;
             var selected = inhabitants[inhabitants.Count - 1];
 
-            foreach (var individual in inhabitants)
+            for (var j = 0; j < inhabitants.Count; j++)
             {
-                runningSum += (individual.Fitness + offset) / totalFitness;
+                runningSum += weights[j] / totalFitness;
                 if (runningSum >= selectionPoint)
                 {
-                    selected = individual;
+                    selected = inhabitants[j];
                     break;
                 }
             }

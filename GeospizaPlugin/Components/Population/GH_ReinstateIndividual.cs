@@ -93,14 +93,27 @@ public class GH_ReinstateIndividual : GH_Component
 
     private void ScheduleCallback(GH_Document doc)
     {
-        individual.Reinstate(stateManager);
+        try
+        {
+            individual.Reinstate(stateManager);
 
-        foreach (var genePool in stateManager.AllGenePools.Values)
-            genePool.ExpireSolutionTopLevel(false);
-        foreach (var slider in stateManager.AllSliders.Values)
-            slider.ExpireSolutionTopLevel(false);
+            foreach (var genePool in stateManager.AllGenePools.Values)
+                genePool.ExpireSolutionTopLevel(false);
+            foreach (var slider in stateManager.AllSliders.Values)
+                slider.ExpireSolutionTopLevel(false);
+        }
+        catch (Exception ex)
+        {
+            // GH swallows exceptions from scheduled callbacks, so report it on the component instead.
+            Message = "Error";
+            AddRuntimeMessage(GH_RuntimeMessageLevel.Error, $"Reinstating failed: {ex.Message}");
+            OnDisplayExpired(true);
+        }
+        finally
+        {
+            _reinstating = false;
+        }
 
         doc.NewSolution(false);
-        _reinstating = false;
     }
 }
